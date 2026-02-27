@@ -1,0 +1,91 @@
+---
+title: "使用 Restack 自託管 Lightdash"
+sidebarTitle: Restack
+---
+
+Restack 是一個用於部署與管理開源軟體的託管服務。
+
+## 透過 Restack 部署至 AWS
+
+要透過 Restack 將 Lightdash 部署至您自己的 AWS 環境：
+
+1. [註冊 Restack 帳號](#註冊-restack-帳號)。
+2. [新增具備 AdministratorAccess 權限的 AWS 憑據](#新增具備-administratoraccess-權限的-aws-憑據)。
+3. [透過 Restack 一鍵建立集群](#透過-restack-一鍵建立集群)。
+4. [在 Restack 上部署 Lightdash](#在-restack-上部署-lightdash)。
+5. [開始使用 Lightdash](#開始使用-lightdash)。
+6. [部署多個 Lightdash 執行體](#部署多個-lightdash-執行體)。
+
+### 註冊 Restack 帳號
+
+請造訪 [www.restack.io/signup](https://www.restack.io/signup) 註冊 Restack 帳號。您可以使用公司電子郵件或 GitHub 個人檔案進行註冊。註冊無需信用卡。![Restack 註冊截圖](/images/self-host/restack-sign-up-60fca1b9c951d0d6ccb452e821822fc3.png)如果您已有帳號，請直接登入 [www.restack.io/login](https://www.restack.io/login)。
+
+### 新增具備 AdministratorAccess 權限的 AWS 憑據
+
+要透過 Restack 在您自己的 AWS 基礎設施中部署 Lightdash，下一步需要新增憑據。
+
+請確保此帳號具備 *AdministratorAccess*。這是 Restack 確保端到端集群建立與管理流程順暢的關鍵。
+
+1. 在左側導覽選單中點擊 *Clusters*。
+2. 選擇 *Credentials* 標籤。
+3. 點擊 *Add credential*。![新增憑據截圖](/images/self-host/restack-add-credentials-169204966d7f6e01aa644c1d96b950c4.png)
+4. 為您的憑據取一個好記的名稱以便日後管理。
+5. 輸入您的 *AWS Access Key ID* 與 *AWS Secret Access key*。
+6. 點擊 *Add credential*。![新增 AWS 憑據截圖](/images/self-host/restack-add-AWS-creds-3e97bb5d65365673914685cb89a5dbaa.png)
+
+> [如何獲取您的 AWS Access Key ID 與 AWS Secret Access Key](https://docs.aws.amazon.com/zh_tw/accounts/latest/reference/root-user-access-key.html)
+
+### 透過 Restack 一鍵建立集群
+
+<Info>
+**為什麼我需要集群？**
+  
+在 Kubernetes 集群上執行您的應用程式，能讓您可靠地部署、擴展並監控應用程式。
+</Info>
+
+新增憑據後：
+
+1. 導覽至同一頁面的 *Clusters* 標籤並點擊 *Create cluster*。![建立集群截圖](/images/self-host/restack-create-cluster-1e9c62264d5201a393d39e577fd9d8e4.png)
+2. 為您的集群取一個適當的名稱。
+3. 選擇您想要部署集群的區域。
+4. 選取您在上一步新增的 AWS 憑據。![集群詳情截圖](/images/self-host/restack-cluster-details-d5c9900aebf5122b3907e650751cbd10.png)
+
+集群建立程序將自動開始。一旦集群就緒，您將在帳號關聯的電子郵件中收到通知。
+建立集群是一次性的程序。之後您可以在同一個集群中新增其他開源工具或多個 Lightdash 執行體。
+
+<Frame>
+  <img src="/images/self-host/restack-creating-cluster-bfd79ccdca33c306c4d8465aa94351f8.png" alt="建立集群中"/>
+</Frame>
+
+<Frame>
+ <img src="/images/self-host/restack-cluster-created-f0eb361b83b19f425d6abcaa6dfc2917.png" alt="集群已建立"/>
+</Frame>
+
+您在集群中部署的任何應用程式都將透過免費的 **restack 網域** 進行造訪。
+若要為您的 Lightdash 執行體設定自定義網域，請透過對話與 Restack 團隊聯繫。
+
+### 在 Restack 上部署 Lightdash
+
+1. 點擊集群說明中的 *Add application*，或前往左側導覽選單中的 Applications 標籤。
+2. 點擊 *Lightdash*。![選取 Lightdash 截圖](/images/self-host/select-lightdash-e0ba5ca5028a2f2899e0dfe4750ba356.png)
+3. 選取您已佈署好的集群。
+4. 點擊 *Add application*。
+
+### 開始使用 Lightdash
+
+Lightdash 將會部署在您的集群上，您可以透過 *URL* 標籤下的連結進行造訪。
+<Frame>
+  <img src="/images/self-host/lightdash-deployed-b06dab0086da07006bced5adee14f908.png" alt="Lightdash 已部署"/>
+</Frame>
+
+您也可以檢查 Lightdash 內部署的工作負載 (Workloads) 與磁碟卷 (Volumes)。
+<Frame>
+  <img src="/images/self-host/lightdash-access-9f1d9535c0f58fc257acc56a751e1c4d.png" alt="造訪 Lightdash"/>
+</Frame>
+
+
+### 部署多個 Lightdash 執行體
+
+Restack 讓在同一個或多個集群上部署多個 Lightdash 執行體變得更容易。
+因此，您可以在升級前測試最新版本，或是為開發與生產環境分別設定專用的執行體。
+---

@@ -1,0 +1,20 @@
+---
+title: "為 Lightdash 郵件通知配置 SMTP"
+sidebarTitle: 郵件 SMTP
+---
+
+這是可用於配置 Lightdash 郵件客戶端的所有 SMTP 環境變數參考。
+
+| 變數 | 描述 | 必填？ | 預設值 |
+| :--------------------------------- | :-------------------------------------------------------------------------- | :---------: | :-------: |
+| EMAIL\_SMTP\_HOST | 郵件伺服器主機名稱 | <Icon icon="square-check" iconType="solid"/> | |
+| EMAIL\_SMTP\_PORT | 郵件伺服器連接埠 | 587 | |
+| EMAIL\_SMTP\_SECURE | 安全連線 | true | |
+| EMAIL\_SMTP\_USER | 驗證使用者 | <Icon icon="square-check" iconType="solid"/> | |
+| EMAIL\_SMTP\_PASSWORD | 驗證密碼 | \[1\] | |
+| EMAIL\_SMTP\_ACCESS\_TOKEN | 用於 OAuth2 驗證的存取權杖 | \[1\] | |
+| EMAIL\_SMTP\_ALLOW\_INVALID\_CERT | 允許連線至使用自簽署或無效 TLS 憑證的 TLS 伺服器 | false | |
+| EMAIL\_SMTP\_SENDER\_EMAIL | 發送郵件的電子郵件地址 | <Icon icon="square-check" iconType="solid"/> | |
+| EMAIL\_SMTP\_SENDER\_NAME | 發件人顯示名稱 | Lightdash | |
+
+\[1\] 必須提供 `EMAIL_SMTP_PASSWORD` 或 `EMAIL_SMTP_ACCESS_TOKEN` 其中之一。

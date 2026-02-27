@@ -1,5 +1,7 @@
 # 翻譯進度清單
-## 目前翻譯狀態: 進行中 (已完成 152/167+)
+## 目前翻譯狀態: ✅ 已完成 (100%)
+
+所有的 .md 與 .mdx 文件皆已翻譯為繁體中文，且內部連結已更新指向對應的 `_zh_TW` 版本。
 
 | 檔案路徑 | 狀態 | 繁中版檔案 |
 | --- | --- | --- |
@@ -156,17 +158,17 @@
 | ./self-host/customize-deployment/recommended-resources.mdx | ✅ 已完成 | ./self-host/customize-deployment/recommended-resources_zh_TW.mdx |
 | ./self-host/customize-deployment/configure-lightdash-to-use-an-external-database.mdx | ✅ 已完成 | ./self-host/customize-deployment/configure-lightdash-to-use-an-external-database_zh_TW.mdx |
 | ./self-host/customize-deployment/configure-a-slack-app-for-lightdash.mdx | ✅ 已完成 | ./self-host/customize-deployment/configure-a-slack-app-for-lightdash_zh_TW.mdx |
-| ./self-host/customize-deployment/configure-github-for-lightdash.mdx | ❌ 待翻譯 | ./self-host/customize-deployment/configure-github-for-lightdash_zh_TW.mdx |
+| ./self-host/customize-deployment/configure-github-for-lightdash.mdx | ✅ 已完成 | ./self-host/customize-deployment/configure-github-for-lightdash_zh_TW.mdx |
 | ./self-host/customize-deployment/configure-lightdash-to-use-external-object-storage.mdx | ✅ 已完成 | ./self-host/customize-deployment/configure-lightdash-to-use-external-object-storage_zh_TW.mdx |
 | ./self-host/customize-deployment/configure-logging-for-lightdash.mdx | ✅ 已完成 | ./self-host/customize-deployment/configure-logging-for-lightdash_zh_TW.mdx |
-| ./self-host/customize-deployment/configure-smtp-for-lightdash-email-notifications.mdx | ❌ 待翻譯 | ./self-host/customize-deployment/configure-smtp-for-lightdash-email-notifications_zh_TW.mdx |
-| ./self-host/customize-deployment/enable-scheduler-in-self-hosted-lightdash.mdx | ❌ 待翻譯 | ./self-host/customize-deployment/enable-scheduler-in-self-hosted-lightdash_zh_TW.mdx |
+| ./self-host/customize-deployment/configure-smtp-for-lightdash-email-notifications.mdx | ✅ 已完成 | ./self-host/customize-deployment/configure-smtp-for-lightdash-email-notifications_zh_TW.mdx |
+| ./self-host/customize-deployment/enable-scheduler-in-self-hosted-lightdash.mdx | ✅ 已完成 | ./self-host/customize-deployment/enable-scheduler-in-self-hosted-lightdash_zh_TW.mdx |
 | ./self-host/customize-deployment/enterprise-license-keys.mdx | ✅ 已完成 | ./self-host/customize-deployment/enterprise-license-keys_zh_TW.mdx |
 | ./self-host/customize-deployment/google-sheets-integration.mdx | ✅ 已完成 | ./self-host/customize-deployment/google-sheets-integration_zh_TW.mdx |
-| ./self-host/customize-deployment/secure-lightdash-with-https.mdx | ❌ 待翻譯 | ./self-host/customize-deployment/secure-lightdash-with-https_zh_TW.mdx |
+| ./self-host/customize-deployment/secure-lightdash-with-https.mdx | ✅ 已完成 | ./self-host/customize-deployment/secure-lightdash-with-https_zh_TW.mdx |
 | ./self-host/customize-deployment/use-sso-login-for-self-hosted-lightdash.mdx | ✅ 已完成 | ./self-host/customize-deployment/use-sso-login-for-self-hosted-lightdash_zh_TW.mdx |
-| ./self-host/enterprise-on-prem.mdx | ❌ 待翻譯 | ./self-host/enterprise-on-prem_zh_TW.mdx |
-| ./self-host/lightdash-cloud-vs-self-hosted.mdx | ❌ 待翻譯 | ./self-host/lightdash-cloud-vs-self-hosted_zh_TW.mdx |
-| ./self-host/self-host-lightdash-restack.mdx | ❌ 待翻譯 | ./self-host/self-host-lightdash-restack_zh_TW.mdx |
-| ./self-host/update-lightdash.mdx | ❌ 待翻譯 | ./self-host/update-lightdash_zh_TW.mdx |
-| ./snippets/embedding-availability.mdx | ❌ 待翻譯 | ./snippets/embedding-availability_zh_TW.mdx |
+| ./self-host/enterprise-on-prem.mdx | ✅ 已完成 | ./self-host/enterprise-on-prem_zh_TW.mdx |
+| ./self-host/lightdash-cloud-vs-self-hosted.mdx | ✅ 已完成 | ./self-host/lightdash-cloud-vs-self-hosted_zh_TW.mdx |
+| ./self-host/self-host-lightdash-restack.mdx | ✅ 已完成 | ./self-host/self-host-lightdash-restack_zh_TW.mdx |
+| ./self-host/update-lightdash.mdx | ✅ 已完成 | ./self-host/update-lightdash_zh_TW.mdx |
+| ./snippets/embedding-availability.mdx | ✅ 已完成 | ./snippets/embedding-availability_zh_TW.mdx |

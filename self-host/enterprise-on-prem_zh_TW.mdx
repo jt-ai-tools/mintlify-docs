@@ -1,0 +1,70 @@
+---
+title: "企業版自託管設定 (Enterprise on-prem)"
+description: "在您自己的基礎設施上部署 Lightdash 企業版的指南"
+---
+
+本指南涵蓋了在內部環境 (on-premises) 部署 Lightdash 企業版的設定需求與最佳實踐。
+
+## 前置條件
+
+- 已安裝 `pgvector` 擴充功能的 Postgres 資料庫
+
+## 獲取 Lightdash 鏡像 (Image)
+
+Lightdash 鏡像可在 [DockerHub](https://hub.docker.com/repository/docker/lightdash/lightdash/tags) 取得。您可以拉取特定版本（推薦）或使用 `latest`。
+
+```bash
+docker pull lightdash/lightdash:0.2248.3
+```
+
+### 建議的版本策略
+
+我們頻繁發佈新版本，目前尚未針對自託管部署提供 LTS（長期支援）或「stable」標籤。
+
+**我們的建議：**
+
+- **在生產環境使用固定版本**（例如：`lightdash/lightdash:0.2248.3`），而非 `latest`。
+- 固定版本能確保部署的可重複性，並避免非預期的變動。
+
+**將升級視為受控的發佈流程：**
+
+1. 先在 **預發佈 (Staging)** 環境升級。
+2. 執行常規驗證（SSO、連接、dbt 重新整理、定時作業、嵌入、關鍵儀表板）。
+3. 待確認無誤後，再推送到 **生產 (Production)** 環境。
+
+## 授權金鑰 (License key)
+
+企業版功能需要授權金鑰。請透過 `LIGHTDASH_LICENSE_KEY` 環境變數進行設定。Lightdash 團隊會透過 1Password 分享您的授權金鑰。
+
+<Note>
+授權驗證需要連外造訪 `https://api.keygen.sh` 的權限。
+</Note>
+
+欲了解詳細配置說明，請參考 [企業版授權金鑰](/self-host/customize-deployment/enterprise-license-keys_zh_TW)。
+
+### 啟用授權金鑰後
+
+金鑰啟用後，大多數企業版功能是由環境變數控制的。若要啟用特定功能，您需要設定對應的變數：
+
+| 功能 | 環境變數 | 說明文件 |
+|---------|---------------------|---------------|
+| 自定義角色 | `CUSTOM_ROLES_ENABLED=true` | [自定義角色](/references/workspace/custom-roles_zh_TW) |
+| AI 代理 | `AI_AGENTS_ENABLED=true` | [AI 代理](/guides/ai-agents_zh_TW) |
+| 快取 | `RESULTS_CACHE_ENABLED=true` | [快取](/guides/developer/caching_zh_TW) |
+| 嵌入 | `EMBEDDING_ENABLED=true` | [內容嵌入](/references/embedding_zh_TW) |
+
+您可以在[環境變數頁面搜尋 "enterprise"](/self-host/customize-deployment/environment-variables_zh_TW)，查看所有需要企業版授權金鑰的變數。
+
+<Tip>
+如果您在啟用功能或排除部署故障方面需要協助，請聯繫 Lightdash 團隊。
+</Tip>
+
+## 從 OSS (開源版) 遷移
+
+如果您正從開源版遷移至企業版：
+
+1. 遷移至與您目前 OSS 版本相符的商業版本。
+2. 一旦有單個容器執行商業版本，連接的資料庫將會自動升級以包含商業版 schema。
+3. 其他 OSS 容器在重啟時會失敗，但可暫時維持執行。
+4. 在第一個容器成功遷移後，請立即將所有容器更新為商業版本。
+---

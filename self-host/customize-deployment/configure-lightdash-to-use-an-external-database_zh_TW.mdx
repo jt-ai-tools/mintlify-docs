@@ -1,0 +1,42 @@
+---
+title: "配置 Lightdash 使用外部資料庫"
+sidebarTitle: 使用外部資料庫
+---
+
+<Info>
+Lightdash 需要 **PostgreSQL** 資料庫（版本 12 或更高）。
+</Info>
+
+在生產環境中，我們建議使用託管式資料庫服務（視您的雲端供應商而定）。這能確保您的資料庫具備高可用性與安全性。您也可以使用自建資料庫，但您需要自行負責維護。
+
+下方的配置範例展示了如何讓 Lightdash 連接至外部資料庫。您可以以此作為自定義設定的起點。
+
+## 外部資料庫配置選項
+
+```yaml
+# values.yaml
+
+# 停用內部資料庫
+postgresql:
+  enabled: false
+
+# 配置 Lightdash 使用外部資料庫
+externalDatabase:
+  host: lightdash-db.mycompany.com
+  port: 5432
+  user: lightdash
+  password: lightdash
+  database: lightdash
+```
+
+（選填）您可以將任何 [PostgreSQL 環境變數](https://www.postgresql.org/docs/current/libpq-envars.html) 傳遞給 `configMap`。
+
+## 外部資料庫所需的 PG 擴充功能
+
+Lightdash 需要在資料庫上安裝以下擴充功能：
+
+* `uuid-ossp` —— 用於生成唯一 ID。
+
+## 遷移 (Migrations)
+
+遷移作業會在啟動 Lightdash 伺服器或工作節點時自動執行。升級 Lightdash 時，遷移也會自動執行。若遷移因 `pg_lock` 錯誤而失敗，請檢查名為 `knex_migrations_lock` 的資料表，並手動釋放該鎖定。

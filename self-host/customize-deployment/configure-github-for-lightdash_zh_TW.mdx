@@ -1,0 +1,67 @@
+---
+title: "為自託管 Lightdash 配置 GitHub 整合"
+sidebarTitle: "GitHub 整合"
+---
+
+在本指南中，我們將向您展示如何在自託管的 Lightdash 伺服器上啟用 GitHub 整合。
+
+### 建立新的 GitHub 應用程式
+
+前往 GitHub 的應用程式設定（組織或帳號的開發者設定），點擊 `New GitHub App`。
+
+![建立應用程式截圖](/images/self-host/customize-deployment/configure-github-for-lightdash/github-create-app.png)
+
+**設定 (Settings)：**
+
+1. 設定應用程式名稱：在 GitHub 中必須是唯一的。
+2. 新增描述。
+3. 首頁網址 (Homepage URL)：例如 `https://lightdash.com`。
+4. 回呼網址 (Callback URL)：`https://<您的網域>/api/v1/github/oauth/callback`。
+5. 開啟 `Expire user authorization tokens` (過期使用者授權權杖)。
+6. 開啟 `Request user authorization (OAuth) during installation` (安裝期間請求使用者授權)。
+
+   ![OAuth 重新整理權杖截圖](/images/self-host/customize-deployment/configure-github-for-lightdash/github-oauth-refresh-token.png)
+7. 在 Post Installation 部分開啟 **Redirect on update**。
+8. 停用 Webhooks。
+
+   ![停用 Webhooks 截圖](/images/self-host/customize-deployment/configure-github-for-lightdash/github-deactivate-webhooks.png)
+
+**儲存庫權限 (Repository Permissions)：**
+
+- Checks: `Read and write`
+- Contents: `Read and write`
+- Pull requests: `Read and write`
+- Workflows (選填): `Read and write`
+
+**帳號權限 (Account Permissions)：** 無
+
+**此 GitHub 應用程式可以安裝在哪裡？** 任何帳號 (Any account)
+
+### **生成憑證與秘密金鑰**
+
+建立 GitHub 應用程式後，您需要生成一組 Client Secret (用戶端密鑰)。
+
+複製並妥善保存它，這將用於 `GITHUB_CLIENT_SECRET` 環境變數。
+
+![生成密鑰截圖](/images/self-host/customize-deployment/configure-github-for-lightdash/github-generate-client-secret.png)
+
+另外還需要生成一個 Private Key (私鑰)。
+
+將私鑰檔案的內容轉換為 `base64` 字串，這將用於 `GITHUB_PRIVATE_KEY` 環境變數。
+
+![生成私鑰截圖](/images/self-host/customize-deployment/configure-github-for-lightdash/github-generate-private-key.png)
+
+<Info>
+  您應將 Client Secret 與 Private Key 儲存在安全的地方，因為日後可能還會用到。
+</Info>
+
+### 將憑據加入您的本地環境
+
+現在，您需要將以下環境變數加入您的 Lightdash 伺服器：
+
+- `GITHUB_PRIVATE_KEY`：為您的 GitHub 應用程式生成的私鑰之 `base64` 字串。
+- `GITHUB_CLIENT_SECRET`：為您的 GitHub 應用程式生成的 Client Secret。
+- `GITHUB_CLIENT_ID`：從 GitHub 應用程式設定的 General 頁面複製。
+- `GITHUB_APP_ID`：從 GitHub 應用程式設定的 General 頁面複製。
+- `GITHUB_APP_NAME`：您為應用程式設定的名稱，可在應用程式設定中找到。
+---

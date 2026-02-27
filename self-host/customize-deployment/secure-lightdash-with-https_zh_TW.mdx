@@ -1,0 +1,38 @@
+---
+title: "使用 HTTPS 保護 Lightdash"
+description: 為了在生產環境下執行 Lightdash，強烈建議使用 HTTPS 進行保護。這通常透過您的雲端供應商提供的負載平衡器 (Load Balancer) 或 Ingress 控制器來達成。您也可以選擇使用 [nginx](https://www.nginx.com/) 或 [traefik](https://traefik.io) 等代理服務。
+sidebarTitle: 使用 HTTPS 保護
+---
+
+## HTTPS 配置選項
+
+```yaml
+# values.yaml
+configMap:
+  # 確保所有的 Lightdash 連結皆使用 https
+  SITE_URL: https://lightdash.mycompany.com
+
+  # 僅允許透過 HTTPS 傳送 Cookie
+  SECURE_COOKIES: 'true'
+
+  # (選填) 允許在具備 HTTPS 終端的代理後方使用 http 流量
+  TRUST_PROXY: 'true'
+
+# 視您的 Ingress 實作情況，可能需要設定以下項目
+service:
+  type: NodePort
+
+# Ingress 控制器配置範例
+ingress:
+  enabled: true
+  annotations: {}
+  hosts:
+    - host: lightdash.mycompany.com
+      paths:
+        - path: /*
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - lightdash.mycompany.com
+      secretName: lightdash-tls
+```

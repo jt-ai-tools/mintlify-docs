@@ -1,0 +1,23 @@
+---
+title: "更新 Lightdash 到最新版本"
+sidebarTitle: 更新 Lightdash
+---
+
+## 本地部署
+
+如果您是在自己的筆記型電腦上使用 Docker 執行 Lightdash，只需指示 Docker 拉取最新版本的 Lightdash 即可：
+
+```bash
+docker pull lightdash/lightdash
+```
+
+接著重新啟動 Lightdash，您就已升級到最新版本。
+
+## Kubernetes / Helm 部署
+
+如果您是使用我們的[社群 Helm Chart](https://github.com/lightdash/helm-charts) 將 Lightdash 安裝至 Kubernetes，則需要更新 Helm 儲存庫並升級您的部署。
+
+```bash
+helm repo update lightdash
+helm upgrade -f values.yml lightdash lightdash/lightdash
+```
