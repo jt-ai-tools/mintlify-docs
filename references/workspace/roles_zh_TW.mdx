@@ -1,0 +1,145 @@
+---
+title: "角色與權限 (Roles and permissions)"
+---
+
+## Lightdash 執行體中的角色
+
+* 除非特別指定，否則組織中的每個人都會以 `Organization Member` (組織成員) 的身分加入。例如：如果我邀請某人以編輯者身分加入某個專案，他們將成為對該專案具備 `editor` (編輯者) 權限的組織成員。如果我邀請某人以 `viewer` (檢視者) 身分加入***組織***，則他們將成為 `organization viewer` (組織檢視者)（而非組織成員）。
+
+* 僅有組織管理員 (Organization Admins) 可以建立新專案（並將成為該專案的專案管理員）。組織開發者 (Organization Developers) 僅能建立預覽專案 (Preview projects)。編輯者、互動檢視者、檢視者與一般成員無法建立專案。
+
+* 管理員具備所有內容的造訪權限（即使是未被明確邀請造訪的內容）。
+
+
+### 專案角色 (Project Roles)
+
+專案管理員 (Project Admins) 可以邀請使用者加入其專案，並為使用者或[群組 (groups)](/references/workspace/groups_zh_TW) 分配專案中的角色。請注意，具備組織角色的使用者也可以造訪專案。
+
+| 動作 | 專案管理員 (Project Admin) | 專案開發者 (Project Developer) | 專案編輯者 (Project Editor) | 專案互動檢視者 (Project Interactive Viewer) | 專案檢視者 (Project Viewer) |
+| :--------------------: | :--------------------: | :--------------------: | :--------------------: | :--------------------: | :--------------------: |
+| 查看圖表與儀表板 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> |
+| 將可見結果匯出為 CSV | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> |
+| 將可見結果匯出至 Google 試算表 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> |
+| 匯出所有結果至 CSV（不限可見行數） | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 匯出所有結果至 Google 試算表 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 查看留言 (Comments) | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> |
+| 建立留言 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 從表格探索建立新查詢 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 查看底層數據 (View underlying data) | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 建立與編輯定時交付 (Scheduled deliveries) | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 建立與編輯同步 (Syncs) | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 建立與編輯圖表和儀表板 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 使用 SQL 執行器 (SQL runner) | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 建立與探索自定義 SQL 維度 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 建立虛擬視圖 (Virtual views) | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 管理專案造訪權限 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 刪除專案 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 建立預覽專案 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 使用儀表板即代碼 (CLI) | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 重新命名模型、維度與指標 (CLI 與 UI) | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+
+
+### 組織角色 (Organization Roles)
+
+組織管理員 (Organization Admins) 可以為組織成員分配角色，這會授予對組織中「所有」專案的造訪權限。
+
+| 動作 | 組織管理員 (Organization Admin) | 組織開發者 (Organization Developer) | 組織編輯者 (Organization Editor) | 組織互動檢視者 (Organization Interactive Viewer) | 組織檢視者 (Organization Viewer) | 組織成員 (Organization Member) |
+| :-------------: | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: |
+| 建立個人存取權杖 (PAT) | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> |
+| 查看「所有」專案的內容 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 編輯「所有」專案的內容 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 建立新專案 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 基於專案建立預覽 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 更新「所有」專案連接 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 擔任「所有」專案的管理員 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 邀請使用者加入組織 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 管理組織造訪權限與權限 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 使用儀表板即代碼 (CLI) | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 重新命名模型、維度與指標 (CLI 與 UI) | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+
+
+### 空間角色 (Space Roles)
+
+共有三種空間角色：`Full Access` (完整存取)、`Can Edit` (可編輯)、`Can View` (可檢視)
+
+| 動作 | 完整存取 (Full Access) | 可編輯 (Can Edit) | 可檢視 (Can View) |
+| :------------------: | :-------------------------------------------: | :-------------------------------------------: | :-------------------------------------------: |
+| 查看空間內容 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> |
+| 管理空間內容 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 管理空間造訪權限 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 管理空間詳情 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+
+具備空間 `Full Access` 權限的使用者可以限制或增加使用者在該空間中繼承的專案權限（例如：您可以將專案編輯者在某個空間中改為 `can view`）。空間權限決定了哪些使用者可以編輯空間內容（圖表與儀表板）、查看空間內容以及變更空間設定：
+
+* 使用者至少需要具備空間的 `Can view` 權限才能看到空間存在，並查看其中的圖表與儀表板。
+
+* 使用者需要具備空間的 `Can edit` 權限才能編輯空間內的內容（新增/刪除/重新命名圖表與儀表板）。
+
+* 使用者需要具備空間的 `Full access` 權限才能管理該空間的造訪權限並編輯空間詳情（名稱、描述等）。
+
+空間權限不控制使用者可以執行的其他操作，也不控制他們可以使用哪些數據來構建自己的內容。
+
+這意味著：
+
+* 具備 `Can edit` 空間權限的專案檢視者 (Project Viewer) 仍然無法獲得建立或編輯圖表的權限，因為檢視者本身沒有探索視圖的造訪權限。
+
+* 被賦予 `Can edit` 空間權限的互動檢視者可以在該空間儲存內容，但無法儲存到任何其他空間（除非獲得另一空間的 `edit` 權限）。
+
+* 被賦予 `Can view` 空間權限的編輯者 (Editor) 無法編輯該空間內的內容，但他們仍可以在專案的其他部分建立/編輯內容（除非被設定為 `Can view` 存取）。
+
+#### 調整空間權限
+
+您可以調整個別使用者或群組在空間中的權限。
+
+<Frame>
+  <img src="/images/references/workspace/roles/add-users-space-16d5e8a04ac28514e015df2cbb2e56c6.png" />
+</Frame>
+
+如果使用者屬於多個已被授予空間造訪權限的群組，該使用者將繼承這些群組中最高的存取權限。
+
+例如：Priyanka 是 `專案互動檢視者`。她是 `財務 (Finance)` 群組與 `設計 (Design)` 群組的成員。`財務` 群組被授予該空間的 `Can View` 權限；`設計` 群組被授予 `Can Edit` 權限。則 Priyanka 對該空間具備 `Can Edit` 權限（繼承自 `設計` 群組）。
+
+您可以透過調整個別使用者存取權限來覆蓋其群組權限。
+
+例如：Priyanka 是 `專案互動檢視者` 且屬於 `設計` 群組。`設計` 群組具備該空間的 `Can Edit` 權限。但我將 Priyanka 個別的空間存取權限設為 `Can View`。則 Priyanka 對該空間僅具備 `Can View` 權限（個別設定覆蓋了群組設定）。
+
+
+## 允許特定電子郵件網域自動加入組織
+
+組織管理員可以在組織設定中添加「允許的電子郵件網域」，以便擁有這些網域的人可以自動加入其組織（無需明確邀請）。
+
+要更新組織的允許電子郵件網域設定，請前往 **Organization settings** 的 **General** 部分。
+
+<Frame>
+  <img src="/images/references/workspace/roles/roles-allowed-email-domain.png" />
+</Frame>
+
+在 **Allowed email domains** 面板中，輸入您希望能夠自動加入組織的電子郵件網域（例如：這裡我們添加了 `lightdash.com`）。不接受 `gmail.com` 或 `hotmail.com` 等通用電子郵件網域。
+
+接著您可以選擇這些使用者預設擁有的存取權限。組織**管理員 (Admin)** 隨時可以在使用者加入後更新其權限！
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/invite-new-users/add-allowed-email-domains-97161e69ae2d054a0c32ce59020046fb.png" />
+</Frame>
+
+如果您想為每個專案設定不同的預設權限，可以選擇 **Organization member (組織成員)** 角色，然後為每個專案設定專案造訪權限。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/invite-new-users/project-access-d9f901afa8a3a1b317399f36aba89804.png" />
+</Frame>
+
+選取好預設角色後，請務必點擊 **Update (更新)** 以儲存變更。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/invite-new-users/update-allowed-email-domain-projects-898f477fe45ca5f4b9a11beb1ddda132.png" />
+</Frame>
+
+現在，當使用者嘗試加入 Lightdash 時，如果他們擁有允許的網域，系統將提示他們加入您的工作區。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/invite-new-users/join-workspace-prompt-be07b9b8686986d33344b2eeec57e2f8.png" />
+</Frame>
+
+### 設定預設專案
+
+在 **Organization settings** 中，您可以設定一個預設專案。這是使用者首次登入或從新裝置登入時會看到的專案。如果使用者沒有造訪該專案的權限，他們將看到下一個可造訪的專案。

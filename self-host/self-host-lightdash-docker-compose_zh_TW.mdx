@@ -1,0 +1,52 @@
+---
+title: "使用 Docker Compose 自託管 Lightdash"
+sidebarTitle: Docker compose
+---
+
+本指南將協助您在本地機器上運行一個最小化的 Lightdash 執行體。該實例無法從網際網路造訪，但您可以從本地機器存取。這是在無需造訪 Kubernetes 的情況下，進行 Lightdash 概念驗證 (PoC) 的絕佳入門方式。
+
+## 前置條件
+
+* [Docker](https://docs.docker.com/get-docker)
+* [Docker Compose](https://docs.docker.com/compose/install)
+
+## 1. 複製 Lightdash 儲存庫
+
+將 Lightdash 代碼複製到您的本地機器。這將建立一個名為 `./lightdash` 的新目錄。
+
+```bash
+# 複製 Lightdash 儲存庫
+git clone https://github.com/lightdash/lightdash
+cd lightdash
+```
+
+## 2. 更新環境變數 (ENV) 配置
+
+編輯 `.env` 檔案中的所有環境變數以符合您的設定，例如：
+
+```bash
+PGHOST=db
+PGPORT=5432
+PGUSER=pg_user *或* 機器使用者名稱（若先前未設定過 postgres）
+PGPASSWORD=pg_password *或* 留空（若先前未設定過 postgres）
+PGDATABASE=postgres
+DBT_DEMO_DIR=/*路徑*/*至*/lightdash/project/examples/full-jaffle-shop-demo
+```
+
+## 3. 建立容器
+
+您必須設定以下兩個環境變數：
+
+* `PGPASSWORD`：用於內部 postgres 資料庫的密碼。
+* `LIGHTDASH_SECRET`：用於加密資料庫中靜態數據的秘密。如果您遺失此秘密，將無法造訪 Lightdash 中的數據。
+
+```bash
+export LIGHTDASH_SECRET="非常不秘密的秘密"
+export PGPASSWORD="密碼"
+
+docker compose -f docker-compose.yml --env-file .env up --detach --remove-orphans
+```
+
+<Info>
+如果您使用的是 Windows 機器並遇到 **Error response from daemon: i/o timeout** 錯誤，請前往 **Docker > Settings > General** 並開啟 **Expose daemon on tcp://localhost:2375 without TLS** 選項。
+</Info>

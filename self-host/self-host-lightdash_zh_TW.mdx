@@ -1,0 +1,135 @@
+---
+title: "自託管 Lightdash"
+---
+
+Lightdash 採用 MIT 授權且完全開源。您可以在自己的基礎設施上自託管 Lightdash。
+
+本指南專為熟悉 Docker、Kubernetes，且能熟練配置環境變數、SMTP 憑據與資料庫連接的 DevOps 工程師設計。如果您不確定是否要自託管，請先閱讀 [Lightdash Cloud vs. 自託管](/self-host/lightdash-cloud-vs-self-hosted_zh_TW) 指南。
+
+## 自託管的前置條件
+
+* 可造訪 Kubernetes 集群並安裝好 [kubectl](https://kubernetes.io/docs/tasks/tools)
+* [Helm](https://helm.sh/docs/intro/quickstart)
+* Docker
+
+## 在 Kubernetes 上自託管 Lightdash
+
+以下步驟將建立一個 Lightdash 執行體與一個用於儲存元數據的 Postgres 資料庫（請注意：這與您存放分析數據的數據倉庫是分開的）。
+
+我們建議使用 Kubernetes + Helm，但您也可以參考以下指南進行不含 Kubernetes 的最小化部署：
+
+* [Docker compose](/self-host/self-host-lightdash-docker-compose_zh_TW)
+* [Restack](/self-host/self-host-lightdash-restack_zh_TW)
+
+若要在 Kubernetes 集群上部署 Lightdash，可以使用我們社群維護的 Helm Chart：[https://github.com/lightdash/helm-charts](https://github.com/lightdash/helm-charts)。這將協助您從最簡單的配置開始。在本指南末尾，您可以找到自定義 Lightdash 執行體並使其具備生產水準的配置選項清單。
+
+### 1. 新增 Lightdash Helm 儲存庫
+
+```bash
+helm repo add lightdash https://lightdash.github.io/helm-charts
+```
+
+### 2. 為 Lightdash 建立命名空間 (Namespace)
+
+```bash
+kubectl create namespace lightdash
+```
+
+### 3. 建立 Lightdash 的最小配置
+
+您至少應配置以下內容：
+
+* `secrets.LIGHTDASH_SECRET` —— 此變數用於 Lightdash 加密資料庫中的靜態數據。您必須妥善保管此秘密。若遺失，您將無法造訪 Lightdash 中的數據。
+* `configMap.S3_REGION`, `configMap.S3_BUCKET`, `configMap.S3_ENDPOINT`, `secrets.S3_ACCESS_KEY` 與 `secrets.S3_SECRET_KEY` —— 這些變數用於配置外部 S3 物件儲存。詳情請參閱[外部物件儲存文件](/self-host/customize-deployment/configure-lightdash-to-use-external-object-storage_zh_TW)。
+* `service.type` —— 預設情況下，Lightdash 的 UI 與 API 暴露在 `ClusterIP` 服務上。這表示它僅能從 Kubernetes 集群內部造訪。如果您想從集群外部存取，可以將其更改為 `LoadBalancer` 或 `NodePort`。更多資訊請參考 [Kubernetes 文件](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)。
+* `configMap.SITE_URL` —— 如果您已知 Lightdash 的造訪網址，請設定此變數。這能確保 Lightdash 內部的所有連結皆正確無誤。若尚不確定，可先留空稍後更新。
+
+在設定與配置 Lightdash 執行體時，您可能需要配置許多額外的環境變數。Helm Chart 支援三種設定環境變數的方式：
+* `configMap` —— 用於非敏感的配置值
+* `secrets` —— 用於敏感數值，如密碼與 API 金鑰
+* `extraEnv` —— 用於 Chart 內建選項未涵蓋的其他環境變數
+
+欲了解可用環境變數的完整列表，請參考[環境變數文件](/self-host/customize-deployment/environment-variables_zh_TW)。關於詳細的 Helm Chart 配置選項，請參考 [Lightdash Helm Charts 儲存庫](https://github.com/lightdash/helm-charts)。
+
+包含我們配置的 `values.yaml` 範例：
+
+```yaml
+# values.yaml
+secrets:
+  LIGHTDASH_SECRET: notverysecret
+  S3_ACCESS_KEY: secret # 若使用 IAM 角色則不需要
+  S3_SECRET_KEY: secret # 若使用 IAM 角色則不需要
+  # LIGHTDASH_LICENSE_KEY: your-enterprise-license-key # 選填：用於企業版功能
+
+configMap:
+  SITE_URL: https://lightdash.mycompany.com
+  S3_REGION: us
+  S3_BUCKET: lightdash
+  S3_ENDPOINT: https://storage.provider.com
+
+# 未包含在 configMap 或 secrets 中的額外環境變數
+extraEnv:
+  - name: CUSTOM_ENV_VAR
+    value: "custom-value"
+  - name: ANOTHER_CONFIG
+    value: "another-value"
+
+service:
+  type: NodePort
+```
+
+#### 企業版授權金鑰 (選填)
+
+如果您擁有 Lightdash 企業版授權，可以透過在配置中加入授權金鑰來啟用企業版功能：
+
+```yaml
+secrets:
+  LIGHTDASH_LICENSE_KEY: your-enterprise-license-key-here
+```
+
+欲獲取企業版授權金鑰，請[聯繫我們的團隊](https://calendly.com/lightdash-cloud/enterprise)。詳情請參閱[企業版授權金鑰文件](/self-host/customize-deployment/enterprise-license-keys_zh_TW)。
+
+### 4. 使用 Helm 安裝 Lightdash
+
+使用 `lightdash/lightdash` Helm Chart 建立名為 `lightdash` 的新版本。在此範例中，我們同時指定了命名空間 `-n lightdash` 並套用上述的最小配置 `-f values.yaml`。
+
+```bash
+helm install lightdash lightdash/lightdash -n lightdash -f values.yaml
+```
+
+### 4 (另一種方式). 使用 kubectl 安裝 Lightdash
+
+如果您不希望使用 Helm 管理部署，可以生成 Kubernetes Manifest 並使用 `kubectl` 套用。
+
+```bash
+helm template lightdash lightdash/lightdash -n lightdash -f values.yaml > lightdash.yaml
+kubectl apply -f lightdash.yaml
+```
+
+造訪您的 `SITE_URL` 即可進入 Lightdash！
+
+## 配置生產環境的 Lightdash
+
+現在您已擁有一個可運作的 Lightdash 執行體，您可以根據需求進行自定義。以下文件涵蓋了最常見的配置選項，包含我們在進入生產環境前推薦的設定：
+
+**必要配置**
+
+* [配置 Lightdash 使用外部物件儲存](/self-host/customize-deployment/configure-lightdash-to-use-external-object-storage_zh_TW)
+
+**推薦用於生產環境**
+
+* [使用 HTTPS 保護 Lightdash](/self-host/customize-deployment/secure-lightdash-with-https_zh_TW)
+* [配置 Lightdash 使用外部資料庫](/self-host/customize-deployment/configure-lightdash-to-use-an-external-database_zh_TW)
+* [配置 SMTP 用於郵件通知](/self-host/customize-deployment/configure-smtp-for-lightdash-email-notifications_zh_TW)
+* [資源建議](/self-host/customize-deployment/recommended-resources_zh_TW)
+
+**選填配置**
+
+* [企業版授權金鑰](/self-host/customize-deployment/enterprise-license-keys_zh_TW)
+* [在自託管 Lightdash 中使用 SSO 登入](/self-host/customize-deployment/use-sso-login-for-self-hosted-lightdash_zh_TW)
+* [在自託管 Lightdash 中啟用排程器 (Scheduler)](/self-host/customize-deployment/enable-scheduler-in-self-hosted-lightdash_zh_TW)
+* [為 Lightdash 配置 Slack 應用程式](/self-host/customize-deployment/configure-a-slack-app-for-lightdash_zh_TW)
+* [配置 Lightdash 的環境變數](/self-host/customize-deployment/environment-variables_zh_TW)
+* [啟用無頭瀏覽器 (Headless Browser)](/self-host/customize-deployment/enable-headless-browser-for-lightdash_zh_TW)
+* [配置日誌記錄 (Logging)](/self-host/customize-deployment/configure-logging-for-lightdash_zh_TW)
+* [為 Lightdash 配置 Prometheus 指標](/self-host/customize-deployment/configure-prometheus-metrics-for-self-hosted-lightdash_zh_TW)

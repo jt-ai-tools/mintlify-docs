@@ -1,0 +1,596 @@
+---
+title: "表格參考指南 (Tables reference)"
+description: "您可以對 Lightdash 專案中的表格執行查詢。"
+sidebarTitle: "表格"
+---
+
+Lightdash 中的表格 (Tables) 是根據 dbt 模型（單個或多個關聯在一起）構建的。
+
+## 向專案新增表格
+
+表格來自您 dbt 專案中 `schema.yml` 檔案裡定義的模型。
+
+如果您的 dbt 模型已在 YAML 檔案中定義，且至少有一欄已記錄描述，它就會出現在 Lightdash 中。
+
+例如：如果我們在 dbt 的 `schema.yml` 檔案中有以下內容，我們會在 Lightdash 中看到一個名為 **Users** 的表格。
+
+```yaml
+models:
+  - name: users
+    columns:
+      - name: user_id
+        description: "每位使用者的唯一識別碼"
+```
+
+您可以[在此了解更多關於向 Lightdash 新增表格的資訊](/get-started/develop-in-lightdash/adding-tables-to-lightdash_zh_TW)。
+
+## 表格配置
+
+您可以透過在 YAML 檔案中添加配置來定義表格在 Lightdash 中的呈現方式。以下是定義表格時可使用的大多數屬性範例：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: users
+        meta:
+          label: '應用程式使用者'
+          order_fields_by: 'label'
+          group_label: '行動應用'
+          sql_filter: ${date_dimension} >= '2025-01-01'
+          primary_key: user_id
+          sets:
+      	    event_fields:
+        	  fields:
+                - user_id
+                - event_type
+          joins:
+            - join: events
+              sql_on: ${users.user_id} = ${events.user_id}
+              fields: [event_fields*]
+              relationship: one-to-many
+          required_attributes:
+            product_team: 'Mobile'
+          explores:
+            users_pii:
+              required_attributes:
+                has_pii_access: true
+              joins:
+                - join: users_pii
+                  sql_on: ${users.user_id} = ${users_pii.user_id}
+                  relationship: one-to-one
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: users
+        config:
+          meta:
+            label: '應用程式使用者'
+            order_fields_by: 'label'
+            group_label: '行動應用'
+            sql_filter: ${date_dimension} >= '2025-01-01'
+            primary_key: user_id
+            sets:
+        	    event_fields:
+          	  fields:
+                  - user_id
+                  - event_type
+            joins:
+              - join: events
+                sql_on: ${users.user_id} = ${events.user_id}
+                fields: [event_fields*]
+                relationship: one-to-many
+            required_attributes:
+              product_team: 'Mobile'
+            explores:
+              users_pii:
+                required_attributes:
+                  has_pii_access: true
+                joins:
+                  - join: users_pii
+                    sql_on: ${users.user_id} = ${users_pii.user_id}
+                    relationship: one-to-one
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: users
+
+    label: '應用程式使用者'
+    order_fields_by: 'label'
+    group_label: '行動應用'
+    sql_filter: ${date_dimension} >= '2025-01-01'
+    primary_key: user_id
+    sets:
+      event_fields:
+        fields:
+          - user_id
+          - event_type
+    joins:
+      - join: events
+        sql_on: ${users.user_id} = ${events.user_id}
+        fields: [event_fields*]
+        relationship: one-to-many
+    required_attributes:
+      product_team: 'Mobile'
+    explores:
+      users_pii:
+        required_attributes:
+          has_pii_access: true
+        joins:
+          - join: users_pii
+            sql_on: ${users.user_id} = ${users_pii.user_id}
+            relationship: one-to-one
+    ```
+  </Tab>
+</Tabs>
+
+### 表格屬性 (Table properties)
+
+| 屬性 | 數值 | 備註 |
+| :-------------------------------------------------------- | :----------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
+| label | string | 自定義標籤。這是在 Lightdash 中顯示的名稱，而非表格原名。 |
+| [order_fields_by](#排序欄位依據-order-fields-by) | `index` 或 `label` | 側邊欄中欄位的排序方式。[閱讀排序規則。](#排序欄位依據-order-fields-by) |
+| [joins](/references/joins_zh_TW) | array | 將其他數據模型關聯到此表格的邏輯。[閱讀關於關聯。](/references/joins_zh_TW) |
+| [metrics](/references/metrics_zh_TW#2-使用模型-meta-標籤) | object | 模型指標。[閱讀模型指標](/references/metrics_zh_TW#2-使用模型-meta-標籤) |
+| [group_label](#群組標籤-group-label) | string | 在側邊欄中對表格進行分組。[閱讀關於群組標籤。](#群組標籤-group-label) |
+| [sql_from](#sql-from) | string | 覆蓋 dbt 模型預設的關聯名稱 (relation_name) |
+| [sql_filter](#sql-filter-行級安全) | string | 直接查詢此表時一律套用的永久過濾條件。[`閱讀關於 sql_filter。`](#sql-filter-行級安全) |
+| [sql_where](#sql-filter-行級安全) | string | `sql_filter` 的別名 |
+| [required_attributes](#必要屬性-required-attributes) | object | 限制僅具備特定屬性的使用者造訪 (AND 邏輯)。[閱讀使用者屬性](/references/workspace/user-attributes_zh_TW) |
+| [any_attributes](#任一屬性-any-attributes) | object | 限制具備任一指定屬性的使用者造訪 (OR 邏輯)。[閱讀使用者屬性](/references/workspace/user-attributes_zh_TW) |
+| group_details | object | 描述維度與指標的分組資訊 |
+| [default_filters](#預設篩選器-default-filters) | array | 當該維度沒有其他過濾條件時套用的預設篩選。[`閱讀關於 default_filters`](#預設篩選器-default-filters) |
+| [default_show_underlying_values](#預設顯示底層數據-default-show-underlying-values) | array | 此模型中所有指標在「查看底層數據」中預設顯示的欄位。 [閱讀關於此屬性](#預設顯示底層數據-default-show-underlying-values) |
+| [explores](#探索-explores) | object | 允許從單個 dbt 模型在 Lightdash 中定義多個表格探索。 |
+| [parameters](#參數配置-parameters-configuration) | object | 模型層級參數，可在 SQL 屬性中引用。 [閱讀關於參數](#參數配置-parameters-configuration) |
+| [sets](#集合-sets) | object | 定義一組欄位的集合，可在模型中重用。 |
+
+### 新增 dbt 模型
+
+如果您向專案新增了新的 dbt 模型，需要先執行 `dbt run` 並在 Lightdash 中點擊 `dbt refresh` (重新整理) 後，模型才會出現。
+
+Lightdash 從 dbt 獲取模型資訊，但從數據倉庫獲取該模型**產生的數據**。
+
+這意味著如果您新增模型或更新模型導致生成的表格發生變化，需要完成以下兩件事變更才會在 Lightdash 生效：
+
+1. **透過 dbt run 實例化新表或變更內容。** 您必須確保數據倉庫中的數據已更新為預期的內容。
+2. **在 Lightdash 中點擊 Refresh dbt 或從 CLI 執行 `lightdash refresh`。** 這會重新同步 dbt 專案，以便 Lightdash 顯示您的變更（例如新增表格或欄位）。
+
+### 排序欄位依據 (Order fields by)
+
+預設情況下，表格側邊欄中的欄位按字母順序排列 (`order_fields_by: "label"`)。有時您可能希望欄位按 YAML 檔案中的順序顯示。您可以將 meta 標籤中的 `order_fields_by` 設為 `index` 來達成：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: users
+        meta:
+          order_fields_by: 'index'
+        columns:
+          - name: user_id
+          - name: user_name
+          - name: user_email
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: users
+        config:
+          meta:
+            order_fields_by: 'index'
+        columns:
+          - name: user_id
+          - name: user_name
+          - name: user_email
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: users
+
+    order_fields_by: 'index'
+
+    dimensions:
+      - name: user_id
+      - name: user_name
+      - name: user_email
+    ```
+  </Tab>
+</Tabs>
+
+在上述範例中，側邊欄中的欄位順序將為：user_id, user_name, user_email，而非字母排序。
+
+關於 `order_fields_by` 的其他注意事項：
+
+- 預設為 `label`。
+- 由於指標 (Metrics) 可定義在多處，若設為 `index`，指標的排序優先級如下：
+  - dbt 原生指標最先。
+  - 模型層級 meta 定義的指標次之。
+  - 維度層級 meta 定義的指標最後。
+- 群組標籤 (Group labels) 將繼承第一個使用該標籤維度的索引位置。
+
+### 群組標籤 (Group label)
+
+設定此屬性後，該表格將在側邊欄中與具有相同標籤的其他表格歸類在一起。
+
+側邊欄的表格顯示順序如下：
+- 群組標籤按字母排序最先顯示。
+- 未分組的表格隨後，按字母排序顯示。
+- 群組內部的表格同樣按字母排序。
+
+<Frame>
+  ![](/images/references/table-group-label-a6d42e6d72a08f15c392fb7cb03a2e6a.png)
+</Frame>
+
+### SQL from
+
+`sql_from` 配置選項可**覆蓋 Lightdash 生成 SQL 查詢時預設的 dbt 模型關聯名稱**。
+
+例如：如果您希望 Lightdash 的探索功能從特定的實例化視圖 (Materialized view)、不同的 schema 進行查詢，或者在 FROM 子句中包含額外的 SQL 邏輯，同時維持維度與指標的 dbt 模型結構，即可使用此屬性。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: sales
+        meta:
+          sql_from: my_schema.my_sales_view
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: sales
+        config:
+          meta:
+            sql_from: my_schema.my_sales_view
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: sales
+
+    sql_from: my_schema.my_sales_view
+    ```
+  </Tab>
+</Tabs>
+
+### SQL filter (行級安全)
+
+`sql_filter` 會向表格添加一個在 Lightdash 中無法移除的過濾條件。執行查詢時，它會自動加入編譯後的 SQL 中。
+
+範例：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: sales
+        meta:
+          sql_filter: ${TABLE}.sales_region = 'EMEA'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: sales
+        config:
+          meta:
+            sql_filter: ${TABLE}.sales_region = 'EMEA'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: sales
+
+    sql_filter: ${TABLE}.sales_region = 'EMEA'
+    ```
+  </Tab>
+</Tabs>
+
+任何使用 `Sales` 表執行的查詢，編譯後的 SQL 都會包含 `sales_region = 'EMEA'` 的過濾條件。
+
+```yaml
+select [...]
+from lightdash.prod.sales
+where sales_region = 'EMEA'
+```
+
+##### 配合使用者屬性實作行級安全
+
+將 `sql_filter` 與 [使用者屬性 (User attributes)](/references/workspace/user-attributes_zh_TW) 結合，可以設定[表格的行級安全](/references/workspace/user-attributes_zh_TW#使用-sql_filter-進行行過濾)。您可以使用 `${lightdash.attributes.我的屬性名}` 來引用屬性。
+
+範例：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: sales
+        meta:
+          sql_filter: ${TABLE}.sales_region IN (${lightdash.attributes.sales_region})
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: sales
+        config:
+          meta:
+            sql_filter: ${TABLE}.sales_region IN (${lightdash.attributes.sales_region})
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: sales
+
+    sql_filter: ${TABLE}.sales_region IN (${lightdash.attributes.sales_region})
+    ```
+  </Tab>
+</Tabs>
+
+##### `sql_filter` 僅在「直接」查詢該表時生效
+
+範例：
+- 表 A 關聯至 表 B。
+- 表 B 設定了 `sql_filter`。
+- 使用者查詢 表 A，並選取了 表 B 的欄位。
+- 此時 表 B 的 `sql_filter` **不會**生效。若要使其生效，必須將過濾邏輯直接定義在 表 A 的 `sql_filter` 中。
+
+##### 在 `sql_filter` 中引用關聯表的維度
+
+範例：
+- 表 A 與 表 B 關聯。
+- 在 表 A 設定了 `sql_filter: ${TABLE}.sales_region = 'EMEA' OR ${table_b}.sales_region IS NULL`。
+- 此時查詢 表 A 一律會自動關聯 表 B（即使查詢結果中沒有選取 表 B 的欄位）。
+
+### 必要屬性 (Required attributes)
+
+Lightdash 可透過[使用者屬性](/references/workspace/user-attributes_zh_TW)限制某些表格僅供特定使用者造訪。
+
+在下方範例中，僅具備 `is_admin` 屬性為 `true` 的使用者可以使用 `payments` 表。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: payments
+        meta:
+          required_attributes:
+            is_admin: "true"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: payments
+        config:
+          meta:
+            required_attributes:
+              is_admin: "true"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: payments
+
+    required_attributes:
+      is_admin: "true"
+    ```
+  </Tab>
+</Tabs>
+
+無權限的使用者發起包含該表的查詢時，會收到 `Forbidden` 錯誤。
+
+### 任一屬性 (Any attributes)
+
+`required_attributes` 使用 AND 邏輯，而 `any_attributes` 使用 OR 邏輯 —— 使用者只需符合**至少一個**條件即可造訪。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: payments
+        meta:
+          any_attributes:
+            department: ["sales", "finance"]
+            role: "analyst"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: payments
+        config:
+          meta:
+            any_attributes:
+              department: ["sales", "finance"]
+              role: "analyst"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: payments
+
+    any_attributes:
+      department: ["sales", "finance"]
+      role: "analyst"
+    ```
+  </Tab>
+</Tabs>
+
+您可以結合使用這兩種屬性。詳情請參閱[使用者屬性文件](/references/workspace/user-attributes_zh_TW#合併使用必要與任一屬性)。
+
+
+## 定義主鍵 (Primary keys)
+
+您可以為模型指定主鍵來唯一識別每一行。這能協助 Lightdash 理解表關係並防止數據重複，特別是在處理關聯導致的 SQL 扇出 (Fanouts) 時。
+
+### 單欄主鍵
+
+```yaml
+models:
+  - name: users
+    meta:
+      primary_key: user_id
+```
+
+### 複合主鍵
+
+```yaml
+models:
+  - name: order_items
+    meta:
+      primary_key: [order_id, item_id]
+```
+
+## 預設顯示底層數據 (Default show underlying values)
+
+您可以設定模型層級的 `show_underlying_values` 配置，套用到該模型的所有指標。這能確保底層數據的可見性一致，無需為每個指標重複設定。個別指標亦可自行覆蓋此設定。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: payments
+        meta:
+          default_show_underlying_values:
+            - orders.customer_id
+            - unique_payment_count
+          metrics:
+            total_revenue:
+              type: sum
+              sql: ${TABLE}.revenue
+            average_revenue:
+              type: average
+              sql: ${TABLE}.revenue
+              show_underlying_values:
+                - custom_field
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: payments
+        config:
+          meta:
+            default_show_underlying_values:
+              - orders.customer_id
+              - unique_payment_count
+            metrics:
+              total_revenue:
+                type: sum
+                sql: ${TABLE}.revenue
+              average_revenue:
+                type: average
+                sql: ${TABLE}.revenue
+                show_underlying_values:
+                  - custom_field
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: payments
+
+    default_show_underlying_values:
+      - orders.customer_id
+      - unique_payment_count
+
+    metrics:
+      total_revenue:
+        type: sum
+        sql: ${TABLE}.revenue
+      average_revenue:
+        type: average
+        sql: ${TABLE}.revenue
+        show_underlying_values:
+          - custom_field
+    ```
+  </Tab>
+</Tabs>
+
+## 預設篩選器 (Default filters)
+
+使用 `default_filters` 定義維度的預設篩選條件。這些篩選會在表格載入時預先填入。您可以添加選填的 `required: true` 標籤，這將使該篩選在 UI 中無法被移除，但使用者仍可調整運算子與數值。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders
+        meta:
+          default_filters:
+            - date: 'inThePast 14 days'
+    		  required: true
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: orders
+        config:
+          meta:
+            default_filters:
+              - date: 'inThePast 14 days'
+    		  required: true
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    default_filters:
+      - date: 'inThePast 14 days'
+        required: true
+    ```
+  </Tab>
+</Tabs>
+
+## 參數配置 (Parameters configuration)
+
+`parameters` 章節讓您定義模型層級的參數，並在 SQL 屬性中引用。
+
+屬性列表：
+- `label`：友善名稱。
+- `description`：描述。
+- `type`："string" 或 "number"。
+- `options`：可選值列表。
+- `default`：預設值。
+- `multiple`：是否多選。
+- `options_from_dimension`：從另一個維度獲取選項。
+
+[閱讀參數指南了解更多資訊](/guides/developer/using-parameters_zh_TW)。
+
+## 探索 (Explores)
+
+您可以透過 `explores` 配置從單個 dbt 模型定義多個表格。
+
+[閱讀探索指南了解更多資訊](/guides/developer/explores_zh_TW)。
+
+## 集合 (Sets)
+
+`sets` 讓您可以將一組欄位關聯到單個名稱，以便在專案中多處重用。
+
+```yaml
+sets:
+  my_set:
+    fields:
+      - user_id
+      - user_name
+```
+
+使用擴展操作符引用：`fields: [my_set*]`。也支援排除操作符，如 `[-user_id]`。

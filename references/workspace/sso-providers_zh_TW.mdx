@@ -1,0 +1,81 @@
+---
+title: SSO 提供商
+description: Lightdash 各方案支援的單一登入 (SSO) 提供商概覽
+---
+
+Lightdash 支援多種 SSO 提供商以實現安全身份驗證。此頁面概述了各個方案中可用的提供商。
+
+## 各方案支援的 SSO 提供商
+
+| 提供商 | Cloud Pro | Enterprise (企業版) | 自託管 (Self-hosted) |
+| :--- | :---: | :---: | :---: |
+| Google | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Okta | | <Icon icon="check" /> | <Icon icon="check" /> |
+| Azure AD | | <Icon icon="check" /> | <Icon icon="check" /> |
+| OneLogin | | <Icon icon="check" /> | <Icon icon="check" /> |
+| Generic OIDC | | <Icon icon="check" /> | <Icon icon="check" /> |
+
+<Note>
+  自託管實例可以配置任何支援的 SSO 提供商。請參閱[自託管 SSO 配置指南](/self-host/customize-deployment/use-sso-login-for-self-hosted-lightdash_zh_TW)了解設置說明。
+</Note>
+
+## 提供商詳情
+
+### Google
+
+使用 Google 帳號的基於 OAuth 2.0 的身份驗證。非常適合使用 Google Workspace 的組織。
+
+- **包含於**：Cloud Pro, Enterprise, 自託管
+- **設置指南**：[Google SSO 配置](/self-host/customize-deployment/use-sso-login-for-self-hosted-lightdash_zh_TW#google)
+
+### Okta
+
+與 Okta 的 OpenID Connect (OIDC) 整合。支援群組同步與 SCIM 配置。
+
+- **包含於**：Enterprise, 自託管
+- **功能**：群組同步、及時 (JIT) 配置、自定義授權伺服器
+- **設置指南**：[Okta SSO 配置](/self-host/customize-deployment/use-sso-login-for-self-hosted-lightdash_zh_TW#okta)
+
+### Azure Active Directory
+
+與 Microsoft Azure AD 的 OpenID Connect 整合。支援用戶端密鑰 (Client secret) 與私鑰 JWT 身份驗證。
+
+- **包含於**：Enterprise, 自託管
+- **功能**：多種身份驗證方法、租戶隔離
+- **設置指南**：[Azure AD 配置](/self-host/customize-deployment/use-sso-login-for-self-hosted-lightdash_zh_TW#azure-active-directory)
+
+### OneLogin
+
+與 OneLogin 身份平台的 OpenID Connect 整合。
+
+- **包含於**：Enterprise, 自託管
+- **設置指南**：[OneLogin 配置](/self-host/customize-deployment/use-sso-login-for-self-hosted-lightdash_zh_TW#one-login)
+
+### 通用 OIDC (Generic OIDC)
+
+連接任何符合 OpenID Connect 規範的身份提供商（如 Keycloak, Auth0, PingIdentity 等）。
+
+- **包含於**：Enterprise, 自託管
+- **功能**：配置靈活，支援 private_key_jwt 身份驗證
+- **設置指南**：[通用 OIDC 配置](/self-host/customize-deployment/use-sso-login-for-self-hosted-lightdash_zh_TW#openid-connect)
+
+## 其他身份驗證選項
+
+### 密碼身份驗證
+
+電子郵件/密碼身份驗證適用於所有方案且預設啟用。使用 SSO 的組織可以停用密碼身份驗證以強制執行僅限 SSO 登入。
+
+### 數據倉庫 SSO (僅限企業版)
+
+企業版客戶還可以為數據倉庫連接配置 SSO：
+
+- **Snowflake OAuth** - 使用者使用其公司身份通過 Snowflake 驗證
+- **Databricks OAuth** - 用於 Databricks 的使用者對機器 (U2M) OAuth 流程
+
+這些會建立「按使用者」的倉庫憑據，而非共用的專案憑據。
+
+## 相關資源
+
+- [自託管 SSO 配置](/self-host/customize-deployment/use-sso-login-for-self-hosted-lightdash_zh_TW)
+- [SCIM 整合](/references/workspace/scim-integration_zh_TW)
+- [群組與存取控制](/references/workspace/groups_zh_TW)

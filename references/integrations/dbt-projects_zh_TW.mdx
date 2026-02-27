@@ -1,0 +1,275 @@
+---
+title: "dbt 專案整合"
+sidebarTitle: dbt
+description: "您可以輕鬆地在 dbt 中進行變更，並在 Lightdash 專案中看到同步更新。"
+---
+
+<Info>
+  Lightdash 支援 dbt v1.4.0 及以上版本。如果您使用的是較舊版本的 dbt，則需要升級後才能將專案同步到 Lightdash。
+</Info>
+
+## 將您的 dbt 專案同步至 Lightdash
+
+您可以透過幾種不同方式將 dbt 專案代碼與 Lightdash 同步。我們建議每個人都設定持續部署 (Continuous Deployment)，但您也可以在 Lightdash 應用程式中手動重新整理，或從 CLI 進行部署。
+
+### 1. 設定持續部署
+
+[參考此指南並查看我們的範例工作流程檔案](/guides/cli/how-to-use-lightdash-deploy_zh_TW#使用-github-action-自動將變更部署到-lightdash)。
+
+### 2. 在 Lightdash 中點擊「Refresh dbt」
+
+您可以在「從表格查詢 (Query from tables)」頁面找到此按鈕。
+
+<Frame>
+  ![重新整理 dbt 截圖](/images/references/integrations/dbt-projects/dbt-refresh.png)
+</Frame>
+
+_如果您使用的是 git 連接（如 GitHub, Gitlab 或 Bitbucket），在點擊 `Refresh dbt` 之前，您需要先將變更推送並合併到 Lightdash 專案所連接的分支。_
+
+<Info>
+如果您對底層數據進行了任何變更（例如：在 `model.sql` 檔案中新增欄位，或更改了維度的 SQL 邏輯），則在 Lightdash 中點擊 `Refresh dbt` 之前，需要先執行：`dbt run -m yourmodel`。
+</Info>
+
+### 3. 從 CLI 推送代碼
+
+如果您正在使用 [Lightdash CLI](/guides/cli/how-to-install-the-lightdash-cli_zh_TW)，可以使用 `lightdash deploy` 指令將變更部署到 Lightdash。[進一步了解如何使用 `lightdash deploy`](/guides/cli/how-to-use-lightdash-deploy_zh_TW)。
+
+<Warning>
+  我們不建議將本地環境的 `lightdash deploy` 作為更新 Lightdash 的主要方式，因為小錯誤可能會導致生產環境出現問題。
+</Warning>
+
+## dbt 專案設定
+
+欲了解更多關於 dbt 連接類型（Github, Gitlab, Bitbucket 等）及各類型所需欄位的資訊，請參考[連接指南中的 dbt 專案章節](/get-started/setup-lightdash/connect-project_zh_TW#2-匯入-dbt-專案)。
+
+以下是所有已連接 dbt 專案通用的欄位說明。
+
+### dbt 選擇器 (dbt selector)
+
+<Info>此設定位於「進階配置選項 (Advanced configuration options)」下</Info>
+
+您可以過濾掉 dbt 專案中不想在 Lightdash 中看到的模型。這在 dbt 專案非常龐大且您希望加快同步速度時非常有用。與[表格選取](/get-started/develop-in-lightdash/adding-tables-to-lightdash_zh_TW#配置哪些表格顯示在您的-lightdash-專案中)不同，此選擇器直接作用於 dbt 模型，會跳過那些您不想在 Lightdash 中看到的模型的完整編譯過程。
+
+為此，您可以在專案設置中加入 **dbt 選擇器**。這是一個 JSON 物件，包含您想包含在 Lightdash 中的模型。
+
+例如，如果您只想在 Lightdash 中包含 `my_model` 以及所有帶有 `lightdash` 標籤的模型，可以在 dbt 專案設定中加入以下內容：
+```console
+my_model tag:lightdash
+```
+
+我們支援所有的 dbt 選擇器。[進一步了解 dbt 官方文件中的選擇器語法](https://docs.getdbt.com/reference/node-selection/syntax#combining-state-and-result-selectors)。
+
+## dbt 目標 (dbt targets)
+
+### 什麼是 dbt 目標？
+
+**dbt 目標 (target)** 是 dbt 專案中的環境配置，定義了 dbt 應在何處以及如何執行。在 dbt Core 中，目標定義在您的 `profiles.yml` 檔案中，通常包含：
+
+- 資料庫連接詳情
+- Schema / 數據集名稱
+- 數據倉庫規格
+- 其他環境特定配置
+
+大多數團隊會為不同環境設定多個目標：
+
+- `dev`：用於開發工作
+- `prod`：用於生產部署
+- `staging`：用於生產前的測試
+
+每個目標都可以有不同的連接設定，這些設定儲存在您的 `profiles.yml` 檔案中。下方的 `profiles.yml` 範例展示了 dev 和 prod 目標的不同連接設定。請注意，第 3 行的 `target: dev` 表示 dev 是此專案的預設目標。
+
+``` yaml
+# profiles.yml 檔案範例
+jaffle_shop:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost
+      user: alice
+      password: <password>
+      port: 5432
+      dbname: jaffle_shop
+      schema: dbt_alice
+      threads: 4
+
+    prod:  # 額外的 prod 目標
+      type: postgres
+      host: prod.db.example.com
+      user: alice
+      password: <prod_password>
+      port: 5432
+      dbname: jaffle_shop
+      schema: analytics
+      threads: 8
+```
+
+### 在 Lightdash 中配置目標
+
+**Target (目標)** 包含關於您與數據倉庫連接的 dbt 資訊。
+預設情況下，當您執行 `lightdash deploy` 時（若您是透過此方式建立或近期部署專案），我們會將其設為與 `profiles.yml` 檔案中預設目標相同的值。若要更新，您可以在專案設置中輸入您選取的目標（例如 `prod` 或 `analytics`）。
+
+[進一步了解 dbt 官方文件中的目標定義。](https://docs.getdbt.com/reference/dbt-jinja-functions/target)
+
+### 目標如何與 dbt 宏 (Macros) 協作
+
+當 Lightdash 連接至您的 dbt 專案時，它會根據您在 Lightdash UI 配置的連接設定，或根據您透過 CLI 執行 `lightdash deploy` 時 `profiles.yml` 中的設定，來編譯出一個 `profiles.yml` 檔案。這意味著您專案中任何使用目標設定的 dbt 宏，都將由 Lightdash 執行並根據這些設定進行解析。
+
+#### 為什麼要在宏中使用目標？
+
+您可能希望 dbt 根據其執行的目標/環境展現不同的行為。常見案例包括：
+
+- 在開發與生產環境使用不同的 schema 命名規範
+- 配置不同大小的倉庫（開發用小型，生產用大型）
+- 按環境調整查詢效能設定
+- 載入不同數據量（開發用範例數據，生產用全量數據）
+- 套用不同的數據保留政策
+
+讓我們來看一個常見範例：根據目標自定義 schema 名稱。
+
+#### 範例：基於目標的 Schema 命名
+
+預設情況下，dbt 會將您的自定義 schema 名稱附加到目標 schema 之後。例如：若目標 schema 是 `analytics` 且您配置模型為 `schema='staging'`，dbt 會將其建立在 `analytics_staging`。
+
+這種預設行為在開發時很有用，因為它能防止開發者互相覆蓋工作 —— 每位開發者可以擁有自己的目標 schema（如 `dbt_jane` 或 `dbt_john`），從而產生隔離的 schema（如 `dbt_jane_staging` 和 `dbt_john_staging`）。
+
+然而，在生產環境中，您通常希望 schema 名稱更簡潔。您不想要 `analytics_staging`，而只要 `staging`。這就是根據目標自定義 `generate_schema_name` 宏發揮作用的地方。
+
+**預設行為：**
+```sql 
+{% macro generate_schema_name(custom_schema_name, node) -%}
+    {%- set default_schema = target.schema -%}
+    {%- if custom_schema_name is none -%}
+        {{ default_schema }}
+    {%- else -%}
+        {{ default_schema }}_{{ custom_schema_name | trim }}
+    {%- endif -%}
+{%- endmacro %}
+```
+
+**生產環境的修改行為：**
+```sql
+{% macro generate_schema_name(custom_schema_name, node) -%}
+    {%- set default_schema = target.schema -%}
+    {%- if custom_schema_name is none -%}
+        {{ default_schema }}
+    {%- elif target.name == 'prod' -%}
+        {{ custom_schema_name | trim }}
+    {%- else -%}
+        {{ default_schema }}_{{ custom_schema_name | trim }}
+    {%- endif -%}
+{%- endmacro %}
+```
+
+此宏的意思是：「如果我們在生產環境 (`target.name == 'prod'`)，則僅使用自定義 schema 名稱。否則，使用預設的加前綴行為。」
+
+**在 Lightdash 中的運作方式：**
+
+若您的 Lightdash 連接設定指定：
+
+- **Target name:** `prod`
+- **Dataset/Schema:** `analytics`
+
+且您的模型配置如下：
+```sql
+{{ config(schema='staging') }}
+```
+
+則 Lightdash 將會在 `staging` schema 中建立/查詢此模型（而非 `analytics_staging`），因為 `target.name == 'prod'`。
+
+這讓您在生產環境中能擁有整潔、專業的 schema 名稱（`staging`, `marts`, `reporting`），同時在開發環境維持開發者的隔離性（`dbt_jane_staging`, `dbt_john_staging`）。
+
+<Tip>
+`generate_schema_name` 宏是 dbt 的預設宏，可以透過在 dbt 中加入同名的宏來進行覆蓋。如果您在專案中沒看到此宏，表示使用的是預設行為。檢查專案中是否有自定義宏來改變專案配置是個好習慣。
+</Tip>
+
+**範例：倉庫配置 (Warehouse configuration)**
+
+同樣地，如果您有一個動態配置設定的宏：
+```sql
+{% macro get_warehouse() %}
+  {% if target.name == 'prod' %}
+    {{ return('LARGE_WAREHOUSE') }}
+  {% elif target.name == 'dev' %}
+    {{ return('SMALL_WAREHOUSE') }}
+  {% endif %}
+{% endmacro %}
+```
+
+並在模型中使用它：
+```sql
+{{ config(snowflake_warehouse=get_warehouse()) }}
+```
+
+Lightdash 將使用與您在 Lightdash 連接設定中配置的目標名稱相對應的配置。
+
+### dbt Core 與 dbt Cloud 的差異
+
+在 dbt Core 中，團隊通常使用 targets 來管理不同環境。在 dbt Cloud 中，目標被「環境 (Environments)」取代，且常見的邏輯如 `if target.name = dev then...` 通常會改用環境變數，變為 `if env_var = development then...` 或類似形式。
+
+## dbt 環境變數 (Environment variables)
+
+### 什麼是環境變數？
+
+環境變數允許您設定動態值，供 dbt 宏引用。如果您的 dbt 專案使用環境變數來控制行為（在 dbt Cloud 設定中很常見），這會非常有用。
+
+### 在 Lightdash 中配置環境變數
+
+<Info>此設定位於「進階配置選項 (Advanced configuration options)」下</Info>
+
+如果您的 dbt 專案在 `profiles.yml` 檔案中使用了[環境變數](https://docs.getdbt.com/reference/dbt-jinja-functions/env%5Fvar)，您可以在專案設置中將這些變數加入 Lightdash。針對每個環境變數，您需要新增對應的 `key` (鍵) 與 `value` (值)。
+
+您通常可以在 dbt 專案目錄下的 `.env` 檔案中找到這些值。
+
+例如，您可能有如下配置：
+```yaml
+profile:
+  target: prod
+  outputs:
+    prod:
+      type: postgres
+      host: 127.0.0.1
+      user: "{{ env_var('DBT_USER') }}"
+      ....
+```
+
+以及 `.env` 檔案：
+```yaml
+export DBT_USER="myspecialuser"
+```
+
+那麼在 Lightdash 中，您應新增一個環境變數，將 `key` 設為 `DBT_USER`，`value` 設為 `myspecialuser`。
+
+### 環境變數如何與 dbt 宏協作
+
+當 Lightdash 編譯您的 dbt 專案時，您配置的任何環境變數都將透過 `env_var()` 函數供 dbt 宏使用。
+
+例如，若您有一個檢查環境變數的宏：
+```sql
+{% macro get_schema() %}
+  {% if env_var('DBT_ENV') == 'production' %}
+    {{ return('prod_analytics') }}
+  {% else %}
+    {{ return('dev_analytics') }}
+  {% endif %}
+{% endmacro %}
+```
+
+您應在 Lightdash 連接設定中將 `DBT_ENV=production` 設為環境變數，以確保宏解析為 `prod_analytics`。
+
+**環境變數關鍵點：**
+
+- 它們透過 `env_var()` 函數對 dbt 專案中的所有宏可用。
+- 如果您的專案是為 dbt Cloud 構建的（重度依賴環境變數），這點尤其重要。
+- 請確保在 Lightdash 中設定的環境變數與您的生產 dbt 環境一致。
+
+## 關鍵要點總結
+
+- Lightdash 使用您在連接設定中配置的目標名稱與其他設定來編譯 dbt 專案。
+- 任何使用 `target.name`、環境變數或其他 profile 設定的宏，都將根據您的 Lightdash 配置進行解析。
+- 請確保 Lightdash 的目標名稱與您生產環境執行 dbt 的目標一致，以確保 Lightdash 的行為與 dbt 專案保持同步。
+- 如果您有依賴目標設定或環境變數的自定義宏，請確保這些設定在 Lightdash 連接設定中已正確配置。
+
+<Tip>
+如果您遇到 Lightdash 編譯 dbt 專案時出現非預期行為，請檢查 Lightdash 中的目標名稱是否符合 dbt 宏的預期，並確認宏依賴的環境變數已正確設定。
+</Tip>

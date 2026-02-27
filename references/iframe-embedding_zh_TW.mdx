@@ -1,0 +1,284 @@
+---
+title: "使用 iframe 進行嵌入"
+sidebarTitle: "iframe"
+description: "使用帶有 JWT 的 iframe 在 URL hash 片段中嵌入 Lightdash 內容的完整參考指南"
+---
+
+import EmbedAvailability from '/snippets/embedding-availability_zh_TW.mdx';
+
+<EmbedAvailability />
+
+## 概覽
+
+iframe 嵌入是在應用程式中嵌入 Lightdash **儀表板**最簡單的方式。它不需要特殊的函式庫、依賴項或 CORS 配置 —— 您只需生成 JWT 並構建嵌入 URL 即可。
+
+<Warning>
+iframe 嵌入**僅適用於儀表板**。圖表嵌入則需使用 [React SDK](/references/react-sdk_zh_TW)。
+</Warning>
+
+### iframe 嵌入的優點
+
+- **整合簡單** —— 標準 HTML iframe 元素，隨處可用。
+- **無依賴項** —— 無需安裝 JavaScript 函式庫或 SDK。
+- **無需 CORS 配置** —— 與 React SDK 不同，iframe 不需要設定 CORS。
+- **通用相容性** —— 適用於任何網頁環境（React, Vue, Angular, 原生 HTML）。
+- **安全** —— URL hash 片段中的 JWT 不會發送到伺服器，也不會被紀錄。
+
+### 何時使用 iframe 嵌入
+
+- 想要快速整合且不想增加依賴項時。
+- 非 React 應用程式。
+- 內容管理系統（如 WordPress, Webflow 等）。
+- 簡單的 HTML 頁面或靜態網站。
+- 當您不需要程式化控制（如篩選器回呼）時。
+
+### 何時應改用 React SDK
+
+若您需要以下功能，請考慮使用 [React SDK](/references/react-sdk_zh_TW)：
+- 程式化篩選器（透過屬性套用篩選）。
+- 回呼功能（例如用於分析的 onExplore）。
+- 無縫的 React 整合。
+- TypeScript 類型定義。
+
+欲了解 JWT 結構與配置選項，請參考[嵌入參考指南](/references/embedding_zh_TW)。
+
+## iframe URL 模式
+
+所有嵌入 URL 均遵循此模式：`https://您的執行體.lightdash.cloud/embed/{projectUuid}/{contentType}/{contentId}#{jwtToken}`
+
+基於安全考量，JWT 會在 URL 的 **hash 片段** (`#token`) 中傳遞 —— 它不會隨請求發送到伺服器，也不會記錄在瀏覽器歷史中。
+
+### 儀表板 URL
+
+```
+https://您的執行體.lightdash.cloud/embed/{projectUuid}/dashboard/{dashboardUuid}#{jwtToken}
+```
+
+使用儀表板 Slug 代替 UUID：
+
+```
+https://您的執行體.lightdash.cloud/embed/{projectUuid}/dashboard/{dashboardSlug}#{jwtToken}
+```
+
+**範例：**
+```
+https://app.lightdash.cloud/embed/abc-123-def-456/dashboard/my-sales-dashboard#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+<Info>
+hash 片段中的 JWT 不會隨 HTTP 請求發送到伺服器，也不會出現在伺服器日誌或瀏覽器歷史中，這提供了額外的安全保護層。
+</Info>
+
+<Warning>
+**目前尚不支持透過 iframe 嵌入圖表。** 圖表僅能透過 [React SDK](/references/react-sdk_zh_TW) 進行嵌入。
+</Warning>
+
+## URL 構建
+
+### 建立嵌入 URL
+
+1. **獲取專案 UUID** —— 可在 Lightdash 專案設置中找到。
+2. **獲取儀表板 ID** —— 儀表板 UUID 或 Slug。
+3. **生成 JWT** —— 參考[嵌入參考指南](/references/embedding_zh_TW#jwt-權杖結構)了解權杖結構。
+4. **構建 URL** —— 結合各部分與 hash 片段。
+
+<CodeGroup>
+
+```javascript Node.js
+import jwt from 'jsonwebtoken';
+
+const LIGHTDASH_EMBED_SECRET = process.env.LIGHTDASH_EMBED_SECRET;
+const instanceUrl = 'https://app.lightdash.cloud';
+const projectUuid = '您的專案-uuid';
+const dashboardUuid = '您的儀表板-uuid';
+
+// 生成 JWT
+const token = jwt.sign({
+  content: {
+    type: 'dashboard',
+    dashboardUuid: dashboardUuid,
+    canExportCsv: true,
+  },
+}, LIGHTDASH_EMBED_SECRET, { expiresIn: '1h' });
+
+// 構建嵌入 URL
+const embedUrl = `${instanceUrl}/embed/${projectUuid}/dashboard/${dashboardUuid}#${token}`;
+
+console.log(embedUrl);
+```
+
+```python Python
+import jwt
+import datetime
+
+LIGHTDASH_EMBED_SECRET = os.getenv('LIGHTDASH_EMBED_SECRET')
+instance_url = 'https://app.lightdash.cloud'
+project_uuid = '您的專案-uuid'
+dashboard_uuid = '您的儀表板-uuid'
+
+# 生成 JWT
+payload = {
+    'content': {
+        'type': 'dashboard',
+        'dashboardUuid': dashboard_uuid,
+        'canExportCsv': True,
+    },
+    'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+}
+
+token = jwt.encode(payload, LIGHTDASH_EMBED_SECRET, algorithm='HS256')
+
+# 構建嵌入 URL
+embed_url = f"{instance_url}/embed/{project_uuid}/dashboard/{dashboard_uuid}#{token}"
+
+print(embed_url)
+```
+
+</CodeGroup>
+
+### 帶有使用者屬性的 URL
+
+若要實作行級安全，請在 JWT 中包含使用者屬性：
+
+```javascript
+const token = jwt.sign({
+  content: {
+    type: 'dashboard',
+    dashboardUuid: '您的儀表板-uuid',
+  },
+  userAttributes: {
+    tenant_id: user.tenantId,  // 按租戶過濾數據
+    region: user.region,
+  },
+}, LIGHTDASH_EMBED_SECRET, { expiresIn: '1h' });
+
+const embedUrl = `https://app.lightdash.cloud/embed/${projectUuid}/dashboard/${dashboardUuid}#${token}`;
+```
+
+詳細說明請參閱[使用者屬性參考指南](/references/workspace/user-attributes_zh_TW)。
+
+## 在 HTML 中嵌入
+
+### 基本 iframe
+
+最簡單的嵌入方式是使用標準 HTML iframe：
+
+```html
+<iframe
+  src="https://app.lightdash.cloud/embed/專案-uuid/dashboard/儀表板-uuid#jwt-token"
+  width="100%"
+  height="600"
+  frameborder="0"
+  style="border: none;"
+></iframe>
+```
+
+### 建議屬性
+
+```html
+<iframe
+  src="https://app.lightdash.cloud/embed/..."
+  width="100%"
+  height="600"
+  frameborder="0"
+  style="border: none;"
+  loading="lazy"
+  title="Lightdash 儀表板"
+  allowfullscreen
+></iframe>
+```
+
+**屬性解析：**
+- `width="100%"` —— 使 iframe 自適應容器寬度。
+- `height="600"` —— 固定高度（根據內容調整）。
+- `frameborder="0"` —— 移除預設邊框（舊版做法）。
+- `style="border: none;"` —— 移除邊框（現代 CSS 做法）。
+- `loading="lazy"` —— 延遲載入，直到 iframe 進入視窗範圍。
+- `title="..."` —— 無障礙功能：為螢幕閱讀器描述內容。
+- `allowfullscreen` —— 啟用全螢幕模式。
+
+### 響應式 iframe
+
+**方法 1：比例包裝容器 (16:9)**
+
+```html
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe
+    src="https://app.lightdash.cloud/embed/..."
+    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+    frameborder="0"
+    allowfullscreen
+  ></iframe>
+</div>
+```
+
+### 安全性考量
+
+您可以加入 `sandbox` 屬性來限制行為：
+
+```html
+<iframe
+  src="https://app.lightdash.cloud/embed/..."
+  sandbox="allow-scripts allow-same-origin allow-forms allow-downloads"
+  style="width: 100%; height: 600px; border: none;"
+></iframe>
+```
+
+**sandbox 屬性說明：**
+- `allow-scripts` —— Lightdash 運作必需。
+- `allow-same-origin` —— Lightdash 運作必需。
+- `allow-forms` —— 篩選器互動必需。
+- `allow-downloads` —— 啟用 CSV/圖片匯出時必需。
+
+## 權杖重新整理 (Token refresh)
+
+JWT 會在 `expiresIn` 指定的時間後過期。
+
+### 選項 1：長效期權杖
+
+針對公開或半公開的儀表板，可使用較長的到期時間：
+```javascript
+jwt.sign(payload, secret, { expiresIn: '7d' })  // 7 天
+```
+
+### 選項 2：過期時重新生成 URL
+
+監測到權杖過期錯誤時，透過 JavaScript 重新載入新的 URL。
+
+## 故障排除
+
+### 權杖無效
+
+**問題：** iframe 顯示 "Invalid token" 或 "Token expired"
+**解法：**
+- 驗證嵌入秘密 (Embed Secret) 與 Lightdash 設置中的是否一致。
+- 檢查 `expiresIn` 是否過短。
+- 確保 JWT 負載結構符合[參考指南](/references/embedding_zh_TW#jwt-權杖結構)。
+
+### 內容未顯示
+
+**問題：** iframe 顯示空白或持續載入。
+**解法：**
+- 檢查瀏覽器主控台 (Console) 錯誤。
+- 確認儀表板 UUID 是否正確。
+- **關鍵：** 確認儀表板已加入 Lightdash 設置中的「允許的儀表板」清單。
+
+## 另請參閱
+
+<CardGroup cols={2}>
+  <Card title="嵌入參考指南" icon="book" href="/references/embedding_zh_TW">
+    JWT 結構與配置選項
+  </Card>
+
+  <Card title="React SDK 參考" icon="react" href="/references/react-sdk_zh_TW">
+    另一種選擇：React 組件嵌入
+  </Card>
+
+  <Card title="嵌入儀表板" icon="grid-2" href="/guides/embedding/dashboards_zh_TW">
+    分步儀表板嵌入指南
+  </Card>
+
+  <Card title="使用者屬性" icon="shield-check" href="/references/workspace/user-attributes_zh_TW">
+    透過使用者屬性實作行級安全
+  </Card>
+</CardGroup>

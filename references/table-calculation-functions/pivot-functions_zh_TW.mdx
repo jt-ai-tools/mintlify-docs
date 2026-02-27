@@ -1,0 +1,247 @@
+---
+title: "樞紐函數 (Pivot functions)"
+description: "內建函數，用於在表格計算中存取跨樞紐欄位的值。"
+---
+
+<Info>
+  **表格計算函數為實驗性功能。**
+
+  隨著我們的持續疊代，這些函數可能會在未經通知的情況下變動或更新。詳情請參閱[功能成熟度分級](/references/workspace/feature-maturity-levels_zh_TW)。
+</Info>
+
+樞紐函數讓您可以處理結果表格中跨樞紐欄位的數值。當您在 Lightdash 中對某個維度進行樞紐分析 (Pivot) 時，該維度的各個值會變成獨立的欄位 —— 樞紐函數提供了引用與跨欄聚合這些數值的方法。
+
+<Note>
+僅當您的查詢中包含已樞紐化的維度時，樞紐函數才可用。
+</Note>
+
+## pivot_column
+
+回傳當前樞紐欄位的索引（從 0 開始）。
+
+```
+pivot_column()
+```
+
+**參數：** 無
+
+**範例**
+
+使用欄位索引為不同的樞紐欄位套用不同的邏輯：
+
+```
+CASE WHEN pivot_column() = 0 THEN '第一欄' ELSE '其他欄' END
+```
+
+<Accordion title="編譯後的 SQL">
+```sql
+"column_index"
+```
+
+樞紐欄位索引是底層樞紐結果中的一個欄位，因此不需要視窗函數。
+</Accordion>
+
+---
+
+## pivot_offset
+
+回傳相對於當前欄位位移量之樞紐欄位中的表達式數值。
+
+```
+pivot_offset(expression, columnOffset)
+```
+
+| 參數 | 類型 | 描述 |
+| :--- | :--- | :--- |
+| `expression` | 欄位引用或 SQL 表達式 | 要計算的表達式 |
+| `columnOffset` | 整數 | 欄位位移量。負數 = 前面的欄位，正數 = 後面的欄位，0 = 當前欄位 |
+
+如果目標欄位不相鄰（例如：中間的欄位被過濾掉了），則回傳 `NULL`。
+
+**範例**
+
+將當前樞紐欄位的營收與前一樞紐欄位進行比較：
+
+```
+${orders.total_revenue} - pivot_offset(${orders.total_revenue}, -1)
+```
+
+<Accordion title="編譯後的 SQL">
+對於負位移量（前面的欄位）：
+```sql
+CASE WHEN LAG("column_index", 1) OVER (
+    PARTITION BY "column_index" ORDER BY "row_index"
+  ) = "row_index" + (-1)
+  THEN LAG(${orders.total_revenue}, 1) OVER (
+    PARTITION BY "column_index" ORDER BY "row_index"
+  )
+  ELSE NULL
+END
+```
+
+對於正位移量（後面的欄位），會使用 `LEAD` 代替 `LAG`。
+
+位移量為 0 時，直接回傳表達式而不使用視窗函數。
+
+每次呼叫都包含「相鄰保護」—— 一個 `CASE WHEN` 檢查，驗證目標欄位是否確實相鄰。這可以防止在樞紐欄位被過濾掉且不連續時產生錯誤數值。
+</Accordion>
+
+---
+
+## pivot_index
+
+透過從 0 開始的索引值，回傳特定樞紐欄位中的表達式數值。
+
+```
+pivot_index(expression, pivotIndex)
+```
+
+| 參數 | 類型 | 描述 |
+| :--- | :--- | :--- |
+| `expression` | 欄位引用或 SQL 表達式 | 要計算的表達式 |
+| `pivotIndex` | 整數 (≥ 0) | 從 0 開始的樞紐欄位索引 |
+
+**範例**
+
+將每個樞紐欄位的營收與第一個樞紐欄位的營收進行比較：
+
+```
+${orders.total_revenue} / pivot_index(${orders.total_revenue}, 0)
+```
+
+<Accordion title="編譯後的 SQL">
+```sql
+MAX(
+  CASE WHEN "column_index" = 0
+    THEN ${orders.total_revenue}
+    ELSE NULL
+  END
+) OVER (PARTITION BY "row_index")
+```
+</Accordion>
+
+---
+
+## pivot_where
+
+尋找第一個符合條件的樞紐欄位，並回傳該欄位中的數值。
+
+```
+pivot_where(selectExpression, valueExpression)
+```
+
+| 參數 | 類型 | 描述 |
+| :--- | :--- | :--- |
+| `selectExpression` | SQL 布林表達式 | 對每個樞紐欄位進行評估的條件 |
+| `valueExpression` | 欄位引用或 SQL 表達式 | 從匹配欄位中回傳的表達式 |
+
+若有多個欄位匹配，則回傳索引值最小的欄位數值。
+
+**範例**
+
+尋找第一個計數超過 100 的樞紐欄位營收：
+
+```
+pivot_where(${orders.count} > 100, ${orders.total_revenue})
+```
+
+<Accordion title="編譯後的 SQL">
+```sql
+MAX(
+  CASE WHEN "column_index" = (
+    SELECT MIN("column_index")
+    FROM (
+      SELECT "column_index",
+        ${orders.count} > 100 AS condition
+      FROM DUAL
+    )
+    WHERE condition = TRUE
+  )
+  THEN ${orders.total_revenue}
+  ELSE NULL
+  END
+) OVER (PARTITION BY "row_index")
+```
+</Accordion>
+
+---
+
+## pivot_row
+
+回傳當前行中所有樞紐欄位數值的陣列。
+
+```
+pivot_row(expression)
+```
+
+| 參數 | 類型 | 描述 |
+| :--- | :--- | :--- |
+| `expression` | 欄位引用或 SQL 表達式 | 為每個樞紐欄位計算的表達式 |
+
+**範例**
+
+獲取當前行所有樞紐化的營收數值：
+
+```
+pivot_row(${orders.total_revenue})
+```
+
+<Accordion title="編譯後的 SQL">
+```sql
+ARRAY_AGG(${orders.total_revenue}) OVER (
+  PARTITION BY "row_index"
+  ORDER BY "column_index"
+  ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+)
+```
+</Accordion>
+
+---
+
+## pivot_offset_list
+
+回傳從相對於當前欄位的位移量開始，連續多個樞紐欄位的數值陣列。
+
+```
+pivot_offset_list(expression, columnOffset, numValues)
+```
+
+| 參數 | 類型 | 描述 |
+| :--- | :--- | :--- |
+| `expression` | 欄位引用或 SQL 表達式 | 要計算的表達式 |
+| `columnOffset` | 整數 | 起始欄位位移量。負數 = 前面，正數 = 後面，0 = 當前 |
+| `numValues` | 整數 | 要包含的連續樞紐欄位數量 |
+
+當位移量指向非相鄰的樞紐欄位時，該值會回傳為 `NULL`。
+
+**範例**
+
+獲取當前及前兩個樞紐欄位的數值：
+
+```
+pivot_offset_list(${orders.total_revenue}, -2, 3)
+```
+
+<Accordion title="編譯後的 SQL">
+```sql
+ARRAY[
+  CASE WHEN LAG("column_index", 2) OVER (
+      PARTITION BY "row_index" ORDER BY "column_index"
+    ) = "column_index" + (-2)
+    THEN LAG(${orders.total_revenue}, 2) OVER (
+      PARTITION BY "row_index" ORDER BY "column_index"
+    )
+    ELSE NULL
+  END,
+  CASE WHEN LAG("column_index", 1) OVER (
+      PARTITION BY "row_index" ORDER BY "column_index"
+    ) = "column_index" + (-1)
+    THEN LAG(${orders.total_revenue}, 1) OVER (
+      PARTITION BY "row_index" ORDER BY "column_index"
+    )
+    ELSE NULL
+  END,
+  ${orders.total_revenue}
+]
+```
+</Accordion>

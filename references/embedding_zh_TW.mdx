@@ -1,0 +1,271 @@
+---
+title: "嵌入參考指南 (Embedding reference)"
+description: "使用 JWT 安全嵌入 Lightdash 內容的完整 API 參考文件"
+---
+
+import EmbedAvailability from '/snippets/embedding-availability_zh_TW.mdx';
+
+<EmbedAvailability />
+
+## 概覽
+
+本文件提供兩種嵌入方法（iframe 與 React SDK）通用的 JWT 結構與配置選項的完整 API 參考。
+
+**針對特定方法的實作詳情，請參閱：**
+- [iframe 嵌入參考](/references/iframe-embedding_zh_TW) —— URL 模式、HTML 嵌入
+- [React SDK 參考](/references/react-sdk_zh_TW) —— React 組件、屬性 (Props)、TypeScript
+
+**分步指南請參閱：**
+- [嵌入快速入門](/guides/embedding/how-to-embed-content_zh_TW)
+- [嵌入儀表板](/guides/embedding/dashboards_zh_TW)
+- [嵌入圖表](/guides/embedding/charts_zh_TW)
+
+嵌入的 Lightdash 內容對任何人都是可見的（不只限於擁有 Lightdash 帳號的人）。內容使用具備可配置過期時間的 JWT (JSON Web Tokens) 進行保護。
+
+## 已知限制
+
+- 嵌入僅支援直接嵌入儀表板與圖表。若要嵌入探索 (Explores)，請使用儀表板中的 `canExplore` 旗標。
+- 點擊個別圖表區段時的「Filter dashboard to (以此過濾儀表板)」選項在嵌入式儀表板中無法運作。
+
+如果您對嵌入功能感興趣，且上述任何項目是您的阻礙，請與我們聯繫。
+
+## 嵌入秘密 (Embed secret)
+
+嵌入秘密用於生成嵌入內容所需的 JWT。此秘密的作用類似於密碼，用於加密與簽署您的權杖。
+
+<Frame>
+  ![](/images/guides/embedding/embed-create-secret-fbb86d6bcb70f4d004c48adb3c107922.png)
+</Frame>
+
+<Warning>
+請務必妥善保管您的嵌入秘密！將其儲存為環境變數，且絕不要暴露在前端代碼中。務必在伺服器端生成權杖。
+</Warning>
+
+您可以透過點擊 `Generate new secret` 來重新生成秘密。如果這樣做，所有先前生成的嵌入 URL 將立即失效。
+
+## JWT 結構
+
+所有嵌入方法皆使用 JWT 來驗證與配置嵌入內容。權杖結構包含三個主要部分：
+
+### 通用欄位
+
+所有權杖共享以下欄位：
+
+```typescript
+{
+  content: {
+    // 內容配置（必要）
+    type: 'dashboard' | 'chart',
+    projectUuid?: string,
+    // ... 類型專屬欄位
+  },
+  user?: {
+    // 用於分析的使用者資訊（選填）
+    externalId?: string,
+    email?: string,
+  },
+  userAttributes?: {
+    // 用於行級過濾的使用者屬性（選填）
+    [attributeName: string]: string,
+  },
+  // 權杖過期時間（由 JWT 函式庫處理）
+  exp?: number,
+  iat?: number,
+}
+```
+
+### 儀表板權杖 (Dashboard token)
+
+用於嵌入包含多個磚塊、篩選器與互動功能的儀表板：
+
+```typescript
+{
+  content: {
+    type: 'dashboard',
+
+    // 儀表板識別碼（必要，擇一使用）
+    dashboardUuid?: string,
+    dashboardSlug?: string,
+
+    // 專案識別碼（選填）
+    projectUuid?: string,
+
+    // 篩選器互動功能
+    dashboardFiltersInteractivity?: {
+      enabled: 'all' | 'some' | 'none',  // 必要
+      allowedFilters?: string[],          // 若 enabled 為 'some' 則必要
+      hidden?: boolean,                   // 選填：隱藏篩選器 UI
+    },
+
+    // 參數互動功能
+    parameterInteractivity?: {
+      enabled: boolean,
+    },
+
+    // 匯出能力
+    canExportCsv?: boolean,         // 允許匯出 CSV
+    canExportImages?: boolean,      // 允許匯出圖片/PNG
+    canExportPagePdf?: boolean,     // 允許匯出 PDF
+
+    // 互動功能
+    canDateZoom?: boolean,          // 允許日期粒度縮放
+    canExplore?: boolean,           // 允許「從此處探索」
+    canViewUnderlyingData?: boolean, // 允許查看原始數據
+  },
+
+  // 選填：用於查詢追蹤的使用者資訊
+  user?: {
+    externalId?: string,
+    email?: string,
+  },
+
+  // 選填：用於行級過濾的使用者屬性
+  userAttributes?: {
+    [attributeName: string]: string,
+  },
+}
+```
+
+### 圖表權杖 (Chart token)
+
+用於嵌入以極簡 UI 顯示的單個儲存圖表：
+
+<Warning>
+圖表嵌入**目前僅能透過 React SDK 使用**。目前尚不支持透過 iframe 嵌入圖表。詳情請參閱 [React SDK 參考指南](/references/react-sdk_zh_TW)。
+</Warning>
+
+```typescript
+{
+  content: {
+    type: 'chart',
+
+    // 圖表識別碼（必要）
+    contentId: string,  // savedQueryUuid
+
+    // 專案識別碼（選填）
+    projectUuid?: string,
+
+    // 預覽模式（選填）
+    isPreview?: boolean,
+
+    // 權限範圍（選填）
+    scopes?: string[],  // 例如：['view:Chart']
+
+    // 匯出能力
+    canExportCsv?: boolean,         // 允許匯出 CSV
+    canExportImages?: boolean,      // 允許匯出圖片/PNG
+    canViewUnderlyingData?: boolean, // 允許查看原始數據
+  },
+
+  // 選填：用於查詢追蹤的使用者資訊
+  user?: {
+    externalId?: string,
+    email?: string,
+  },
+}
+```
+
+<Info>
+圖表權杖使用 `contentId`（儲存圖表的 UUID）而非 `dashboardUuid`。圖表嵌入的範圍僅限於特定圖表，無法存取其他內容。
+</Info>
+
+## 互動選項參考
+
+### 儀表板篩選器互動功能
+
+控制使用者是否可以與儀表板篩選器互動。
+
+**選項：**
+
+- `enabled: 'all'` —— 所有的儀表板篩選器皆可見且可互動。
+- `enabled: 'some'` —— 僅有在 `allowedFilters` 列表中的篩選器可互動。
+- `enabled: 'none'` —— 篩選器會被套用，但使用者無法看見或編輯。
+- `hidden: true` —— 篩選器可在運行時配置，但 UI 會被隱藏（可與 'all' 或 'some' 搭配使用）。
+
+### 參數互動功能
+
+控制使用者是否可以修改儀表板參數。啟用後，使用者可以在儀表板 UI 中更改參數值。
+
+### 匯出選項
+
+控制使用者可以從嵌入內容中匯出哪些項目。
+
+- **CSV 匯出**：在圖表磚塊選單中啟用「下載 CSV」。匯出的是視覺化圖表中顯示的數據。
+- **圖片匯出**：在圖表磚塊選單中啟用「下載為圖片」。匯出為 PNG 檔案並捕捉當前圖表狀態。
+- **PDF 匯出（僅限儀表板）**：在儀表板標頭啟用列印圖示。將整個儀表板頁面（包含所有可見磚塊）匯出為 PDF。
+
+### 日期縮放 (Date zoom)
+
+允許使用者透過更改粒度（年 → 季 → 月 → 週 → 天）來縮放時間序列數據。
+
+### 從此處探索 (Explore from here)
+
+在圖表磚塊選單中顯示「Explore from here」。點擊後會開啟完整的查詢構建器，並預載該圖表的配置。使用者可以修改維度、指標與過濾器，但無法儲存或查看 SQL。
+
+### 查看底層數據 (View underlying data)
+
+允許使用者點擊圖表以開啟顯示底層數據表格的彈窗。數據無法在此處單獨匯出（需使用 `canExportCsv`）。
+
+## 允許的內容
+
+### 允許的儀表板
+
+只有加入「允許的儀表板 (allowed dashboards)」清單的儀表板才能被嵌入。您也可以開啟「Allow all dashboards」切換開關來略過手動選取。
+
+### 允許的圖表
+
+圖表必須明確加入允許清單後才能嵌入。圖表嵌入比儀表板提供更細分的存取控制。
+
+### 自託管的環境變數預設值
+
+對於自託管部署，您可以透過 `EMBED_ALLOW_ALL_DASHBOARDS_BY_DEFAULT` 與 `EMBED_ALLOW_ALL_CHARTS_BY_DEFAULT` 環境變數，將新專案的嵌入預設設為允許所有內容。
+
+## 使用者屬性 (User attributes)
+
+使用者屬性透過根據使用者特性過濾數據來實作行級安全。它們會過濾在 dbt 中配置了 `sql_filter` 的表格。詳情請參閱[使用者屬性指南](/references/workspace/user-attributes_zh_TW)。
+
+## 使用者元數據 (User metadata)
+
+傳遞 `user` 資訊（如 `externalId` 與 `email`）以追蹤誰在查看嵌入內容。這些資訊會出現在使用量分析的[查詢標籤 (Query tags)](/references/workspace/usage-analytics_zh_TW#查詢標籤)中。
+
+## 權杖到期 (Token expiration)
+
+為了安全性，JWT 應具備短暫的到期時間。
+
+**建議到期時間：**
+- **開發/測試**：`'24h'` 或 `'1 week'`
+- **生產儀表板**：`'1h'` 到 `'4h'`
+- **生產圖表**：`'24h'` (若用於公開頁面)
+- **探索對話 (Explore sessions)**：`'4h'` 到 `'8h'`
+
+<Warning>
+務必在伺服器端生成具有短效期的權杖。絕不要在前端代碼中生成長效期權杖。
+</Warning>
+
+## 安全最佳實踐
+
+1. **絕不暴露嵌入秘密**：使用環境變數儲存秘密，切勿寫死在代碼中。
+2. **僅在伺服器端生成權杖**：在前端生成會暴露您的秘密！
+3. **使用短效期權杖**：縮短權杖被誤用的空窗期。
+4. **驗證使用者擁有權**：在後端生成權杖前，先驗證當前使用者是否具備造訪該儀表板的權限。
+5. **使用使用者屬性實作行級安全**：確保使用者僅能看到其權限範圍內的數據。
+
+## 另請參閱
+
+<CardGroup cols={2}>
+  <Card title="iframe 嵌入參考" icon="code" href="/references/iframe-embedding_zh_TW">
+    URL 模式與 HTML 嵌入詳情
+  </Card>
+
+  <Card title="React SDK 參考" icon="react" href="/references/react-sdk_zh_TW">
+    用於 React 整合的組件 API
+  </Card>
+
+  <Card title="嵌入快速入門" icon="rocket" href="/guides/embedding/how-to-embed-content_zh_TW">
+    5 分鐘快速上手
+  </Card>
+
+  <Card title="使用者屬性" icon="shield-check" href="/references/workspace/user-attributes_zh_TW">
+    實作行級安全
+  </Card>
+</CardGroup>

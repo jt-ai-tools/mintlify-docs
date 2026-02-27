@@ -1,0 +1,181 @@
+---
+title: "lightdash.config.yml 參考指南"
+description: 'lightdash.config.yml 檔案讓您可以為 Lightdash 專案配置全專案層級的設定，包含 Spotlight 與參數。'
+sidebarTitle: "lightdash.config.yml"
+---
+
+
+## 什麼是 lightdash.config.yml？
+
+`lightdash.config.yml` 是一個**選填**的配置檔案，允許您定義 Lightdash 專案的全專案層級設定。您可以將其視為在基礎設定之外，自定義並增強 Lightdash 體驗的一種方式。
+
+<Warning>
+  當您的專案直接連接至 dbt Cloud 時，**不支援** `lightdash.config.yml`。
+  
+  此檔案僅適用於使用直接 git 連接或透過 CLI 部署（從本地 dbt 專案及/或持續部署）的專案。
+</Warning>
+
+
+## 我需要這個檔案嗎？
+
+您**不需要** `lightdash.config.yml` 即可開始使用 Lightdash！此檔案適合想要執行以下操作的使用者：
+
+- **在 [Spotlight (指標目錄)](/guides/metrics-catalog_zh_TW) 中組織指標**，設定自定義類別與可見性。
+- **建立參數 (Parameters)**，讓使用者能更改數值以同時修改多個圖表與儀表板的數據。
+
+如果您剛開始使用 Lightdash，可以先跳過此檔案，等日後需要這些進階功能時再回來設定。
+
+
+## 開始使用
+
+在建立 `lightdash.config.yml` 檔案前，請確保您具備：
+
+1. ✅ 一個運作中的 Lightdash 專案（已完成[入門指南](/get-started/setup-lightdash/intro_zh_TW)）。
+2. ✅ 一個本地 dbt 專案（未連接至 dbt Cloud）。
+3. ✅ 已安裝並配置好 [Lightdash CLI](/get-started/setup-lightdash/get-project-lightdash-ready_zh_TW#步驟-1：安裝-lightdash-cli-工具)。
+
+
+<Steps>
+  <Step title="建立檔案">
+    在 **dbt 專案的根目錄**（即 `dbt_project.yml` 所在的資料夾）建立一個名為 `lightdash.config.yml` 的新檔案。
+
+    ```bash
+    # 進入您的 dbt 專案目錄
+    cd /path/to/your/dbt/project
+
+    # 建立配置檔案
+    touch lightdash.config.yml
+    ```
+  </Step>
+  <Step title="添加您的第一個配置">
+    從簡單的配置開始。以下是一個設定 Spotlight 類別的基礎範例：
+
+    ```yaml
+    # 基礎 lightdash.config.yml 範例
+    spotlight:
+      default_visibility: "show"
+      categories:
+        finance:
+          label: "財務"
+          color: "green"
+        marketing:
+          label: "行銷" 
+          color: "blue"
+    ```
+  </Step>
+  <Step title="部署變更">
+    建立或更新 `lightdash.config.yml` 檔案後，將變更部署到您的 Lightdash 專案：
+
+    ```bash
+    lightdash deploy
+    ```
+
+    大功告成！您的配置現在已在 Lightdash 專案中生效。
+  </Step>
+</Steps>
+
+
+
+
+## 配置選項
+
+`lightdash.config.yml` 檔案支援以下頂層配置選項：
+
+```yaml
+# 全專案 Spotlight 設定的配置
+spotlight:
+  # ...
+
+# 全專案參數的配置
+parameters:
+  # ...
+```
+
+
+## Spotlight 配置
+
+`spotlight` 章節讓您配置全專案的指標目錄設定。此章節在 lightdash.config.yml 中是必要的。
+
+```yaml
+spotlight:
+  default_visibility: "show"
+  categories:
+    finance:
+      label: "財務"
+      color: "green"
+    user_engagement:
+      label: "使用者參與度"
+      color: "blue"
+```
+
+| 屬性 | 必填 | 數值 | 描述 |
+| :------------------- | :------- | :---------- | :---------- |
+| `default_visibility` | 否 | string enum | 指標目錄中指標的預設可見性。預設為 `show` (顯示)，也可設為 `hide` (隱藏)。 |
+| `categories` | 否 | Object | 定義可用於模型 YAML 檔案中 Spotlight 的類別。 |
+
+`categories` 物件中的每個類別具備以下屬性：
+
+| 屬性 | 必填 | 數值 | 描述 |
+| :------- | :------- | :---------- | :---------- |
+| `label` | 是 | string | 顯示在 Spotlight 中的類別標籤。 |
+| `color` | 否 | string enum | 類別的顏色。若未提供則預設為灰色 (gray)。可選值：`gray`, `violet`, `red`, `orange`, `green`, `blue`, `indigo`, `pink`, `yellow`。 |
+
+
+## 參數 (Parameters) 配置
+
+`parameters` 章節讓您定義可在 Lightdash 專案各處引用的全專案參數。
+
+```yaml
+parameters:
+  region:
+    label: "區域"
+    description: "按區域過濾數據"
+    options:
+      - "EMEA"
+      - "AMER"
+      - "APAC"
+    default: ["EMEA", "AMER"]
+    multiple: true
+  min_revenue:
+    label: "最小營收"
+    description: "篩選最小營收門檻"
+    type: "number"
+    options:
+      - 1000
+      - 5000
+      - 10000
+    default: 5000
+```
+
+每個參數定義為一組鍵值對 (Key-value pair)，其中鍵為參數名稱（必須是字母數字配上底線或連字號），值為具備以下屬性的物件：
+
+| 屬性 | 必填 | 數值 | 描述 |
+| :----------------------- | :------- | :------------------------- | :---------- |
+| `label` | 是 | string | 顯示在 UI 中的友善標籤。 |
+| `description` | 否 | string | 參數的描述。 |
+| `type` | 否 | "string", "number", 或 "date" | 參數類型。預設為 "string"。 |
+| `options` | 否 | 字串或數字陣列 | 參數的可選值列表。 |
+| `default` | 否 | 字串、數字或其陣列 | 參數的預設值。 |
+| `multiple` | 否 | boolean | 是否支援多選。 |
+| `allow_custom_values` | 否 | boolean | 是否允許使用者輸入預定義選項之外的自定義值。 |
+| `options_from_dimension` | 否 | Object | 從模型的維度獲取參數選項。需要 `model` 與 `dimension` 參數。|
+
+若使用 `options_from_dimension`，物件具備以下屬性：
+
+| 屬性 | 必填 | 數值 | 描述 |
+| :---------- | :------- | :----- | :---------------------------------- |
+| `model` | 是 | string | 包含該維度的模型名稱。 |
+| `dimension` | 是 | string | 用於獲取選項的維度名稱。 |
+
+
+### 在專案中使用參數
+
+在 `lightdash.config.yml` 中定義的參數可以使用 `${lightdash.parameters.參數名稱}` 或簡稱 `${ld.parameters.參數名稱}` 在專案各處引用。
+
+例如，引用名為 `region` 的參數：
+
+```yaml
+${lightdash.parameters.region}
+```
+
+欲了解更多關於參數的使用方式，請參考 [參數使用指南](/guides/developer/using-parameters_zh_TW)。

@@ -1,0 +1,338 @@
+---
+title: "Lightdash MCP"
+icon: "hexagon-nodes"
+---
+
+<Check>
+  適用於所有 Lightdash Cloud 使用者。
+</Check>
+
+[Model Context Protocol (MCP)](https://modelcontextprotocol.io/) 讓 AI 助手（如 ChatGPT、Claude）和自定義代理 (Agents) 能直接與您的 Lightdash 數據互動。此整合允許 MCP 客戶端探索您的數據模型、搜尋指標與維度，並透過自然對話提供數據驅動的見解。您可以將 MCP 用於現有的 AI 助手，或將其整合到自定義代理和自動化工作流程中。MCP 使用安全的 OAuth 身份驗證，並遵守您現有的所有存取控制，確保數據受到保護。
+
+透過 MCP，您的 AI 助手將成為一名具備以下能力的數據分析師：
+
+- 瀏覽並理解您的數據模型
+- 尋找相關的指標與維度
+- 在不同專案之間無縫切換
+- 遵守您的數據治理與存取控制
+
+<Info>
+  MCP 遵守您現有的所有 Lightdash 權限與使用者屬性。MCP 客戶端僅能存取您的使用者帳號有權查看的數據。
+</Info>
+
+## 開始使用
+
+設定 MCP 非常簡單快速。您只需幾分鐘即可將 AI 助手連接到您的 Lightdash 執行體。
+
+### 前置條件
+
+- 一個已啟用 MCP 的 Lightdash Cloud 帳號或企業版帳號
+- 一個支援 MCP 的 AI 助手（例如：Claude.ai, Claude Desktop, ChatGPT）
+
+### 網路需求
+
+如果您的組織使用了公司防火牆、VPN 或網路安全工具，必須將以下網域加入白名單，MCP 才能正常運作：
+
+| 網域 | 用途 |
+|---|---|
+| `<your_instance_name>.lightdash.cloud` | Lightdash API 與 OAuth 身份驗證 |
+| `claudemcpcontent.com` | 用於 Claude 渲染來自 MCP 連接器的視覺化內容（圖表、表格） |
+
+<Warning>
+  如果 `claudemcpcontent.com` 被阻擋，Claude 仍能以文字形式回傳查詢結果，但將無法顯示 Lightdash 的視覺化圖表。您可能會看到錯誤訊息：_"Failed to set up MCP app. Check that claudemcpcontent.com is not blocked by your network or browser."_
+</Warning>
+
+<Tip>
+  如果您遇到問題，請嘗試在無痕/私密瀏覽視窗中開啟 Claude，以排除可能阻擋這些網域的瀏覽器擴充功能（如廣告攔截器）。
+</Tip>
+
+### 安裝方式
+
+#### Claude.ai (網頁版與桌面版應用程式)
+
+在 [Claude.ai](https://claude.ai) 網頁版設定 MCP 後，重新啟動 Claude 桌面版應用程式即可自動同步。
+
+<Accordion title="設定步驟說明">
+  1. **進入 Claude.ai 的設定**
+
+     導覽至個人資料選單（左下角）並選擇 Settings。
+
+     <Frame>
+       ![導覽至左下角個人資料選單並點擊 Settings](/images/references/integrations/lightdash-mcp/claude-ai-01-click-profile-settings.png)
+     </Frame>
+  2. **新增自定義連接器 (Custom Connector)**
+
+     在 Settings 選單中，從側邊欄選擇 "Connectors"，然後點擊 "Add custom connector"。
+
+     <Frame>
+       ![從側邊欄選單選擇 Connectors，然後點擊 Add custom connector 按鈕](/images/references/integrations/lightdash-mcp/claude-ai-02-select-connectors-then-add-custom-connector.png)
+     </Frame>
+  3. **配置連線**
+
+     填入您的 Lightdash 執行體資訊。
+
+     <Frame>
+       ![在配置表單中輸入 Lightdash 作為名稱以及您的執行體 MCP URL](/images/references/integrations/lightdash-mcp/claude-ai-03-fill-out-name-and-mcp-url.png)
+     </Frame>
+     - **Name:** Lightdash (或任何您偏好的名稱)
+     - **URL:** `https://<your_instance_name>.lightdash.cloud/api/v1/mcp`
+  4. **連線與驗證**
+
+     點擊 "Connect" 按鈕啟動身份驗證流程。
+
+     <Frame>
+       ![點擊 Connect 按鈕啟動與 Lightdash 的 OAuth 身份驗證](/images/references/integrations/lightdash-mcp/claude-ai-04-click-connect.png)
+     </Frame>
+  5. **完成 OAuth 流程**
+
+     登入您的 Lightdash 帳號，並在出現提示時核准連線。
+
+     <Frame>
+       ![登入 Lightdash 並核准 OAuth 連線請求](/images/references/integrations/lightdash-mcp/claude-ai-05-oauth-flow-via-lightdsah.png)
+     </Frame>
+  6. **配置權限 (選填)**
+
+     您可以選擇性配置 Claude 可造訪哪些 MCP 工具，並設定額外權限。
+
+     <Frame>
+       ![選填：為您的 Claude 助手配置 MCP 工具造訪權限與權限設定](/images/references/integrations/lightdash-mcp/claude-ai-06-OPTIONAL-configure.png)
+     </Frame>
+</Accordion>
+
+#### ChatGPT (網頁版應用程式)
+
+ChatGPT 的 MCP 支援即將推出！敬請期待更新。
+
+#### Claude Code CLI
+
+對於使用 Claude Code CLI 的開發者：
+
+```bash
+claude mcp add lightdash https://<your_instance_name>.lightdash.cloud/api/v1/mcp -t http
+```
+
+請將 `<your_instance_name>` 替換為您實際的 Lightdash 執行體名稱。
+
+<Accordion title="設定步驟說明">
+  1. **在 Claude Code 中使用 /mcp 指令**
+
+     <Frame>
+       ![輸入 /mcp 查看可用的 MCP 連線](/images/references/integrations/lightdash-mcp/claude-code-01-slash-mcp-command.png)
+     </Frame>
+  2. **從清單中選取 Lightdash**
+
+     <Frame>
+       ![使用方向鍵導覽至 Lightdash](/images/references/integrations/lightdash-mcp/claude-code-02-select-lightdash-navigating-using-arrow-keys.png)
+     </Frame>
+  3. **向 Lightdash 進行驗證**
+
+     <Frame>
+       ![選取 Authenticate 並按 Enter 鍵](/images/references/integrations/lightdash-mcp/claude-code-03-select-authenticate-hit-enter.png)
+     </Frame>
+  4. **完成 OAuth 流程**
+
+     <Frame>
+       ![透過 Lightdash 完成 OAuth 驗證流程](/images/references/integrations/lightdash-mcp/claude-code-04-complete-oauth-flow-via-lightdash.png)
+     </Frame>
+  5. **開始使用 MCP**
+
+     <Frame>
+       ![驗證成功後開始下達提示詞](/images/references/integrations/lightdash-mcp/claude-code-05-start-prompting-after-successful-auth.png)
+     </Frame>
+
+  驗證完成後，您即可直接在 Claude Code 中詢問關於 Lightdash 數據的問題！
+</Accordion>
+
+#### Cursor 編輯器
+
+導覽至 **Cursor Settings \> MCP & Integrations**
+
+![Cursor 設定截圖](/images/references/integrations/CleanShot2025-08-28at17.42.54@2x.png)
+
+#### 自定義整合 (供開發者使用)
+
+如果您正在構建自己的代理或自動化工作流程，可以直接整合 Lightdash MCP：
+
+- **傳輸協議 (Transport)**：Lightdash MCP 在 `https://<your_instance_name>.lightdash.cloud/api/v1/mcp` 提供 StreamableHTTP 傳輸端點。
+- **偵錯 (Debugging)**：使用 `@modelcontextprotocol/inspector` 來檢查並偵錯 MCP 連線。
+- **身份驗證**：需要 OAuth 2.0 流程以實現安全認證。
+- **說明文件**：實作細節請參考 [MCP 規範](https://modelcontextprotocol.io/docs)。
+
+## 配置您的 AI 助手
+
+由於 MCP 提供的是不具備內建智慧的原始工具，您的 AI 助手需要正確的指令才能有效使用 Lightdash MCP。我們建議新增自定義指令 (Custom Instructions) 來引導 AI 正確操作。
+
+<Accordion title="為 Claude 設定自定義指令">
+  <Frame>
+    ![在 Claude 中為 Lightdash MCP 設定自定義指令](/images/references/integrations/lightdash-mcp/setting-up-custom-instructions-01-claude.png)
+  </Frame>
+  以下是優化 Lightdash MCP 使用體驗的建議範本。您可以根據具體需求隨時修改這些指令：
+
+  ```
+  ## Lightdash 工具使用最佳實踐
+  
+  ### 初始數據探索模式
+  1. **從探索 (Explore) 發現開始**：使用 `find_explores` 且 `exploreName: null` 以查看所有可用表格。
+  2. **檢查表格描述**：找出與您的查詢最相關的探索。
+  3. **搜尋特定欄位**：使用具描述性的搜尋詞透過 `find_fields` 尋找欄位。
+  4. **執行查詢**：取得正確的欄位 ID 後即可執行查詢。
+  
+  ### 應避免的常見參數錯誤
+  - **find_explores**：傳遞 `null`（而非布林值 `true`）給 exploreName 以獲取所有探索。
+  - **find_explores**：若要聚焦於特定探索，請傳遞 _確切的探索名稱_ 給 `exploreName`。
+  - **find_fields**：務必使用欄位搜尋回傳的確切 `fieldId` 值。
+  - **分頁參數**：使用數字（例如預設為 `1`）。絕不要使用 `NaN` 或 `"null"` (字串形式的 null)。
+  
+  ### 欄位搜尋策略
+  - 搜尋業務術語（例如：「購物車總額」、「合作夥伴名稱」），而非技術欄位名稱。
+  - 在一次呼叫中執行多個搜尋查詢，以更高效地尋找相關欄位。
+  - 同時尋找維度 (Dimensions，用於分組) 與指標 (Metrics，用於聚合)。
+  ```
+
+  <Info>
+    Claude Code CLI 的使用者可以將這些指令加入專案的 `CLAUDE.md` 檔案，而無需在網頁介面配置。
+  </Info>
+</Accordion>
+
+## 功能介紹
+
+### 核心能力
+
+MCP 為 AI 助手提供了強大的工具與您的 Lightdash 數據互動：
+
+#### 系統資訊
+
+- **獲取 Lightdash 版本** —— 檢查當前 Lightdash 執行體的版本。
+
+#### 專案管理
+
+- **列出專案** —— 查看組織中所有可造訪的專案。
+- **設定活動專案** —— 在不同專案間切換上下文（存取任何數據前必做）。
+- **獲取當前專案** —— 檢查目前哪個專案處於活動狀態。
+
+<Info>
+  **重要提示：** 在 MCP 抓取任何數據前，必須先設定活動專案。您的 AI 助手通常會自動列出可用專案，並在沒有活動專案時提示您選擇。
+</Info>
+
+#### 數據探索工具
+
+- **尋找探索 (Find explores)** —— 瀏覽可用的數據模型（探索）並理解其結構。
+- **尋找欄位 (Find fields)** —— 在數據模型中搜尋特定的指標與維度。
+- **尋找儀表板** —— 按名稱或內容定位現有的儀表板。
+- **尋找圖表** —— 在儲存的圖表與視覺化內容中進行搜尋。
+
+### 對話範例
+
+以下是透過 MCP 與 AI 助手互動的一些範例：
+
+<AccordionGroup>
+  <Accordion title="驗證 MCP 連線">
+    <Frame>
+      ![驗證 MCP 連線並列出可用工具](/images/references/integrations/lightdash-mcp/examples-01-verifying-mcp-connection.png)
+    </Frame>
+  </Accordion>
+  <Accordion title="設定專案並尋找儀表板">
+    <Frame>
+      ![設定專案上下文並尋找儀表板](/images/references/integrations/lightdash-mcp/examples-02-setting-up-project-and-finding-dashboards.png)
+    </Frame>
+  </Accordion>
+  <Accordion title="尋找探索與欄位，並執行指標查詢">
+    <Frame>
+      ![尋找探索與欄位，接著執行指標查詢以分析數據](/images/references/integrations/lightdash-mcp/examples-03-finding-explores-and-fields-and-executing-metric-query-to-analyze-data.png)
+    </Frame>
+  </Accordion>
+</AccordionGroup>
+
+## 最佳實踐
+
+為了從 MCP 獲得最大價值，請確保您的 Lightdash 數據經過良好組織且具備完善文件。參考我們的 [AI 代理最佳實踐指南](/guides/ai-agents_zh_TW#最佳實踐)，了解關於以下方面的詳細建議：
+
+- 數據模型的組織與命名
+- 編寫有效的說明文件與 AI 提示 (AI Hints)
+- 優化 AI 助手的效能
+- 安全性與權限考量
+
+## Lightdash Docs MCP
+
+除了上述數據 MCP 外，我們還提供 **Docs MCP 端點**，讓 AI 編碼代理可以造訪完整的 Lightdash 文件。此功能對所有人免費 —— 包含開源使用者與所有雲端版本。
+
+### 優點
+
+Docs MCP 協助 AI 代理：
+
+- 理解 Lightdash 概念、配置與最佳實踐
+- 為指標與維度生成準確的 YAML 配置
+- 透過官方文件排除故障
+- 掌握 Lightdash 的最新功能
+
+<Tip>
+  為了獲得構建與維護語義層的最佳體驗，我們建議改用 [代理技能 (Agent Skills)](/guides/developer/agent-skills_zh_TW)。技能為 AI 編碼代理提供更具針對性的上下文，並針對代碼生成任務進行了優化。
+</Tip>
+
+### 設定方式
+
+Docs MCP 端點位於 `https://docs.lightdash.com/mcp`。將其加入您的 AI 編碼工具：
+
+<Tabs>
+  <Tab title="Cursor">
+    加入您的 `.cursor/mcp.json`：
+
+    ```json
+    {
+      "mcpServers": {
+        "lightdash-docs": {
+          "url": "https://docs.lightdash.com/mcp"
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Claude Code">
+    執行以下指令：
+
+    ```bash
+    claude mcp add lightdash-docs https://docs.lightdash.com/mcp -t http
+    ```
+  </Tab>
+  <Tab title="Windsurf">
+    加入您的 `~/.codeium/windsurf/mcp_config.json`：
+
+    ```json
+    {
+      "mcpServers": {
+        "lightdash-docs": {
+          "serverUrl": "https://docs.lightdash.com/mcp"
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### 可用性
+
+Docs MCP 對所有人免費：
+
+- 開源使用者
+- Cloud Pro
+- Cloud 企業版
+
+無需身份驗證。
+
+## 常見問題 (FAQ)
+
+**問：Lightdash MCP 會儲存我的數據或查詢結果嗎？**
+
+答：不會。Lightdash MCP 不會儲存任何查詢結果、對話回應或數據。MCP 充當橋樑，允許 AI 助手即時造訪您的 Lightdash 元數據並執行查詢。數據儲存由 MCP 消費端（即您的 AI 助手）負責。根據您使用的 AI 助手，數據可能會根據其隱私政策與第三方分享。
+
+**問：多位團隊成員可以同時使用 MCP 嗎？**
+
+答：是的。每位團隊成員都可以使用各自的 Lightdash 憑據設定自己的 MCP 連線。每個連線都會遵守該使用者的特定權限與存取控制。
+
+**問：MCP 可以修改我的數據或儀表板嗎？**
+
+答：不可以。MCP 僅具備唯讀存取權。它可以搜尋並探索您的數據模型，但無法對您的 Lightdash 配置或底層數據進行任何修改。
+
+**問：Claude 回傳了文字數據，但沒顯示視覺化圖表。哪裡出錯了？**
+
+答：Claude 使用 `claudemcpcontent.com` 網域來渲染視覺化內容。如果此網域被公司防火牆、VPN、網路安全工具或瀏覽器擴充功能阻擋，Claude 將退回到僅顯示文字。請參考上方的[網路需求](#網路需求)章節，將必要的網域加入白名單。

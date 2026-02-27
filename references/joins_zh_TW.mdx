@@ -1,0 +1,257 @@
+---
+title: "表格關聯參考指南 (Joins reference)"
+description: "關聯 (Joins) 讓您可以將不同的模型互相連接，以便在 Lightdash 中同時探索多個模型，並查看數據中不同部分之間的關係。"
+sidebarTitle: "關聯"
+---
+
+<Info>
+  **效能最佳實踐：** 為了獲得最佳的查詢效能，我們建議儘可能使用寬表，並盡量減少 BI 層中的關聯。雖然我們提供進階功能（如扇出保護）來處理複雜關係，但在 SQL 模型中直接處理數據轉換與複雜邏輯通常比在查詢時重度依賴關聯具備更好的效能。建議在數據建模階段預先關聯相關數據，而非在儀表板與報告中即時關聯。
+</Info>
+
+## 在模型中新增關聯
+
+關聯定義在與 YAML 檔案中的模型參數同級的位置。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: accounts
+        meta:
+          primary_key: id
+          joins:
+            - join: deals
+              type: left
+              sql_on: ${accounts.id} = ${deals.account_id}
+              fields: [unique_deals, new_deals, won_deals, lost_deals, stage]
+              relationship: one-to-many
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: accounts
+        config:
+          meta:
+            primary_key: id
+            joins:
+              - join: deals
+                type: left
+                sql_on: ${accounts.id} = ${deals.account_id}
+                fields: [unique_deals, new_deals, won_deals, lost_deals, stage]
+                relationship: one-to-many
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: accounts
+
+    primary_key: id
+
+    joins:
+      - join: deals
+        type: left
+        sql_on: ${accounts.id} = ${deals.account_id}
+        fields: [unique_deals, new_deals, won_deals, lost_deals, stage]
+        relationship: one-to-many
+    ```
+  </Tab>
+</Tabs>
+
+當您開啟 Lightdash 時，來自關聯模型的維度與指標將顯示在所選模型下方。
+
+<Frame>
+  ![關聯表格截圖](/images/references/screenshot-joined-table-1eaca01a7819ce13488b565e04c90cd8.png)
+</Frame>
+
+<Tip>
+  - 省略 `fields` 以包含關聯表中定義的所有指標與維度。
+  - 當關聯欄位引用了其他欄位時，那些被引用的欄位也必須包含在內。
+  - `sql_on` 語句可以包含對 [使用者屬性](/references/workspace/user-attributes_zh_TW) 的引用，以便進行行級過濾。
+</Tip>
+
+## 重新命名關聯模型
+
+關聯表格時，您可能出於可讀性考量想要重新命名。這可以使用 `label` 標籤來達成。例如：在 `messages` 模型中，將關聯的 `users` 表重新命名為 "Sender" (傳送者) 很有意義：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: messages
+        meta:
+          joins:
+            - join: users
+              label: Sender
+              sql_on: ${messages.sent_by} = ${users.user_id}
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: messages
+        config:
+          meta:
+            joins:
+              - join: users
+                label: Sender
+                sql_on: ${messages.sent_by} = ${users.user_id}
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: messages
+
+    joins:
+      - join: users
+        label: Sender
+        sql_on: ${messages.sent_by} = ${users.user_id}
+    ```
+  </Tab>
+</Tabs>
+
+您也可以透過 `description` 欄位覆蓋關聯表格的描述。
+
+## 多次關聯同一張表
+
+如果您需要多次關聯同一張表，可以使用 `alias` (別名) 來區分。常見場景是根據使用者類型將使用者表多次關聯到另一張表。例如此 `messages` 模型同時具備傳送者與接收者：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: messages
+        meta:
+          joins:
+            - join: users
+              alias: sender
+              sql_on: ${messages.sent_by} = ${sender.user_id}
+            - join: users
+              alias: recipient
+              sql_on: ${messages.sent_to} = ${recipient.user_id}
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: messages
+        config:
+          meta:
+            joins:
+              - join: users
+                alias: sender
+                sql_on: ${messages.sent_by} = ${sender.user_id}
+              - join: users
+                alias: recipient
+                sql_on: ${messages.sent_to} = ${recipient.user_id}
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: messages
+
+    joins:
+      - join: users
+        alias: sender
+        sql_on: ${messages.sent_by} = ${sender.user_id}
+      - join: users
+        alias: recipient
+        sql_on: ${messages.sent_to} = ${recipient.user_id}
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>建議使用全小寫且不含空格的 `alias` 值，以避免非預期問題。</Warning>
+
+使用別名時請注意：
+1. 必須使用新別名引用欄位（例如使用 `${sender.user_id}` 而非 `${users.user_id}`）。
+2. 若欄位引用了 `${users.*}`，將會導致編譯失敗。請小心對基礎模型中使用到的表設定別名。
+3. 關聯模型會自動標記為別名，但您仍可使用 `label:` 自定義。
+
+## 指定關聯類型
+
+使用 `type` 欄位指定關聯類型：`inner`, `left`, `right`, 或 `full`。
+
+| 關聯類型 | 生成的 SQL | 描述 |
+| :-------------- | :--------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [inner](#inner) | inner join | 回傳兩張表中皆有匹配值的行。 |
+| [left](#left) | left outer join | 回傳左表的所有行，以及右表中匹配的行。不匹配處右表欄位為 NULL。 |
+| [right](#right) | right outer join | 回傳右表的所有行，以及左表中匹配的行。不匹配處左表欄位為 NULL。 |
+| [full](#full) | full outer join | 當左表或右表任一處有匹配時，回傳所有行。不匹配處對應欄位為 NULL。 |
+
+<Info>預設情況下，若未指定 `type`，Lightdash 使用 `left join`。</Info>
+
+## 定義關聯關係 (Relationships)
+
+定義 `relationship` 協助 Lightdash 生成正確 SQL 並防止 [SQL 扇出 (Fanouts)](#sql-扇出) 導致的指標膨脹。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: users
+        meta:
+          primary_key: user_id
+          joins:
+            - join: orders
+              sql_on: ${users.user_id} = ${orders.user_id}
+              relationship: one-to-many
+    ```
+  </Tab>
+</Tabs>
+
+支援的關係：
+- `one-to-many`：起始表有 1 筆記錄，關聯表有多筆匹配。
+- `many-to-one`：起始表有多筆記錄，關聯表有 1 筆匹配。
+- `one-to-one`：起始表與關聯表皆為 1 筆匹配。
+- `many-to-many`：多對多匹配。
+
+<Accordion title="判斷關聯關係的實用步驟">
+  1. **確認起始表**：您是從哪張表開始關聯？
+  2. **計算預期匹配數**：起始表的 1 筆記錄對應關聯表幾筆？反之亦然。
+  3. **檢查條件式關聯**：SQL 中的 AND 條件可能將一對多變為多對多。
+  4. **樣本數據驗證**：拿一筆記錄手動推演結果數量。
+</Accordion>
+
+## 一律執行關聯 (Always join)
+
+若不論是否選取關聯表的欄位，都希望執行該關聯，請將 `always` 設為 `true`。
+
+## 僅選取部分欄位
+
+使用 `fields` 標籤選取子集。例如：`messages` 僅需要 `users` 表的 `name` 和 `email`。
+
+## 在 YAML 中引用關聯維度或指標
+
+您可以跨模型引用。例如：在 `users` 的指標中使用 `subscriptions.plan` 進行過濾。
+
+<Warning>引用關聯欄位會增加依賴性。未來引用該模型時，必須一併包含該關聯，否則會報錯。</Warning>
+
+## 隱藏關聯表
+
+針對中間表，可設定 `hidden: true` 使其不在側邊欄顯示，但仍可在表格列表中作為獨立表格探索。
+
+## SQL 扇出 (SQL fanouts)
+
+當一對多關聯發生時，聚合指標可能會被重複計算。
+
+- **安全指標**：`min`, `max`, 以及帶有 `distinct` 的聚合（如 `count(distinct id)`）。
+- **風險指標**：未加 distinct 的 `sum`, `count`, `avg`。
+
+### Lightdash 如何解決扇出問題
+
+Lightdash 會在編譯出的 SQL 中自動加入多個 CTE（通用資料表運算式），透過主鍵進行去重計算，確保指標正確。這包含：
+1. `cte_keys`：確立結果粒度。
+2. `cte_metrics`：在正確粒度上計算受影響指標。
+3. `cte_unaffected`：計算不受影響指標。
+4. `final`：合併結果。
+
+### 已知限制
+- 引用關聯表維度的指標 SQL。
+- 帶有跨表維度過濾器的指標。
+- 多層級嵌套引用。
+- 預先聚合後的指標 (Rolledup metrics)。
+- 業務上刻意需要的扇出（如計費邏輯）。建議針對此類需求先建立專屬的 dbt 模型處理好粒度。

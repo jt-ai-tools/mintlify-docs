@@ -1,0 +1,142 @@
+---
+title: "Slack 整合"
+sidebarTitle: Slack
+description: "以下是關於 Lightdash Slack 整合您需要了解的一切內容。"
+---
+
+欲觀看操作影片，請參考我們的[加入 Slack 整合](/references/workspace/adding-slack-integration_zh_TW)以及[使用 Slack 整合](/guides/using-slack-integration_zh_TW)指南。
+
+## 必要權限
+
+Lightdash Slack 應用程式將請求以下權限範圍：
+
+* **針對 lightdash.cloud 的 `[links:read]`**：發送到 slack 的 lightdash.cloud 連結將傳送給我們的應用程式，以便我們進行內部請求並獲取圖表與儀表板資訊，進而能在 slack 中分享。
+* **`[links:write]`**：這允許我們對上述 URL 進行連結展開 (Unfurl)。
+
+系統不會從您的工作區分享任何其他內容。
+
+## 設定
+
+安裝應用程式後，您將看到以下設定：
+
+<Frame>
+![](/images/references/integrations/slack-integration/slack-settings.png)
+</Frame>
+
+### 選擇通知頻道
+您可以在此選擇一個 Slack 頻道，當組織中任何定時交付失敗時，Lightdash 將會向該頻道發送告警。
+
+您必須將 Lightdash 應用程式加入該組織，通知功能才能正常運作。
+
+### Slack 機器人頭像
+
+您可以透過在「Profile photo URL」欄位中添加圖片網址，來自定義您的 Lightdash Slack 應用程式頭像。Slack 建議使用正方形圖片，尺寸至少為 512x512 像素，且不超過 1024x1024 像素。
+
+### AI 代理配置
+
+配置 AI 代理與您的 Slack 工作區互動的方式。您可以控制 AI 代理在被提及時是否可以存取討論串訊息，以及使用 AI 代理是否需要 OAuth 身份驗證。
+
+欲了解 Slack 頻道限制與多代理支援的詳情，請參閱 [Slack 頻道限制](/guides/ai-agents/getting-started_zh_TW#slack-頻道限制)。
+
+#### 使用者歸因與 OAuth
+
+預設情況下，Slack 中的所有 AI 代理對話都歸因於安裝 Slack 應用程式（或建立代理）的使用者。這意味著每位 Slack 使用者的提問看起來都像是來自該單一使用者，且所有查詢都將以該使用者的權限執行。
+
+若要讓每位 Slack 使用者都能被正確識別並使用其各自的權限，請在這些設定中啟用 **AI Agents OAuth requirement (AI 代理 OAuth 要求)** 切換開關。啟用後：
+
+- 每位 Slack 使用者在使用 AI 代理前必須先通過 Lightdash 身份驗證
+- 對話將歸因於提出問題的個別使用者
+- 查詢將遵守每位使用者自己的 [使用者屬性與權限](/guides/ai-agents/data-access_zh_TW#使用者屬性與權限)
+
+<Tip>
+如果您的組織透過使用者屬性實施行級或欄級安全，或者您需要審計追蹤是哪些使用者提出了哪些問題，我們建議啟用 OAuth。
+</Tip>
+
+## 在私有頻道中使用 Lightdash
+
+Lightdash 支援私有 Slack 頻道，但因為 Slack 預設不允許應用程式看到私有頻道，您需要先手動將 Lightdash 應用程式加入您的私有頻道。
+
+要將 Lightdash 加入私有頻道，您可以：
+
+- **使用邀請指令** —— 在頻道中輸入 `/invite @Lightdash`
+
+<Frame>
+  ![](/images/references/integrations/slack-integration/slack-invite-command.png)
+</Frame>
+
+- **使用頻道設定** —— 點擊頻道名稱，前往 **Integrations** > **Add an app**，然後搜尋並加入 Lightdash
+
+<Frame>
+  ![](/images/references/integrations/slack-integration/slack-add-app-settings.png)
+</Frame>
+
+加入應用程式後，您可以透過以下方式在 Lightdash 中找到該頻道：
+
+- **重新整理頻道列表**：在 Lightdash UI 中重新整理。
+- **按 ID 搜尋頻道**：您可以透過右鍵點擊 Slack 頻道名稱，選擇「View channel details」，然後從彈窗底部複製頻道 ID (Channel ID)。
+
+<Frame>
+  ![](/images/references/integrations/slack-integration/slack-channel-id.png)
+</Frame>
+
+在 Lightdash 中，將頻道 ID 貼入頻道輸入框，並選擇「Look up channel ID」選項即可找到您的私有頻道。
+
+<Frame>
+  ![](/images/references/integrations/slack-integration/slack-lookup-id.png)
+</Frame>
+
+
+## 展開 Lightdash 連結 (Unfurl)
+
+安裝 Slack 應用程式後，它會自動展開您在 Slack 中分享的來自 Lightdash 專案的連結。Lightdash 應用程式必須先被邀請至頻道，才能在該頻道展開連結。
+
+從 URL 欄位複製的圖表與儀表板連結，以及點擊連結圖示複製的「分享」連結皆支援自動展開。
+
+<Note>
+在生成連結預覽時，查詢是使用「安裝 Slack 應用程式的使用者」憑據執行的。這意味著預覽將反映該使用者的數據存取權限，而非分享連結者的權限。如果安裝者的倉庫對話過期，連結預覽將失敗，直到他們重新進行身份驗證。
+</Note>
+
+這是個別圖表展開後的樣子：
+
+<Frame>
+  ![](/images/references/integrations/slack-integration/slack-chart-unfurl-45875cd3a4a3afc83b636571085be4c0.png)
+</Frame>
+這是儀表板展開後的樣子：
+
+<Frame>
+  ![](/images/references/integrations/slack-integration/slack-dashboard-unfurl-424589974afbb6574dff67199a9cdcda.png)
+</Frame>
+
+## 定時交付 (Scheduled deliveries)
+
+將 Slack 加入 Lightdash 組織後，您可以將其設定為定時交付的目的地。您可以為圖表或儀表板排程重新整理，並將結果傳送到 Slack 頻道或私訊 (DM)。
+
+若您選擇附加圖表圖片，結果會像這樣：
+
+<Frame>
+  ![](/images/references/integrations/slack-integration/slack-scheduled-chart-d2604af845afc166f4c13b2265a83b71.png)
+</Frame>
+若您選擇*不*包含圖片，儀表板的交付結果會像這樣：
+
+<Frame>
+  ![](/images/references/integrations/slack-integration/slack-scheduled-dashboard-a2e37864f7d080ea04d3cc28e367040e.png)
+</Frame>
+
+## Slack 中的儲存圖表告警
+
+除了定時交付，您還可以設定[儲存圖表告警](/guides/how-to-create-alerts_zh_TW)，當符合特定條件時才發送到 Slack。
+
+<Frame>
+  ![](/images/references/integrations/slack-integration/slack-alert-f80ad5e8c309f46972bb8e8a12238efc.png)
+</Frame>
+
+
+## AI 分析代理 (AI analyst agents)
+
+Slack 整合也供 AI 分析代理使用，讓您能在 Slack 中與數據對話並構建圖表。擁有 AI 分析權限後，您可以在整合設定中授予它們存取 Slack 討論串的權限。
+
+若要觸發 AI 回應，請在訊息中提及 Lightdash 應用程式。提及時只需使用統一的 Lightdash Slack 應用程式名稱，無需指定特定代理。Lightdash 會自動將問題路由到最合適的代理。若不明確應由哪個代理回應，系統會提示您選擇。
+
+<Note>
+預設情況下，所有 Slack AI 代理對話都歸因於安裝 Slack 應用程式的使用者。若要將對話歸因於個別 Slack 使用者（並遵守其數據權限），請在您的 [Slack 整合設定](#ai-代理配置) 中啟用 **AI Agents OAuth requirement**。
+</Note>

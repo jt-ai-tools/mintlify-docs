@@ -1,0 +1,63 @@
+---
+title: "Google 試算表 (Google Sheets)"
+description: "「同步 (Syncs)」讓您可以按排程將圖表結果傳送到您 Google 雲端硬碟中的 Google 試算表。"
+---
+
+## 同步 (Syncs)
+
+您可以根據需求設定任意數量的同步。如果您修改了內容，Lightdash 會在下次傳送時自動更新同步內容。
+
+
+## 建立同步
+
+所有具備編輯者 (Editor) 權限或以上的使用者都可以建立同步。操作步驟：在檢視或編輯模式下開啟您的圖表，點擊右上角的三點選單，然後點擊 `Google Sheets Sync`。
+
+<Frame>
+  ![](/images/references/integrations/new-sync.png)
+</Frame>
+
+彈窗會顯示該儲存圖表目前已有的同步列表，您也可以選擇 `Create new Sync` (建立新同步)。點擊後將進入配置介面以設定新的 Google 試算表同步。
+
+<Frame>
+  ![](/images/references/integrations/new-sync-setup.png)
+</Frame>
+
+建立同步時，Lightdash 還會在您的 Google 試算表中建立一個名為 `metadata` 的特殊分頁，其中包含該表最後一次更新的時間與頻率間隔。這能讓使用者輕鬆了解試算表內數據的更新頻率。
+
+<Info>
+  預設情況下，數據會同步到 Google 試算表的第一個分頁，並覆蓋所有既有內容。如果您想選擇特定的分頁，請使用 **Save in new tab (儲存在新分頁)** 選項。
+</Info>
+
+## 同步選項
+
+- **Name** (名稱)：此同步在 Lightdash 中的名稱。
+- **Frequency** (頻率)：Google 試算表的同步頻率。您可以選擇每小時、每天、每週、每月或自定義 —— 每種頻率都有各自的詳細選項。例如，設定每月排程時，您可以指定每月的哪一天與時間執行。自定義頻率允許您編寫自己的 Cron 表達式。所有排程時間皆以 UTC 為準。
+- **Select Google Sheet** (選擇 Google 試算表)：使用檔案選取器選取您想同步圖表結果的 Google 試算表。注意：您必須先建立好該試算表，才能在此處選取。
+- **Save in new tab** (儲存在新分頁)：啟用後，您可以設定一個用於儲存同步數據的分頁名稱。如果該分頁在試算表中尚不存在，系統會自動建立。這能避免覆蓋試算表的第一個分頁。
+
+設定好所有同步選項後，點擊 `Sync` 即可。
+
+
+## 同步概覽
+
+具備管理員角色的使用者可以在專案設置中造訪同步概覽。
+
+在 `Syncs & Scheduled deliveries` 概覽頁面中，您可以看到所有同步（以及定時交付）的列表、最近的交付狀態，以及專案中所有的歷史記錄。
+
+要造訪概覽頁面，請前往專案設置，然後點擊 `Syncs & Scheduled deliveries` 標籤。
+
+<Frame>
+  ![](/images/references/integrations/google-sheets/sync-with-google-sheets-dashboard-overview-82473c0bc5b7a62b20b25443fbcbc9a9.png)
+</Frame>
+
+在此處，您還可以點擊每個同步旁邊的三點選單來進行編輯或刪除。
+
+<Frame>
+  ![](/images/references/integrations/google-sheets/sync-with-google-sheets-dashboard-overview-three-dot-menu-4fb3bae81cb7b62347ca8d1c608d9d7b.png)
+</Frame>
+
+從概覽頁面編輯同步將會帶您進入與建立新同步相同的配置介面。從概覽頁面刪除同步則會將其從圖表中移除。
+
+## Google API 服務使用者數據政策
+
+Lightdash 對從 Google API 接收到的資訊之使用與傳輸，均遵守 [Google API 服務使用者數據政策](https://developers.google.com/terms/api-services-user-data-policy)，包含「有限使用 (Limited Use)」規範。

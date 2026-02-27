@@ -1,0 +1,214 @@
+---
+title: "行函數 (Row functions)"
+description: "內建函數，用於在表格計算中存取其他行的值。"
+---
+
+<Info>
+  **表格計算函數為實驗性功能。**
+
+  隨著我們的持續疊代，這些函數可能會在未經通知的情況下變動或更新。詳情請參閱[功能成熟度分級](/references/workspace/feature-maturity-levels_zh_TW)。
+</Info>
+
+行函數讓您可以引用其他行的數值，而無需手動編寫 SQL 視窗函數。它們使用 `${table.column}` 語法來引用結果表格中的欄位。
+
+<Note>
+行函數使用查詢當前的「排序順序」來決定行位置。更改結果的排序方式將會改變這些函數的輸出。
+</Note>
+
+## row
+
+回傳當前行的列號（從 1 開始）。
+
+```
+row()
+```
+
+**參數：** 無
+
+**範例**
+
+為結果添加一個列號欄位：
+
+```
+row()
+```
+
+<Accordion title="編譯後的 SQL">
+```sql
+ROW_NUMBER() OVER (ORDER BY ...)
+```
+
+`ORDER BY` 子句會使用查詢中配置的排序順序。
+</Accordion>
+
+---
+
+## offset
+
+回傳相對於當前行位移量之行中的欄位數值。
+
+```
+offset(column, rowOffset)
+```
+
+| 參數 | 類型 | 描述 |
+| :--- | :--- | :--- |
+| `column` | 欄位引用 | 要獲取數值的欄位 |
+| `rowOffset` | 整數 | 行位移量。負數 = 前面的行，正數 = 後面的行，0 = 當前行 |
+
+**範例**
+
+獲取前一行的營收以計算期對期變化：
+
+```
+${orders.total_revenue} - offset(${orders.total_revenue}, -1)
+```
+
+<Accordion title="編譯後的 SQL">
+對於負位移量（前面的行）：
+```sql
+LAG(${orders.total_revenue}, 1) OVER (ORDER BY ...)
+```
+
+對於正位移量（後面的行）：
+```sql
+LEAD(${orders.total_revenue}, 1) OVER (ORDER BY ...)
+```
+
+位移量為 0 時，直接回傳欄位值而不使用視窗函數。
+</Accordion>
+
+---
+
+## index
+
+回傳特定絕對行位置（從 1 開始）的表達式數值。
+
+```
+index(expression, rowIndex)
+```
+
+| 參數 | 類型 | 描述 |
+| :--- | :--- | :--- |
+| `expression` | 欄位引用或 SQL 表達式 | 要計算的表達式 |
+| `rowIndex` | 整數 (≥ 1) | 要獲取數值的行位置（從 1 開始） |
+
+**範例**
+
+將每一行的營收與第一行的營收進行比較：
+
+```
+${orders.total_revenue} / index(${orders.total_revenue}, 1)
+```
+
+<Accordion title="編譯後的 SQL">
+```sql
+NTH_VALUE(${orders.total_revenue}, 1) OVER (
+  ORDER BY ...
+  ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+)
+```
+</Accordion>
+
+---
+
+## lookup
+
+在某一欄中尋找特定值，並回傳另一欄對應的數值。
+
+```
+lookup(value, lookupColumn, resultColumn)
+```
+
+| 參數 | 類型 | 描述 |
+| :--- | :--- | :--- |
+| `value` | 任意 | 要搜尋的值 |
+| `lookupColumn` | 欄位引用 | 搜尋範圍欄位 |
+| `resultColumn` | 欄位引用 | 回傳值所在的欄位 |
+
+若有多行匹配，則回傳 `resultColumn` 中最大的匹配值。
+
+**範例**
+
+尋找特定狀態的營收：
+
+```
+lookup('completed', ${orders.status}, ${orders.total_revenue})
+```
+
+<Accordion title="編譯後的 SQL">
+```sql
+MAX(
+  CASE WHEN ${orders.status} = 'completed'
+    THEN ${orders.total_revenue}
+    ELSE NULL
+  END
+) OVER ()
+```
+</Accordion>
+
+---
+
+## offset_list
+
+回傳從相對於當前行的位移量開始，連續多行的數值陣列。
+
+```
+offset_list(column, rowOffset, numValues)
+```
+
+| 參數 | 類型 | 描述 |
+| :--- | :--- | :--- |
+| `column` | 欄位引用 | 要獲取數值的欄位 |
+| `rowOffset` | 整數 | 起始行位移量。負數 = 前面，正數 = 後面，0 = 當前 |
+| `numValues` | 整數 | 要包含的連續行數 |
+
+**範例**
+
+獲取當前及前兩行的營收數值（3 個時段的視窗）：
+
+```
+offset_list(${orders.total_revenue}, -2, 3)
+```
+
+<Accordion title="編譯後的 SQL">
+```sql
+ARRAY[
+  LAG(${orders.total_revenue}, 2) OVER (ORDER BY ...),
+  LAG(${orders.total_revenue}, 1) OVER (ORDER BY ...),
+  ${orders.total_revenue}
+]
+```
+</Accordion>
+
+---
+
+## list
+
+將多個數值組合成一個陣列。與其他行函數不同，`list` 不使用視窗化處理。
+
+```
+list(value1, value2, ..., valueN)
+```
+
+| 參數 | 類型 | 描述 |
+| :--- | :--- | :--- |
+| `value1...valueN` | 任意 | 要組合成陣列的數值或表達式 |
+
+**範例**
+
+建立特定欄位數值的陣列：
+
+```
+list(${orders.total_revenue}, ${orders.total_cost}, ${orders.total_profit})
+```
+
+<Accordion title="編譯後的 SQL">
+```sql
+ARRAY[
+  ${orders.total_revenue},
+  ${orders.total_cost},
+  ${orders.total_profit}
+]
+```
+</Accordion>

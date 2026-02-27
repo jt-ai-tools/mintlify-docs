@@ -1,0 +1,58 @@
+---
+title: "群組 (Groups)"
+description: "群組是一種同時管理多個使用者造訪權限的方式。一個使用者可以屬於多個群組。"
+---
+
+<Info>
+  **群組功能僅適用於 Lightdash Cloud Pro 與 Enterprise (企業版) 方案。**
+
+  欲了解更多關於方案的資訊，請造訪我們的[定價頁面](https://www.lightdash.com/pricing)。
+</Info>
+
+要查看與管理您的群組，請前往 `Organization Settings` \> `Users & groups` 標籤。僅具備「組織管理員 (Organization Admin)」角色的使用者可以管理群組。
+
+<Frame>
+  ![](/images/references/workspace/groups-management-page-8871b97449641ed560fbd5dd34637802.jpg)
+</Frame>
+
+## 建立群組
+
+要建立新群組，請前往 `Organization Settings` \> `Users & groups` \> `Add group`。您可以為群組命名，並將組織內的使用者加入該群組。預設情況下，新建立的群組沒有任何造訪權限。
+
+## 編輯群組
+
+要編輯群組，請點擊清單中群組右側的編輯按鈕。您可以從群組中新增或移除使用者，並變更群組名稱。
+
+若要將某人從群組中移除，點擊群組成員右側的 `x` 即可。
+
+## 刪除群組
+
+要刪除群組，點擊清單中群組右側的刪除圖示即可將其移除。
+
+## 為群組分配角色
+
+要為群組分配角色，請使用 `Organization settings` 選單中的 `Project access` (專案存取) 頁面。在那裡，您可以將一個或多個群組分配給某個角色，這將決定他們對專案的造訪權限。詳情請參閱 [專案角色](/references/workspace/roles_zh_TW#專案角色) 頁面。
+
+## 為群組分配使用者屬性
+
+您可以為群組以及個別使用者分配使用者屬性。欲了解更多關於如何使用使用者屬性管理群組數據造訪的資訊，請參考 [使用者屬性文件](/references/workspace/user-attributes_zh_TW#將使用者屬性分配給使用者與群組)。
+
+## 使用 OKTA 管理 Lightdash 中的群組
+
+<Warning>
+  **此功能已棄用，並將在未來的版本中移除。**
+
+  欲了解更多關於如何在 Lightdash 中配置使用者與群組的資訊，請參閱 [SCIM 整合](/references/workspace/scim-integration_zh_TW) 文件。
+</Warning>
+
+如果您的 Lightdash 執行體被配置為[使用 OKTA 作為身份驗證提供商](/self-host/customize-deployment/use-sso-login-for-self-hosted-lightdash_zh_TW#okta)，則使用者將自動被分配到 Lightdash 中與 OKTA 相同的群組中。欲了解更多關於設定正確環境變數以及 Okta 配置（包含/不包含自定義授權伺服器）的資訊，請參考 [設定 OKTA 指南](/self-host/customize-deployment/use-sso-login-for-self-hosted-lightdash_zh_TW#okta)。
+
+<Info>
+  請注意，使用者僅會被分配到 Lightdash 中「已存在」且名稱與 OKTA 群組名稱「完全一致」的群組（系統不會自動建立群組）。
+</Info>
+
+要使用 OKTA 管理 Lightdash 中的群組，您需要：
+
+1. [在 OKTA 的目錄中設定群組](https://help.okta.com/en-us/content/topics/users-groups-profiles/usgp-bulk-assign-group-people.htm)
+2. [允許群組從 Okta 登入 Lightdash](https://help.okta.com/en-us/content/topics/users-groups-profiles/usgp-assign-app-group.htm)
+3. 最後，為了讓群組同步生效，您需要[配置 Okta 以與 Lightdash 分享群組資訊](https://developer.okta.com/docs/guides/customize-tokens-groups-claim/main/#add-a-groups-claim-for-a-custom-authorization-server)

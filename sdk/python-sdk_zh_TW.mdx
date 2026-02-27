@@ -1,0 +1,105 @@
+---
+title: "Python SDK"
+description: "使用原生 Python 語法查詢您的語義層。"
+---
+
+Lightdash Python SDK 讓您可以直接從 Python 查詢語義層。不論是在 Jupyter notebook、Python 指令碼或任何使用 Python 的環境中，都能確保每個人都從單一事實來源 (Single source of truth) 獲取數據。
+
+<Card title="查看實際應用" icon="notebook" href="https://github.com/lightdash/python-sdk/blob/main/examples/getting_started.ipynb">
+  嘗試「快速入門」Jupyter notebook 進行實機操作。
+</Card>
+
+## 安裝
+
+```bash
+pip install lightdash
+```
+
+## 快速入門
+
+```python
+from lightdash import Client
+
+client = Client(
+    instance_url="https://app.lightdash.cloud",
+    access_token="您的權杖",
+    project_uuid="您的專案-uuid",
+)
+model = client.get_model("orders")
+
+# 構建並執行查詢
+result = (
+    model.query()
+    .metrics(model.metrics.revenue, model.metrics.profit)
+    .dimensions(model.dimensions.country)
+    .filter(model.dimensions.status == "active")
+    .sort(model.metrics.revenue.desc())
+    .limit(100)
+    .execute()
+)
+
+# 以 DataFrame 格式獲取結果
+df = result.to_df()
+
+# 或以字典清單 (list of dictionaries) 格式獲取
+records = result.to_records()
+```
+
+## 過濾器 (Filters)
+
+在維度上使用 Python 比較運算子來建立過濾器：
+
+```python
+# 等於與不等於
+model.dimensions.country == "USA"
+model.dimensions.country != "USA"
+
+# 數值比較
+model.dimensions.amount > 1000
+model.dimensions.amount >= 1000
+model.dimensions.amount < 500
+model.dimensions.amount <= 500
+
+# 字串操作
+model.dimensions.name.starts_with("John")
+model.dimensions.name.ends_with("son")
+model.dimensions.name.contains("Smith")
+
+# 列表成員身分
+model.dimensions.country.in_(["USA", "UK", "Canada"])
+
+# 空值檢查
+model.dimensions.email.is_null()
+model.dimensions.email.is_not_null()
+```
+
+### 組合過濾器
+
+使用 `&` (AND) 與 `|` (OR) 組合過濾器：
+
+```python
+# AND (且)
+f = (model.dimensions.country == "USA") & (model.dimensions.amount > 1000)
+
+# OR (或)
+f = (model.dimensions.status == "active") | (model.dimensions.status == "pending")
+
+# 複雜組合
+f = (
+    (model.dimensions.country == "USA") &
+    ((model.dimensions.amount > 1000) | (model.dimensions.priority == "high"))
+)
+```
+
+## 原始 SQL
+
+直接對您的數據倉庫執行 SQL 查詢：
+
+```python
+result = client.sql("SELECT * FROM orders WHERE status = 'active' LIMIT 100")
+df = result.to_df()
+```
+
+---
+
+欲了解詳細文件，請參考 [GitHub 上的 SDK 參考指南](https://github.com/lightdash/python-sdk/tree/main/docs)。

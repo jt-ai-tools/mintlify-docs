@@ -1,0 +1,71 @@
+---
+title: "使用量分析 (Usage analytics)"
+description: "為了了解誰在造訪內容或在 Lightdash 專案中執行查詢，我們構建了使用量分析功能來協助您進行追蹤。"
+---
+
+了解使用者活動有兩種方式：
+
+1. [**使用量分析儀表板**](#使用量分析儀表板) —— 這些是由 Lightdash 建立的儀表板，為您提供專案內容與使用者活動的概覽。
+2. [**查詢標籤 (Query tags)**](#查詢標籤) —— 這是附加在數據倉庫查詢中的元數據，提供關於誰在查詢數據以及查詢內容的資訊。
+
+## 使用量分析儀表板
+
+每個專案都具備由 Lightdash 建立的使用量分析儀表板，提供專案內容與使用者活動的概覽。
+
+要查看專案的使用量分析儀表板，只需點擊 `settings` (設置) 圖示，選擇 `project settings` (專案設置)，然後點擊 `usage analytics`。
+
+<Frame>
+  ![](/images/references/workspace/access-usage-analytics-84a955690c23e22d4a5594e76f134737.jpg)
+</Frame>
+
+您也可以使用[搜尋列](/get-started/exploring-data/exploring-your-content_zh_TW#使用搜尋列)，透過輸入儀表板名稱（例如：User activity）直接存取不同的分析儀表板。
+
+### 使用者活動儀表板 (User Activity dashboard)
+
+此儀表板讓您對專案中的使用者及其活動情況有一整體的了解。
+
+<Frame>
+  ![](/images/references/workspace/user-activity-dashboard-e95a42bb99c5ed04f3434b1cbf9e5f4b.jpg)
+</Frame>
+
+以下是儀表板中各個欄位的說明：
+
+- **Number of users** (使用者總數)：具備該專案造訪權限的使用者總數。
+- **Number of viewers** (檢視者人數)：具備 `viewer` 角色的使用者人數。
+- **Number of editors** (編輯者人數)：具備 `editor` 角色的使用者人數。
+- **Number of admins** (管理員人數)：具備 `admin` 角色的使用者人數。
+- **% of weekly querying users** (每週執行查詢使用者比例)：過去 7 天內在專案中執行過至少一次查詢的使用者佔比（包含查看現有圖表與儀表板）。
+- **Number of weekly querying users** (每週執行查詢使用者人數)：過去 7 天內執行過查詢的使用者人數。
+- **Weekly average number of queries per user** (每位使用者每週平均查詢次數)：每位使用者執行查詢次數的 7 天滾動平均值。
+- **Users that have run the most queries in the last 7 days** (過去 7 天執行最多查詢的使用者)：列出查詢頻率最高的前幾名使用者。
+- **Users that have updated the most charts in the last 7 days** (過去 7 天更新最多圖表的使用者)：列出更新或建立圖表頻率最高的使用者。
+- **Users that have not run a query in the last 90 days** (過去 90 天未執行查詢的使用者)：列出在該時段內未曾執行查詢（包含查看）的使用者。
+
+## 查詢標籤 (Query tags)
+
+查詢標籤是附加在數據倉庫查詢中的元數據，提供關於每次執行查詢的詳情。
+
+系統會發送以下查詢標籤：
+
+| 查詢標籤 | 詳細資訊 |
+| :---------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| organization_uuid | Lightdash 組織的唯一識別碼。 |
+| project_uuid | Lightdash 專案的唯一識別碼。 |
+| user_uuid | 使用者的唯一識別碼。 |
+| dashboard_uuid | 儀表板的唯一識別碼。 |
+| chart_uuid | 圖表的唯一識別碼。 |
+| explore_name | 探索 (Explore) 的名稱。 |
+| query_context | 執行查詢的上下文背景。<br /><br />對應關係：<br />- 儀表板：`dashboardView` <br />- 探索：`exploreView`<br />- 圖表：`chartView`<br />- SQL 圖表：`sqlChartView` |
+
+查詢標籤在不同數據倉庫中的儲存方式有所不同：
+
+| 數據倉庫 | 查詢標籤儲存方式 |
+| :------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| BigQuery | 以標籤 (Labels) 形式將元數據寫入您的 [工作歷史記錄 (Job history)](https://cloud.google.com/bigquery/docs/managing-jobs#view%5Fjob%5Fdetails%5F2)。 |
+| Snowflake | 以 JSON 元數據形式寫入 [查詢歷史記錄 (Query history)](https://docs.snowflake.com/en/user-guide/ui-history#viewing-query-details-and-results) 的註釋欄位。 |
+| ClickHouse | 以 JSON 元數據形式寫入 [查詢日誌 (Query log)](https://clickhouse.com/docs/operations/system-tables/query_log) 的註釋欄位。 |
+| Trino | 在提交的每個 SQL 查詢中以 SQL 註釋形式附加 JSON 元數據。 |
+| Redshift | 在提交的每個 SQL 查詢中以 SQL 註釋形式附加 JSON 元數據。 |
+| Databricks | 在提交的每個 SQL 查詢中以 SQL 註釋形式附加 JSON 元數據。 |
+| Postgres | 在提交的每個 SQL 查詢中以 SQL 註釋形式附加 JSON 元數據。 |
+| Athena | 在提交的每個 SQL 查詢中以 SQL 註釋形式附加 JSON 元數據。 |

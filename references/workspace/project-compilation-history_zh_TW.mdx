@@ -1,0 +1,78 @@
+---
+title: "專案編譯歷史 (Project compilation history)"
+description: "查看專案編譯歷史，以追蹤變更、監控部署並排除編譯問題。"
+---
+
+專案編譯日誌提供了 Lightdash 專案編譯的完整歷史記錄，讓管理員與專案經理能監控專案變更、追蹤部署情況並識別任何編譯問題。
+
+## 造訪專案編譯日誌
+
+要查看專案的編譯日誌：
+
+1. 點擊導覽列中的 `settings` (設置) 圖示。
+2. 導覽至 `project settings` (專案設置)。
+3. 從選單中選擇 `compilation history` (編譯歷史)。
+
+<Frame>
+  ![](/images/references/workspace/compilation-history-settings.png)
+</Frame>
+
+## 了解編譯日誌項目
+
+編譯歷史顯示了所有專案編譯的列表，展示了每次編譯發生的時間、觸發者以及來源（例如 `Refresh dbt`、`CLI Deploy`）。
+
+### 查看編譯詳情
+
+點擊任何一條日誌項目即可查看該次編譯的詳細資訊，包括：
+
+- **使用者與觸發源 (User and trigger)**：誰發起了編譯以及是如何觸發的。
+- **編譯報告 (Compilation report)**：
+  - 專案中的指標 (Metrics)、維度 (Dimensions) 與探索 (Explores) 的總數。
+  - 包含的 dbt 模型列表。
+  - 成功的探索數量 vs. 出現錯誤的探索數量。
+  - 針對任何失敗探索的詳細錯誤訊息。
+
+<Frame>
+  ![](/images/references/workspace/compilation-history-log-details.png)
+</Frame>
+
+## 在 dbt 重新整理時查看日誌
+
+當您在 UI 中使用 `Refresh dbt` 按鈕時，編譯日誌會在作業完成時顯示。重新整理完成後，您可以直接在作業通知中查看完整的編譯詳情。
+
+<Frame>
+  ![](/images/references/workspace/compilation-history-job-status.png)
+</Frame>
+
+## 常見使用場景
+
+### 排除編譯失敗問題
+
+當編譯失敗時，使用日誌來：
+
+1. 識別失敗發生的時間。
+2. 查看是哪個使用者或程序觸發了編譯。
+3. 審查錯誤訊息與堆疊追蹤 (Stack traces)。
+4. 與先前成功的編譯進行比較，以找出變動之處。
+
+### 監控部署活動
+
+追蹤您的專案何時被部署到生產環境：
+
+- 監控部署頻率。
+- 識別誰正在進行變更。
+- 驗證自動化部署是否按預期執行。
+- 為合規性要求審計變更。
+
+### 了解專案隨時間的變遷
+
+使用編譯日誌來：
+
+- 追蹤語義層 (Semantic layer) 的演進。
+- 查看何時新增了新的指標或維度。
+- 監控專案開發的速度。
+- 識別團隊工作模式。
+
+## 權限
+
+僅具備管理員或專案管理員權限的使用者可以造訪編譯日誌。欲了解更多關於造訪層級的資訊，請參考 [角色與權限](/references/workspace/roles_zh_TW)。

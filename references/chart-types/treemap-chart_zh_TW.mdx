@@ -1,0 +1,44 @@
+---
+title: "樹狀圖 (Treemap chart)"
+description: "使用樹狀圖透過巢狀矩形展示整體中的各個部分。"
+icon: "chart-tree-map"
+---
+
+樹狀圖使用巢狀矩形展示整體中的各個部分。每個矩形的大小代表指標的數值，而維度則定義了數據的分組與巢狀方式。您可以使用單個或多個維度，其運作方式如下所述。
+
+**一個維度**：每個類別變為一個矩形，其大小由指標數值決定。
+
+<Frame>
+  ![](/images/references/chart-types/treemap-single-dim.png)
+</Frame>
+
+**兩個維度**：建立一個層級結構，每個矩形根據第二個維度進一步拆分為子矩形。
+
+<Frame>
+  ![](/images/references/chart-types/treemap-two-dims.png)
+</Frame>
+
+**三個或更多維度**：圖表顯示頂層層級。使用者可以點擊以向下鑽取 (Drill down) 到更深層。
+
+<Frame>
+  ![](/images/references/chart-types/treemap-drilldown.gif)
+</Frame>
+
+樹狀圖在以下情況非常有用：
+
+- 您想比較各類別間的比例。
+- 您正在視覺化具備層級結構的數據。
+- 空間有限，您想要一個比長條圖或圓餅圖更精簡的替代方案。
+
+要建立樹狀圖，請選擇 **Treemap** 作為圖表類型並挑選您的維度。
+
+## 版面配置 (Layout)
+
+- **Dimension hierarchy (維度層級)**：告訴 Lightdash 如何對維度進行分組或巢狀排列。
+- **Size metric (大小指標)**：決定樹狀圖中每個區塊的大小。
+- **Color metric (顏色指標)**：讓您可以設定色階來高亮顯示樹狀圖的每個區塊。
+
+## 顯示 (Display)
+
+- **Minimum section size (最小區塊大小)**：決定何時開始隱藏區塊，任何小於此尺寸的區塊需透過縮放才能看到。
+- **Max leaf depth (最大葉節點深度)**：允許您選擇使用者何時需要開始鑽取區塊以查看下一層級，預設值為 2。

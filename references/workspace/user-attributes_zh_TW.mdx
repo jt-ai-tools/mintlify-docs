@@ -1,0 +1,638 @@
+---
+title: "使用者屬性 (User attributes)"
+description: "使用者屬性提供了一種根據登入使用者自定義 Lightdash 圖表、儀表板和其他行為的方式。例如，您可以讓銷售團隊成員僅看到與其負責區域相關的數據。"
+---
+
+使用者屬性是為整個組織定義的，且僅能為文字值（不能是日期或數字）。使用者屬性的一些範例包括：
+
+- 銷售區域 (Sales region)
+- 部門 (Department)
+- 是否可查看 PII (Can view PII)
+- 是否可查看財務數據 (Can view financial data)
+
+要開始使用使用者屬性，您需要遵循兩個步驟：
+
+1. 定義使用者屬性：使用者只能擁有由管理員明確建立的屬性。
+2. 為每個使用者設定屬性值。
+
+使用者屬性僅能由管理員管理。
+
+<iframe width="100%" height="420" src="https://www.youtube.com/embed/eSUULAeBZU8" title="如何建立使用者屬性" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen />
+
+## 管理使用者屬性
+
+### 建立使用者屬性
+
+要建立使用者屬性，請導覽至 **Organization Settings** \> **User Attributes**，然後點擊 **Add attribute** 按鈕。這會建立一個新的使用者屬性，但尚未分配給任何使用者。
+
+### 將使用者屬性分配給使用者與群組
+
+您可以透過導覽至 **Organization Settings** \> **User Attributes** 並點擊您想分配的屬性，將其分配給使用者或[群組 (Groups)](/references/workspace/groups_zh_TW)。透過電子郵件地址選取使用者，或透過群組名稱選取群組，並設定其數值。
+
+### 為使用者屬性設定預設值
+
+您可以添加一個預設屬性值，該值將套用到所有未定義該屬性個別數值的使用者。
+
+<Frame>
+  ![](/images/references/workspace/user-attribute-default-value-5618464d7ec3e8f71a78d0af4d409229.png)
+</Frame>
+
+如果使用者已定義了特定數值，我們將忽略該使用者的預設值。
+
+## 在 Lightdash 中使用使用者屬性
+
+Lightdash 有多個位置可以根據使用者屬性自定義行為。
+
+### 我可以在哪裡引用使用者屬性？
+
+使用者屬性可以在模型 YAML 檔案的以下特定上下文中使用：
+
+- `sql_filter:` - 用於模型層級的行過濾
+- `required_attributes:` - 用於欄位與表格的存取控制（AND 邏輯 —— 需符合所有條件）
+- `any_attributes:` - 用於欄位與表格的存取控制（OR 邏輯 —— 至少符合一個條件）
+- `sql_on:` - 用於過濾關聯 (Joins)
+
+<Info>
+  使用者屬性目前無法在模型 YAML 檔案的 `sql:` 標籤內被引用。
+</Info>
+
+在 SQL 中引用使用者屬性時，可以使用以下 [SQL 變數](/references/sql-variables_zh_TW)：
+
+- `${lightdash.attributes.my_attr_1}` - 名為 `my_attr_1` 的使用者屬性
+  - （選填）`ld` 作為 `lightdash` 的別名
+  - （選填）`attribute` 或 `attr` 作為 `attributes` 的別名
+- `${lightdash.user.<intrinsic_attribute>}` - 引用當前 Lightdash 使用者的「內建屬性」
+  - （選填）`ld` 作為 `lightdash` 的別名
+  - 可用的內建使用者屬性：
+    - `email` (電子郵件)
+
+<Info>
+  **使用者電子郵件屬性僅在電子郵件已驗證時可用。**
+
+  這是一項安全措施，旨在防止使用者使用不屬於自己的電子郵件建立/更新帳號，從而獲得不應造訪的數據。
+
+  如果使用者電子郵件未經驗證，您將收到以下錯誤：
+
+  <Frame>
+    ![](/images/references/workspace/user-attributes-info.png)
+  </Frame>
+  <Tabs>
+    <Tab title="dbt v1.9 及更早版本">
+      ```yaml
+      models:
+        - name: example
+          meta:
+            sql_filter: ${lightdash.user.email} = 'example@lightdash.com'
+      ```
+    </Tab>
+    <Tab title="dbt v1.10+">
+      ```yaml
+      models:
+        - name: example
+          config:
+            meta:
+              sql_filter: ${lightdash.user.email} = 'example@lightdash.com'
+      ```
+    </Tab>
+    <Tab title="Lightdash YAML">
+      ```yaml
+      type: model
+      name: example
+
+      sql_filter: ${lightdash.user.email} = 'example@lightdash.com'
+      ```
+    </Tab>
+  </Tabs>
+
+  如果您是自託管使用者，可以啟用 [SMTP](/self-host/customize-deployment/configure-smtp-for-lightdash-email-notifications_zh_TW) 或 [SSO](/self-host/customize-deployment/use-sso-login-for-self-hosted-lightdash_zh_TW) 驗證，以便使用者驗證其電子郵件地址。
+</Info>
+
+### 使用 `sql_filter` 進行行過濾 (Row filtering)
+
+您可以使用使用者屬性來過濾查詢回傳的行。這在您想根據使用者的屬性限制數據時非常有用。要在 SQL 中引用使用者屬性，請使用特殊的 Lightdash 引用語法 `${lightdash.attributes.<attribute_name> }`。由於該屬性可能包含多個值，建議使用 `IN` 運算子。
+
+例如，如果您有一個名為 `sales_region` 的使用者屬性，可以像這樣在 SQL 中使用它：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: my_model
+        meta:
+          sql_filter: ${TABLE}.sales_region IN (${lightdash.attributes.sales_region})
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: my_model
+        config:
+          meta:
+            sql_filter: ${TABLE}.sales_region IN (${lightdash.attributes.sales_region})
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: my_model
+
+    sql_filter: ${TABLE}.sales_region IN (${lightdash.attributes.sales_region})
+    ```
+  </Tab>
+</Tabs>
+
+### 使用 `required_attributes` 進行欄位過濾
+
+您可以使用使用者屬性來限制某些維度僅供部分使用者造訪。
+
+<Info>
+  不具備造訪權限的使用者將無法看到該維度，也無法看到**基於該維度衍生的指標**。
+</Info>
+
+在下方範例中，只有 `is_admin` 屬性為 `true` 的使用者才能造訪 `user` 表中的 `salary` (薪資) 維度。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: user
+        description: 使用者名稱
+      - name: salary
+        description: 使用者薪資
+        meta:
+          dimension:
+            required_attributes:
+              is_admin: "true"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    columns:
+      - name: user
+        description: 使用者名稱
+      - name: salary
+        description: 使用者薪資
+        config:
+          meta:
+            dimension:
+              required_attributes:
+                is_admin: "true"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: users
+
+    dimensions:
+      - name: user
+        description: 使用者名稱
+      - name: salary
+        description: 使用者薪資
+        required_attributes:
+          is_admin: "true"
+    ```
+  </Tab>
+</Tabs>
+
+如果無權限的使用者執行包含該維度的查詢，會收到 `Forbidden` 錯誤。此外，如果使用者執行包含基於該維度衍生指標的查詢，他們在探索頁面將看不到該指標，且無法對其發起查詢。
+
+您可以為單個維度添加多個屬性，有以下兩種方式：
+
+1. **「多個屬性以 AND 結合」**：在下方範例中，只有同時具備 `is_admin: "true" AND team_name: "HR"` 的使用者才能造訪 Lightdash 中的 `salary` 維度。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: user
+        description: 使用者名稱
+      - name: salary
+        description: 使用者薪資
+        meta:
+          dimension:
+            required_attributes:
+              is_admin: 'true'
+              team_name: 'HR'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    columns:
+      - name: user
+        description: 使用者名稱
+      - name: salary
+        description: 使用者薪資
+        config:
+          meta:
+            dimension:
+              required_attributes:
+                is_admin: 'true'
+                team_name: 'HR'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: users
+
+    dimensions:
+      - name: user
+        description: 使用者名稱
+      - name: salary
+        description: 使用者薪資
+        required_attributes:
+          is_admin: 'true'
+          team_name: 'HR'
+    ```
+  </Tab>
+</Tabs>
+
+2. **「多個屬性值以 OR 結合」**：在下方範例中，具有 `team_name = 'HR' OR team_name = 'C-Suite'` 的使用者均可造訪 Lightdash 中的 `salary` 維度。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: user
+        description: 使用者名稱
+      - name: salary
+        description: 使用者薪資
+        meta:
+          dimension:
+            required_attributes:
+              team_name: ['HR', 'C-Suite']
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    columns:
+      - name: user
+        description: 使用者名稱
+      - name: salary
+        description: 使用者薪資
+        config:
+          meta:
+            dimension:
+              required_attributes:
+                team_name: ['HR', 'C-Suite']
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: users
+
+    dimensions:
+      - name: user
+        description: 使用者名稱
+      - name: salary
+        description: 使用者薪資
+        required_attributes:
+          team_name: ['HR', 'C-Suite']
+    ```
+  </Tab>
+</Tabs>
+
+<Info>
+  使用 `required_attributes` 進行欄位過濾時，不包含使用者的內建屬性 —— `email`。
+</Info>
+
+### 使用 `any_attributes` 進行欄位過濾
+
+`required_attributes` 使用 AND 邏輯（所有條件都必須符合），而 `any_attributes` 使用 OR 邏輯 —— 使用者只需符合**至少一個**條件即可造訪維度。
+
+在下方範例中，具有 `department = "sales"` **或** `department = "finance"` **或** `role = "analyst"` 的使用者皆可看到 `revenue` 維度。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: revenue
+        description: 總營收
+        meta:
+          dimension:
+            any_attributes:
+              department: ["sales", "finance"]
+              role: "analyst"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    columns:
+      - name: revenue
+        description: 總營收
+        config:
+          meta:
+            dimension:
+              any_attributes:
+                department: ["sales", "finance"]
+                role: "analyst"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    dimensions:
+      - name: revenue
+        description: 總營收
+        any_attributes:
+          department: ["sales", "finance"]
+          role: "analyst"
+    ```
+  </Tab>
+</Tabs>
+
+`any_attributes` 中的每個項目都是獨立的條件。使用者只需滿足**其中任一**條件即可。單一鍵值對應的陣列值（如 `["sales", "finance"]`）表示該鍵接受其中任何一個值。
+
+### 合併使用 `required_attributes` 與 `any_attributes`
+
+您可以同時使用 `required_attributes` 與 `any_attributes`。當兩者皆設定時，**兩項**檢查都必須通過：
+
+1. 必須符合 `required_attributes` 中的「所有」條件 (AND)
+2. 必須符合 `any_attributes` 中的「至少一個」條件 (OR)
+
+在下方範例中，使用者必須同時具備 `access_level = "2"` **且** (`department = "sales"` **或** `department = "finance"`) 才能造訪。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: revenue
+        description: 總營收
+        meta:
+          dimension:
+            required_attributes:
+              access_level: "2"
+            any_attributes:
+              department: ["sales", "finance"]
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    columns:
+      - name: revenue
+        description: 總營收
+        config:
+          meta:
+            dimension:
+              required_attributes:
+                access_level: "2"
+              any_attributes:
+                department: ["sales", "finance"]
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    dimensions:
+      - name: revenue
+        description: 總營收
+        required_attributes:
+          access_level: "2"
+        any_attributes:
+          department: ["sales", "finance"]
+    ```
+  </Tab>
+</Tabs>
+
+<Info>
+  使用 `any_attributes` 進行欄位過濾時，不包含使用者的內建屬性 —— `email`。
+</Info>
+
+### 使用 `required_attributes` 進行表格過濾
+
+您可以使用「使用者屬性」來限制某些表格僅供特定使用者造訪。
+
+在下方範例中，只有 `is_admin` 屬性為 `true` 的使用者才能使用 `payments` (支付) 表。無權限的使用者在「表格頁面」或與其他表關聯時的「探索頁面」將看不到此表。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: payments
+        meta:
+          required_attributes:
+            is_admin: "true"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: payments
+        config:
+          meta:
+            required_attributes:
+              is_admin: "true"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: payments
+
+    required_attributes:
+      is_admin: "true"
+    ```
+  </Tab>
+</Tabs>
+
+與[欄位過濾](#使用-required_attributes-進行欄位過濾)類似，您可以為單個表格添加多個屬性。
+
+<Info>
+  使用 `required_attributes` 進行表格過濾時，不包含使用者的內建屬性 —— `email`。
+</Info>
+
+### 使用 `any_attributes` 進行表格過濾
+
+您也可以在表格層級使用 `any_attributes` 配合 OR 邏輯。在下方範例中，具有 `department = "sales"` **或** `department = "finance"` **或** `role = "analyst"` 的使用者皆可造訪 `payments` 表。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: payments
+        meta:
+          any_attributes:
+            department: ["sales", "finance"]
+            role: "analyst"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: payments
+        config:
+          meta:
+            any_attributes:
+              department: ["sales", "finance"]
+              role: "analyst"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: payments
+
+    any_attributes:
+      department: ["sales", "finance"]
+      role: "analyst"
+    ```
+  </Tab>
+</Tabs>
+
+您可以在同一個表格上合併使用 `required_attributes` 與 `any_attributes`。兩項檢查都必須通過 —— 詳情請參閱[合併使用必要與任一屬性](#合併使用-required_attributes-與-any_attributes)。
+
+<Info>
+  使用 `any_attributes` 進行表格過濾時，不包含使用者的內建屬性 —— `email`。
+</Info>
+
+### 使用 `sql_on` 過濾關聯 (Joins)
+
+如果您正在進行表格關聯，也可以自定義回傳的行。
+
+您可以使用使用者屬性來過濾關聯回傳的行。這在您想限制關聯表中回傳的數據時非常有用。要在 SQL 中引用使用者屬性，請使用特殊的 Lightdash 引用語法 `${ lightdash.attributes.<attribute_name> }`。例如，如果您有一個名為 `sales_region` 的使用者屬性，可以像這樣在 SQL 中使用它：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: base
+        meta:
+          joins:
+            - join: joined
+              sql_on: >
+                ${base}.id = ${joined}.id
+                AND ${joined}.sales_region = ${lightdash.attributes.sales_region}
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: base
+        config:
+          meta:
+            joins:
+              - join: joined
+                sql_on: >
+                  ${base}.id = ${joined}.id
+                  AND ${joined}.sales_region = ${lightdash.attributes.sales_region}
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: base
+
+    joins:
+      - join: joined
+        sql_on: >
+          ${base}.id = ${joined}.id
+          AND ${joined}.sales_region = ${lightdash.attributes.sales_region}
+    ```
+  </Tab>
+</Tabs>
+
+## 目前限制
+
+Lightdash 維度與自定義指標受此功能保護，但仍有可能透過編寫自定義 SQL 來繞過過濾器，例如：
+
+- 開發者與管理員在 SQL 執行器中執行 SQL 查詢。
+- 在「表格計算」中使用自定義 SQL 或子查詢。
+
+<Info>
+  定時交付 (Scheduled deliveries) 將以「建立該定時交付的使用者」身份執行，在與其他使用者分享包含必要屬性的內容時請務必小心。
+</Info>
+
+## 演示：根據使用者屬性過濾圖表
+
+以下影片完整示範了如何使用使用者屬性來過濾圖表結果。
+
+<iframe width="100%" height="420" src="https://www.youtube.com/embed/t6QS0rr0PDQ" title="透過使用者屬性自定義 Lightdash" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen />
+
+## 使用者與群組屬性值如何互動
+
+使用者可以被分配屬性，您也可以為群組分配屬性。那麼，如果一個使用者被分配了屬性值，但他所屬的群組也被分配了同一個屬性的不同值，會發生什麼事？
+
+### 欄位過濾
+
+如果必要屬性符合使用者群組屬性或使用者個人屬性值中的「任一個」，則該使用者具備該欄位的造訪權限。
+
+例如：某個使用者所屬的一個群組屬性值為 `kiwi`，另一個群組屬性值為 `orange`，而他個人被分配的屬性值為 `coconut`。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: tropical_fruits_column
+        meta:
+          dimension:
+            required_attributes:
+              fruits: 'coconut'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    columns:
+      - name: tropical_fruits_column
+        config:
+          meta:
+            dimension:
+              required_attributes:
+                fruits: 'coconut'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: fruits
+
+    dimensions:
+      - name: tropical_fruits_column
+        required_attributes:
+          fruits: 'coconut'
+    ```
+  </Tab>
+</Tabs>
+
+在此範例中，`tropical_fruits_column` 對該使用者是可見的，因為 `coconut` 包含在他的屬性值列表 `['kiwi','orange', 'coconut']` 中。
+
+### 行過濾 (Row filtering)
+
+範本引用將被替換為該使用者群組屬性與個人屬性值的陣列。
+
+讓我們來看一個範例：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: my_model
+        meta:
+          sql_filter: ${TABLE}.fruit IN (${lightdash.attributes.fruit})
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: my_model
+        config:
+          meta:
+            sql_filter: ${TABLE}.fruit IN (${lightdash.attributes.fruit})
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: my_model
+
+    sql_filter: ${TABLE}.fruit IN (${lightdash.attributes.fruit})
+    ```
+  </Tab>
+</Tabs>
+
+在此範例中，`${lightdash.attributes.fruit}` 將被替換為 `'kiwi','orange','coconut'`。最終產生的 SQL 為 `my_model.fruit IN ('kiwi','orange','coconut')`。

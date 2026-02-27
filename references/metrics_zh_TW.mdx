@@ -1,0 +1,909 @@
+---
+title: "指標參考指南 (Metrics reference)"
+sidebarTitle: "指標"
+---
+
+指標 (Metric) 是描述或摘要一組數據特徵的數值。例如：使用者 ID 的總計數，或營收的總和。
+
+在 Lightdash 中，指標用於摘要維度，有時也用於摘要其他指標。
+
+## 使用 `meta` 標籤向專案新增指標
+
+### 1. 使用欄位 `meta` 標籤
+
+要使用 `meta` 標籤向 Lightdash 新增指標，您需要在 dbt 專案中，於您想要描述/摘要的維度名稱下進行定義。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders_model
+        columns:
+          - name: user_id # 您指標要聚合的維度
+            meta:
+              metrics:
+                distinct_user_ids: # 指標名稱
+                  type: count_distinct # 指標類型
+          - name: revenue # 您指標要聚合的維度
+            meta:
+              metrics:
+                sum_revenue: # 指標名稱
+                  type: sum # 指標類型
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: orders_model
+        columns:
+          - name: user_id # 您指標要聚合的維度
+            config:
+              meta:
+                metrics:
+                  distinct_user_ids: # 指標名稱
+                    type: count_distinct # 指標類型
+          - name: revenue # 您指標要聚合的維度
+            config:
+              meta:
+                metrics:
+                  sum_revenue: # 指標名稱
+                    type: sum # 指標類型
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders_model
+
+    dimensions:
+      - name: user_id # 您指標要聚合的維度
+      - name: revenue # 您指標要聚合的維度
+
+    metrics:
+      distinct_user_ids: # 指標名稱
+        type: count_distinct # 指標類型
+        sql: ${TABLE}.user_id
+      sum_revenue: # 指標名稱
+        type: sum # 指標類型
+        sql: ${TABLE}.revenue
+    ```
+  </Tab>
+</Tabs>
+
+了解這些指標的基本樣子後，請參考下文了解您可以使用的[指標類型](#指標類型-metric-types)。
+
+### 2. 使用模型 `meta` 標籤
+
+有時指標會引用多個欄位，在這種情況下，您可以在模型層級定義指標：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders_model
+        meta:
+          metrics:
+            revenue_per_user:
+              type: number
+              sql: ${sum_revenue} / ${distinct_user_ids}
+            sum_total_paid:
+              type: sum
+              sql: ${revenue} + ${taxes_paid}
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: orders_model
+        config:
+          meta:
+            metrics:
+              revenue_per_user:
+                type: number
+                sql: ${sum_revenue} / ${distinct_user_ids}
+              sum_total_paid:
+                type: sum
+                sql: ${revenue} + ${taxes_paid}
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders_model
+
+    metrics:
+      revenue_per_user:
+        type: number
+        sql: ${sum_revenue} / ${distinct_user_ids}
+      sum_total_paid:
+        type: sum
+        sql: ${revenue} + ${taxes_paid}
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+  **非聚合指標 (Non-aggregate metrics)**（如 `number`, `boolean` 等）在 `sql:` 中只能引用其他指標，因為它們會被直接插入生成的 SQL 查詢中，而不會被封裝在聚合函數內。
+
+  **聚合指標 (Aggregate metrics)**（如 `sum`, `count_distinct` 等）只能引用維度，因為它們在加入生成的 SQL 查詢前，會先被封裝在聚合函數中。將聚合函數嵌套在另一個聚合函數中會導致錯誤。
+
+  **後計算指標 (Post calculation metrics)**（如 `percent_of_previous`, `percent_of_total`, `running_total`）是在其他指標之後計算的。由於它們在主聚合之後執行，因此可以使用視窗函數 (Window functions)。後計算指標：
+  - 僅能引用聚合與非聚合指標（無法引用維度或其他後計算指標）。
+  - 可以像其他指標一樣在表格計算中被引用。
+  - 不支援 YML 中的 `filters` 屬性。
+</Warning>
+
+繼續閱讀以了解聚合指標與非聚合指標的區別！
+
+## 指標類別 (Metric Categories)
+
+每種指標類型都屬於以下類別之一。類別決定了該指標是否為聚合，以及它可以引用哪些類型的欄位：
+
+### 聚合指標 (Aggregate metrics)
+
+聚合指標類型執行（沒錯，就是你想的那樣）聚合運算。總和 (Sum) 與平均值 (Average) 是聚合指標的典型例子：它們是摘要一組數據點的測量值。
+
+聚合指標**只能**引用維度，不能引用其他指標。
+
+### 非聚合指標 (Non-aggregate metrics)
+
+非聚合指標是不執行聚合運算的指標類型。
+
+數字 (Number) 與布林值 (Boolean) 是非聚合指標的例子。這些類型對單個數據點執行計算，因此它們**只能引用聚合指標**，而**不能引用維度**。
+
+### 後計算指標 (Post calculation metrics)
+
+後計算指標是在查詢中的聚合指標與非聚合指標之後計算的。由於它們在主聚合之後運行，因此可以使用視窗函數。後計算指標：
+
+- 僅能引用聚合與非聚合指標（無法引用維度或其他後計算指標）。
+- 可以在表格計算中像其他指標一樣被引用。
+- 不支援 `filters` YML 屬性。
+
+<Info>
+  **實驗性功能**：後計算指標目前處於「實驗性 (Experimental)」階段。欲了解其含義，請參考我們的 [功能成熟度分級](/references/workspace/feature-maturity-levels_zh_TW) 指南。
+</Info>
+
+## 指標配置
+
+您可以在 dbt 模型的 YAML 檔案中自定義指標。以下是定義指標時所使用的屬性範例：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: sales_stats
+        meta:
+          joins:
+            - join: web_sessions
+              sql_on: ${web_sessions.date} = ${sales_stats.date}
+          group_details:
+            product_details:
+              label: 產品詳情
+              description: '關於籃子中產品資訊的欄位。'
+            item_details:
+              label: 項目詳情
+              description: '關於籃子中個別項目資訊的欄位。'
+        columns:
+          - name: revenue
+            description: '根據財務團隊預測估算的英鎊總營收。'
+            meta:
+              metrics:
+                total_revenue:
+                  label: '總營收 (GBP)'
+                  type: SUM
+                  description: '英鎊總營收'
+                  sql: 'IF(${revenue} IS NULL, 10, ${revenue})'
+                  groups: ['product_details', 'item_details'] # 這會將指標添加到巢狀群組：`產品詳情` --> `項目詳情`
+                  hidden: false
+                  format: '[$£]#,##0.00' # 英鎊格式，捨入至小數點後兩位
+                  show_underlying_values:
+                    - revenue
+                    - forecast_date
+                    - web_sessions.session_id # 來自關聯表的欄位
+                  filters:
+                    - is_adjusted: true
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: sales_stats
+        config:
+          meta:
+            joins:
+              - join: web_sessions
+                sql_on: ${web_sessions.date} = ${sales_stats.date}
+            group_details:
+              product_details:
+                label: 產品詳情
+                description: '關於籃子中產品資訊的欄位。'
+              item_details:
+                label: 項目詳情
+                description: '關於籃子中個別項目資訊的欄位。'
+        columns:
+          - name: revenue
+            description: '根據財務團隊預測估算的英鎊總營收。'
+            config:
+              meta:
+                metrics:
+                  total_revenue:
+                    label: '總營收 (GBP)'
+                    type: SUM
+                    description: '英鎊總營收'
+                    sql: 'IF(${revenue} IS NULL, 10, ${revenue})'
+                    groups: ['product_details', 'item_details'] # 這會將指標添加到巢狀群組：`產品詳情` --> `項目詳情`
+                    hidden: false
+                    format: '[$£]#,##0.00' # 英鎊格式，捨入至小數點後兩位
+                    show_underlying_values:
+                      - revenue
+                      - forecast_date
+                      - web_sessions.session_id # 來自關聯表的欄位
+                    filters:
+                      - is_adjusted: true
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: sales_stats
+
+    joins:
+      - join: web_sessions
+        sql_on: ${web_sessions.date} = ${sales_stats.date}
+
+    group_details:
+      product_details:
+        label: 產品詳情
+        description: '關於籃子中產品資訊的欄位。'
+      item_details:
+        label: 項目詳情
+        description: '關於籃子中個別項目資訊的欄位。'
+
+    dimensions:
+      - name: revenue
+        description: '根據財務團隊預測估算的英鎊總營收。'
+
+    metrics:
+      total_revenue:
+        label: '總營收 (GBP)'
+        type: SUM
+        description: '英鎊總營收'
+        sql: 'IF(${revenue} IS NULL, 10, ${revenue})'
+        groups: ['product_details', 'item_details'] # 這會將指標添加到巢狀群組：`產品詳情` --> `項目詳情`
+        hidden: false
+        format: '[$£]#,##0.00' # 英鎊格式，捨入至小數點後兩位
+        show_underlying_values:
+          - revenue
+          - forecast_date
+          - web_sessions.session_id # 來自關聯表的欄位
+        filters:
+          - is_adjusted: true
+    ```
+  </Tab>
+</Tabs>
+
+下表列出了您可以自定義的所有屬性：
+
+| 屬性 | 必填 | 數值 | 描述 |
+| :------------------------------------------------ | :------: | :----------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| label | 否 | string | 自定義標籤。設定此屬性後，這將是您在 Lightdash 中看到的名稱，而非指標名稱。 |
+| [type](#指標類型-metric-types) | 是 | 指標類型 | 指標必須是支援的類型之一。 |
+| [description](#描述-description) | 否 | string | 在 Lightdash 中顯示的指標描述。若未包含此項，Lightdash 會建立預設描述。 |
+| [sql](#聚合指標中的自定義-sql) | 否 | string | 用於定義指標的自定義 SQL。 |
+| hidden | 否 | boolean | 若設為 true，則在 Lightdash 中隱藏該指標。預設為 false。 |
+| [compact](#簡寫-compact) | 否 | string | 此選項會簡寫數值（例如：1,500 變為 1.50K）。支援：['thousands', 'millions', 'billions', 'trillions', 'kilobytes', 'megabytes', 'gigabytes', 'terabytes', 'petabytes', 'kibibytes', 'mebibytes', 'gibibytes', 'tebibytes', 'pebibytes'] |
+| [format](#格式-format) | 否 | string | 格式化結果表格與 CSV 匯出的輸出值。支援試算表風格格式（如 #,##0.00）。可參考 [customformats.com](https://customformats.com)。 |
+| [groups](#群組-groups) | 否 | string 或 string[] | 設定此屬性後，指標會在側邊欄中與具有相同群組標籤的其他指標歸類在一起。 |
+| [urls](/references/dimensions_zh_TW#urls) | 否 | array | 為指標添加 URL 允許使用者點擊數值並執行動作（如開啟外部連結）。支援 Liquid 範本來根據維度值自定義連結。 |
+| [show_underlying_values](#顯示底層數據-show-underlying-values) | 否 | 維度名稱陣列 | 當使用者點擊「查看底層數據」時，您可以限制顯示哪些維度或指標。列表必須僅包含基礎模型或任何關聯模型的維度/指標名稱。若未定義，則顯示模型的所有維度。 |
+| [filters](#過濾器-filters) | 否 | array | 您可以添加過濾邏輯以限制包含在指標計算中的數值。可以添加多個過濾器。查看[此處](#過濾器-filters)了解支援的過濾器類型。 |
+
+## 指標類型 (Metric types)
+
+| 類型 | 類別 | 描述 |
+|:--------------------------------------------|:--------------------------------|:--------------------------------------------------------------------------------|
+| [percentile](#percentile) | 聚合 (Aggregate) | 生成欄位內數值的百分位數 |
+| [median](#median) | 聚合 (Aggregate) | 生成欄位內數值的第 50 百分位數（中位數） |
+| [average](#average) | 聚合 (Aggregate) | 生成欄位內數值的平均值 (Mean) |
+| [boolean](#boolean) | 非聚合 (Non-aggregate) | 用於顯示某事是否為真或假的欄位 |
+| [count](#count) | 聚合 (Aggregate) | 計算維度中數值的總數 |
+| [count_distinct](#count_distinct) | 聚合 (Aggregate) | 計算維度中不重複數值的總數 |
+| [date](#date) | 非聚合 (Non-aggregate) | 用於為回傳日期的指標添加計算。 |
+| [max](#max) | 聚合 (Aggregate) | 生成數值欄位中的最大值 |
+| [min](#min) | 聚合 (Aggregate) | 生成數值欄位中的最小值 |
+| [number](#number) | 非聚合 (Non-aggregate) | 用於為回傳數字的指標添加計算。 |
+| [string](#string) | 非聚合 (Non-aggregate) | 用於包含字母或特殊字元的指標 |
+| [sum](#sum) | 聚合 (Aggregate) | 生成欄位內數值的總和 |
+| [percent_of_previous](#percent_of_previous) | 後計算 (Post calculation) (實驗性) | 當前值佔前一行數值的百分比 |
+| [percent_of_total](#percent_of_total) | 後計算 (Post calculation) (實驗性) | 當前值佔結果集（或分區）總額的百分比 |
+| [running_total](#running_total) | 後計算 (Post calculation) (實驗性) | 累計總額 |
+
+### percentile
+
+計算指定欄位數值的百分位數。類似 SQL 的 `PERCENTILE_CONT` 函數。
+
+`percentile` 指標可用於任何數值型維度，或任何產生數值欄位的有效 SQL 表達式。
+
+例如，這透過取得 `item_price` 維度的第 50 百分位數來建立一個名為 `median_price` 的指標：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: item_price
+        meta:
+          metrics:
+            median_price:
+              type: percentile
+              percentile: 50
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    columns:
+      - name: item_price
+        config:
+          meta:
+            metrics:
+              median_price:
+                type: percentile
+                percentile: 50
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: my_model
+
+    dimensions:
+      - name: item_price
+
+    metrics:
+      median_price:
+        type: percentile
+        percentile: 50
+        sql: ${TABLE}.item_price
+    ```
+  </Tab>
+</Tabs>
+
+### median
+
+計算指定欄位數值的第 50 百分位數。類似 SQL 的 `PERCENTILE_CONT(0.5)` 函數。
+
+例如，這透過取得 `item_price` 維度的中位數來建立一個名為 `median_price` 的指標：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: item_price
+        meta:
+          metrics:
+            median_price:
+              type: median
+    ```
+  </Tab>
+</Tabs>
+
+### average
+
+計算指定欄位數值的平均值 (Mean)。類似 SQL 的 `AVG` 函數。
+
+例如，這透過取得 `item_price` 維度的平均值來建立一個名為 `avg_price` 的指標：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: item_price
+        meta:
+          metrics:
+            avg_price:
+              type: average
+    ```
+  </Tab>
+</Tabs>
+
+### boolean
+
+告訴您某事為 True 或 False。
+
+`boolean` 指標可用於任何產生 `TRUE` 或 `FALSE` 值的有效 SQL 表達式。它只能用於聚合，這意味著它引用的是聚合指標或是[引用其他指標的自定義 SQL](#在非聚合指標中使用自定義-sql)。您不能透過引用模型中未經聚合的維度來構建 `boolean` 指標。
+
+`boolean` 指標本身不執行聚合；它們僅引用其他聚合結果。
+
+例如，下方的 `avg_price` 指標是產品表中所有 `item_price` 數值的平均值。第二個指標 `is_avg_price_above_20` 是一個 `boolean` 類型指標，其自定義 SQL 表達式告訴我們 `avg_price` 是否大於 20。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: item_price
+        meta:
+          metrics:
+            avg_price:
+              type: average
+            is_avg_price_above_20:
+              type: boolean
+              sql: 'IF(${avg_price} > 20, TRUE, FALSE)'
+    ```
+  </Tab>
+</Tabs>
+
+### count
+
+執行表格計數，類似 SQL 的 `COUNT` 函數。
+
+例如，這透過計算表格中 `user_id` 的數量來建立一個名為 `number_of_users` 的指標：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: user_id
+        meta:
+          metrics:
+            number_of_users:
+              type: count
+    ```
+  </Tab>
+</Tabs>
+
+### count_distinct
+
+計算指定欄位中不重複數值的數量。類似 SQL 的 `COUNT DISTINCT` 函數。
+
+例如，這透過計算表格中不重複的 `user_id` 數量來建立一個名為 `number_of_unique_users` 的指標：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: user_id
+        meta:
+          metrics:
+            number_of_unique_users:
+              type: count_distinct
+    ```
+  </Tab>
+</Tabs>
+
+### date
+
+從表達式中獲取日期值。
+
+`date` 指標可用於任何產生日期值的有效 SQL 表達式。它只能用於聚合，這意味著它引用的是聚合指標或是引用其他指標的自定義 SQL。您不能透過引用模型中未經聚合的維度來構建 `date` 指標。
+
+**「使用 type: date 建立最大或最小日期指標」**
+
+如果您想建立最大或最小日期的指標，不能使用 `type: max` 或 `type: min`，因為這些僅與數值型欄位兼容。相反地，您可以定義一個 `type: date` 的指標並使用自定義 SQL 來計算：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: created_at_date
+        meta:
+          dimension:
+            type: date
+          metrics:
+            max_created_at_date:
+              type: date
+              sql: MAX(${TABLE}.created_at_date)
+    ```
+  </Tab>
+</Tabs>
+
+
+### max
+
+Max 獲取指定數值欄位中的最大值。類似 SQL 的 `MAX` 函數。
+
+由於 `type: max` 僅適用於數值型欄位，因此您不能用它來尋找最大日期。尋找最大日期請參考上方的 [date 區塊](#date)。
+
+例如，這透過查看 `delivery_cost` 維度並取得最大值來建立 `max_delivery_cost` 指標：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: delivery_cost
+        meta:
+          metrics:
+            max_delivery_cost:
+              type: max
+    ```
+  </Tab>
+</Tabs>
+
+### min
+
+Min 獲取指定數值欄位中的最小值。類似 SQL 的 `MIN` 函數。
+
+同樣地，`type: min` 僅適用於數值型欄位。尋找最小日期請參考 [date 區塊](#date)。
+
+例如，這透過查看 `delivery_cost` 維度並取得最小值來建立 `min_delivery_cost` 指標：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: delivery_cost
+        meta:
+          metrics:
+            min_delivery_cost:
+              type: min
+    ```
+  </Tab>
+</Tabs>
+
+### number
+
+用於數字或整數。`number` 指標本身不執行任何聚合，但可用於對其他指標執行簡單的轉換。
+
+`number` 指標可用於任何產生數值或整數的有效 SQL 表達式。它只能用於聚合，引用聚合指標或引用其他指標的自定義 SQL。
+
+例如，這建立了一個名為 `total_gross_profit_margin_percentage` 的指標，基於 `total_sale_price` 和 `total_gross_profit_margin` 兩個聚合指標計算得出：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: sale_price
+        meta:
+          metrics:
+            total_sale_price:
+              type: sum
+      - name: gross_profit_margin
+        meta:
+          metrics:
+            total_gross_profit_margin:
+              type: sum
+            total_gross_profit_margin_percentage:
+              type: number
+              sql: '(${total_gross_profit_margin}/ NULLIF(${total_sale_price},0))'
+    ```
+  </Tab>
+</Tabs>
+
+上述範例還使用了 `NULLIF()` SQL 函數來避免除以零的錯誤。
+
+### sum
+
+加總指定欄位中的數值。類似 SQL 的 `SUM` 函數。
+
+例如，這透過加總 `revenue` 維度中的數值來建立 `total_revenue` 指標：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: revenue
+        meta:
+          metrics:
+            total_revenue:
+              type: sum
+    ```
+  </Tab>
+</Tabs>
+
+**那 sum distinct 呢？** Lightdash 沒有 `sum_distinct` 指標類型，但如果您的資料庫支援，您可以透過新增一個 number 類型指標並使用 `sql` 參數來直接呼叫它。
+
+<Warning>在大多數情況下，使用 [Lightdash 扇出保護](/references/joins_zh_TW#處理扇出) 在加總前先進行去重會比在 SQL 中使用 `SUM(DISTINCT ...)` 更準確。這是因為 `SUM(DISTINCT ...)` 在多行具有相同數值時可能會給出錯誤結果。</Warning>
+
+### string
+
+用於包含字母或特殊字元的欄位。
+
+`string` 指標可用於任何產生字串值的有效 SQL 表達式。它只能用於聚合。
+
+`string` 指標較少使用，因為大多數 SQL 聚合函數不回傳字串。一個常見的例外是 MySQL 的 `GROUP_CONCAT` 函數。
+
+### percent_of_previous
+
+回傳所引用指標當前值佔前一行數值的百分比。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders_model
+        meta:
+          metrics:
+            total_revenue:
+              type: sum
+            revenue_percent_of_previous:
+              type: percent_of_previous
+              sql: ${total_revenue}
+              format: '0.00%'
+    ```
+  </Tab>
+</Tabs>
+
+注意：若前一值為 0 或 NULL，結果將為 NULL 以避免除以零。
+<Warning>
+**這是一個後計算指標**，在其他指標之後計算。它僅能引用聚合與非聚合指標。
+</Warning>
+
+### percent_of_total
+
+回傳所引用指標當前值佔整個結果集（或分區）總額的百分比。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders_model
+        meta:
+          metrics:
+            total_revenue:
+              type: sum
+            revenue_percent_of_total:
+              type: percent_of_total
+              sql: ${total_revenue}
+              format: '0.00%'
+    ```
+  </Tab>
+</Tabs>
+
+### running_total
+
+根據查詢的分組與排序順序，回傳所引用指標的累計總額。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders_model
+        meta:
+          metrics:
+            total_revenue:
+              type: sum
+            running_total_revenue:
+              type: running_total
+              sql: ${total_revenue}
+    ```
+  </Tab>
+</Tabs>
+
+## 描述 (Description)
+
+我們會為模型中包含的所有指標添加預設描述。但您可以在定義指標時使用 description 參數進行覆蓋。
+
+## 格式 (Format)
+
+您可以使用 `format` 參數讓指標在 Lightdash 中以特定格式顯示。Lightdash 為所有指標類型支援試算表風格的格式表達式。
+
+要建立格式表達式，我們建議使用 https://customformats.com/。
+
+<Accordion title="(舊版 Legacy) format 與 round 選項">
+  試算表風格的格式表達式是目前 Lightdash 推薦的格式化方式。舊版選項靈活性較低。
+</Accordion>
+
+## 簡寫 (Compact)
+
+您可以在 YAML 中簡寫數值。例如將 `1,500` 簡化顯示為 `1.50K`。
+
+## 聚合指標中的自定義 SQL
+
+您可以在指標定義中使用 `sql` 參數包含自定義 SQL，以構建更進階的指標。在 `sql` 參數內，您可以引用同模型或關聯模型中的任何其他維度。您**不能引用其他指標**。
+
+### 在自定義 SQL 中引用時間間隔
+
+您可以引用維度的特定時間間隔（例如 `${session_start_month}`）。這允許您對維度的特定時間版本執行聚合。
+
+## 在非聚合指標中使用自定義 SQL
+
+在非聚合指標中，您可以引用同模型或關聯模型中的任何其他指標。您**不能引用其他維度**。
+
+## 顯示底層數據 (Show underlying values)
+
+預設情況下，點擊「查看底層數據」會顯示表格中的所有維度。您可以透過在 `.yml` 檔案中加入維度/指標清單來限制顯示內容。
+
+<Note>
+隱藏的維度 (`hidden: true`) 無法包含在鑽取 (Drilldown) 中。若需在鑽取中顯示但不顯示在側邊欄，請改用[群組](/references/dimensions_zh_TW#群組-groups)來組織維度。
+</Note>
+
+### 引用時間間隔
+
+您可以在 `show_underlying_values` 清單中引用維度的特定時間間隔（如 `session_start_month`）。
+
+## 群組 (Groups)
+
+您可以使用 `groups` 參數在側邊欄中對維度和指標進行分組。需要在模型配置中設定 `group_details`。
+
+## 過濾器 (Filters)
+
+過濾器會在指標於 Lightdash 中被使用時自動套用。僅能用於聚合指標類型。這些過濾器不會顯示在 UI 的過濾器標籤中，而是直接套用於 SQL 查詢中。
+
+## 詳盡層級指標 (Level of detail metrics)
+
+有時您需要指標在與查詢其餘部分不同的粒度上進行計算。例如計算「各區段中具備成交訂單的帳號百分比」，且希望分母（該區段的總帳號數）不隨其他篩選維度（如訂單方案）而改變。
+
+這通常被稱為 LOD 計算。變通方法是在 dbt 模型中預先計算較粗粒度的指標（如透過 CTE 計算每個區段的總帳號數），使其在 Lightdash 中不論選取何種維度都能保持正確。
+
+### 問題點
+
+這最常出現在百分比或比例指標中。考慮此場景：您想計算**「各區段中具備『成交』訂單的帳號百分比」**，且想按訂單方案進行拆分。
+
+分子（具備成交訂單的帳號）理應隨方案而異。但分母（該區段的總帳號數）則不應改變。無論您分析哪種方案，企業級區段 (Enterprise) 總共有 152 個帳號。
+
+當您將帳號表關聯到訂單表並按區段和方案分組時，分母會自動限縮為僅包含該方案下有訂單的帳號。這是任何採行「先關聯後分組」方法的 BI 工具的預設行為。
+
+**不具備 LOD 時（分母隨方案分組）：**
+
+| Segment | Plan | 具備成交訂單的帳號數 | 總帳號數 | % |
+|---|---|---|---|---|
+| Enterprise | Basic | 36 | 107 | 33.6% |
+| Enterprise | Professional | 13 | 46 | 28.3% |
+
+總帳號數欄位顯示 **107** 和 **46**，因為僅包含了在該特定方案中有訂單的帳號。
+
+**具備 LOD 時（分母不隨方案改變）：**
+
+| Segment | Plan | 具備成交訂單的帳號數 | 總帳號數 | % |
+|---|---|---|---|---|
+| Enterprise | Basic | 36 | 152 | 23.7% |
+| Enterprise | Professional | 13 | 152 | 8.6% |
+
+總帳號數維持在 **152**，因為分母的計算與方案維度無關。這是透過在 dbt 模型中使用獨立的 CTE 預先計算分母來達成的。
+
+### 變通方法
+
+解決方案是在 dbt 模型中預先計算較粗粒度的指標（每個區段的總帳號數），使其在 Lightdash 中不論選取何種維度都能維持正確。
+
+**步驟 1：在 dbt 模型中預先計算分母**
+
+<Accordion title="SQL 模型">
+```sql
+with segment_totals as (
+    select
+        segment,
+        count(distinct account_id) as total_accounts_in_segment
+    from {{ ref('accounts') }}
+    group by segment
+),
+
+account_deals as (
+    select
+        a.account_id,
+        a.segment,
+        d.deal_id,
+        d.plan,
+        d.stage
+    from {{ ref('accounts') }} a
+    inner join {{ ref('deals') }} d on a.account_id = d.account_id
+)
+
+select
+    ad.*,
+    st.total_accounts_in_segment
+from account_deals ad
+left join segment_totals st on ad.segment = st.segment
+```
+</Accordion>
+
+**步驟 2：在 YAML 中定義指標**
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: account_deal_metrics
+        meta:
+          metrics:
+            pct_accounts_with_won_deals:
+              type: number
+              label: "% 具備成交訂單的帳號"
+              format: percent
+              sql: ${unique_accounts_with_won_deals} / NULLIF(${segment_total_accounts}, 0)
+        columns:
+          - name: account_id
+            meta:
+              dimension:
+                type: string
+                hidden: true
+              metrics:
+                unique_accounts_with_won_deals:
+                  type: count_distinct
+                  filters:
+                    - stage: 'Won'
+          - name: segment
+            meta:
+              dimension:
+                type: string
+          - name: plan
+            meta:
+              dimension:
+                type: string
+          - name: total_accounts_in_segment
+            meta:
+              dimension:
+                type: number
+              metrics:
+                segment_total_accounts:
+                  type: max
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: account_deal_metrics
+        config:
+          meta:
+            metrics:
+              pct_accounts_with_won_deals:
+                type: number
+                label: "% 具備成交訂單的帳號"
+                format: percent
+                sql: ${unique_accounts_with_won_deals} / NULLIF(${segment_total_accounts}, 0)
+        columns:
+          - name: account_id
+            config:
+              meta:
+                dimension:
+                  type: string
+                  hidden: true
+                metrics:
+                  unique_accounts_with_won_deals:
+                    type: count_distinct
+                    filters:
+                      - stage: 'Won'
+          - name: segment
+            config:
+              meta:
+                dimension:
+                  type: string
+          - name: plan
+            config:
+              meta:
+                dimension:
+                  type: string
+          - name: total_accounts_in_segment
+            config:
+              meta:
+                dimension:
+                  type: number
+                metrics:
+                  segment_total_accounts:
+                    type: max
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: account_deal_metrics
+
+    dimensions:
+      - name: account_id
+        type: string
+        hidden: true
+      - name: segment
+        type: string
+      - name: plan
+        type: string
+      - name: total_accounts_in_segment
+        type: number
+
+    metrics:
+      unique_accounts_with_won_deals:
+        type: count_distinct
+        sql: ${TABLE}.account_id
+        filters:
+          - stage: 'Won'
+      segment_total_accounts:
+        type: max
+        sql: ${TABLE}.total_accounts_in_segment
+      pct_accounts_with_won_deals:
+        type: number
+        label: "% 具備成交訂單的帳號"
+        format: percent
+        sql: ${unique_accounts_with_won_deals} / NULLIF(${segment_total_accounts}, 0)
+    ```
+  </Tab>
+</Tabs>
+
+核心關鍵在於 `total_accounts_in_segment` 已在 SQL 中預先計算，且對於同一區段的每一行來說數值相同。使用 `max` 作為聚合方式會回傳正確的區段總額，不論查詢中包含哪些其他維度（如 `plan`）。
+
+接著，`pct_accounts_with_won_deals` 指標將分子（隨方案正確變動）除以分母（每個區段固定不變）。

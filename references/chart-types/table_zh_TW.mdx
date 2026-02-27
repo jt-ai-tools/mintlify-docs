@@ -1,0 +1,225 @@
+---
+title: "表格 (Table)"
+description: "使用表格來查看表格式數據，或使用者 ID、交易記錄等清單。"
+icon: "table-cells-columns"
+---
+
+<Frame>
+  ![](/images/references/chart-types/table-chart-278753fedbb2530cda566e2fc61cebef.png)
+</Frame>
+
+表格選項非常適合查看表格式數據，或者使用者 ID、交易記錄等清單。
+
+表格的配置選項包括：
+
+- 重新命名表格中的欄位。
+- 顯示或隱藏表格中的欄位。
+- 在欄位標籤中顯示或隱藏表名。
+- 顯示或隱藏欄位總計。
+- 依據某個欄位進行樞紐分析 (Pivoting)。
+- 轉置 (Transpose) 您的表格（亦即將指標作為列顯示）。
+- 鎖定某個欄位使其在滾動時固定。
+- 透過拖拽欄位標題邊緣來調整欄位寬度。
+- 為單元格添加條件格式化 (Conditional formatting)。
+
+預設情況下，我們會將表名附加在欄位名稱前（以防來自關聯表中有重複的欄位名）。但您可以在表格視覺化設定中輕鬆關閉此功能。
+
+## 列、欄與指標 (Columns, rows, and metrics)
+
+表格視覺化由三個組件組成：
+
+- **Rows (列)**：當一個欄位被選入「列」區域時，該欄位的所有唯一值將作為表格的*列*填入。
+- **Columns (欄)**：當一個欄位被選入「欄」區域時，該欄位的所有唯一值將作為表格的*欄*填入。
+- **Metrics (指標)**：如果表格中包含指標，則每個指標單元格會顯示該特定「列 + 欄」組合的加總資訊。
+
+<Frame>
+  ![](/images/references/chart-types/columns-rows-metrics-example-97f2fbed98971241dde62c993fa6df8e.jpg)
+</Frame>
+
+## 在表格視覺化中添加微型長條圖 (Tiny bars)
+
+您可以在每個表格單元格中啟用微型長條圖，以增強視覺反饋。
+
+要進行配置，請前往側邊欄的 `bar display`，並選擇 `numeric` (數值) 欄位。我們將計算最大/最小值，並在表格的數值旁顯示一個微型長條圖。
+
+![微型長條圖配置](/images/references/chart-types/table/tinybars-config.png)
+
+此功能也適用於樞紐分析表。
+
+## 樞紐分析表 (Pivot tables)
+
+樞紐分析表讓您可以透過將列數值移動到欄位中，在表格視覺化中摘要大型數據集。這也有助於識別數據中兩個維度之間的趨勢。
+
+要為表格添加樞紐分析，請將一個維度移動到表格配置的 `column` (欄) 區域。這會將該維度從填入「列」數值改為填入表格的「欄」數值。
+
+<Frame>
+  ![](/images/references/chart-types/pivoted-table-72daaf2e205221bd425e61dd1b6dc883.jpg)
+</Frame>
+
+您最多可以將 3 個維度移動到「欄」區域。
+
+### 欄位限制 (Column limits)
+
+樞紐分析表預設限制為 200 欄，以確保效能。欄位過多的樞紐分析表會顯著減慢查詢執行與渲染速度，此限制有助於維持儀表板的響應性。
+
+<Tip>
+  如果您擁有 Lightdash Pro 或 Enterprise 帳號，可以要求提高此限制。如果您是自託管，可以透過更新 [`LIGHTDASH_PIVOT_TABLE_MAX_COLUMN_LIMIT`](/self-host/customize-deployment/environment-variables_zh_TW) 環境變數來設定限制。
+</Tip>
+
+欄位限制的計算方式取決於您是將指標作為列還是欄：
+
+#### 當指標作為欄顯示時 (預設)
+
+當指標作為欄顯示時（這是預設行為），每個樞紐化的維度值都會為**每個指標**建立一個欄位。這意味著總欄位數等於「唯一維度值數量」乘以「指標數量」。
+
+例如，如果您按 `order_date_month`（有 36 個月）進行樞紐化，且有 3 個指標：
+- 總欄位數：36 個月 × 3 個指標 = 108 欄，在 200 欄的限制內。
+
+此限制始終套用於完整的維度值 —— 一個維度值要嘛完整顯示（包含其所有指標），要嘛完全不顯示。顯示的維度值數量是透過將欄位限制除以指標數量並無條件捨去得出的。
+
+在限制 200 欄且有 3 個指標的情況下：
+- 最大顯示維度值數量：`floor(200 / 3)` = 66 個月。
+
+以下是將 `order_date_month` 樞紐化為欄位且包含 3 個指標的表格外觀：
+
+<img src="/images/references/chart-types/table/pivot_column_limit_example_1_light.png" alt="樞紐欄位限制範例" className="block dark:hidden" />
+<img src="/images/references/chart-types/table/pivot_column_limit_example_1_dark.png" alt="樞紐欄位限制範例" className="hidden dark:block" />
+
+如果樞紐配置產生了過多欄位，您將會看到「結果可能不完整」的警告。這通常發生在您按多個維度進行樞紐化時。
+
+例如，如果您同時按 `order_date_month` 和 `browser`（有 6 個唯一值）進行樞紐化，且有 3 個指標，則最大顯示月份數量為：
+- 最大顯示維度值數量：`floor(200 / (6*3))` = 11 個月。
+
+警告訊息如下圖所示：
+<img src="/images/references/chart-types/table/column_limit_exceeded_light.png" alt="樞紐欄位超出限制" className="block dark:hidden" />
+<img src="/images/references/chart-types/table/column_limit_exceeded_dark.png" alt="樞紐欄位超出限制" className="hidden dark:block" />
+
+要減少樞紐欄位數量，您可以：
+- 過濾數據（例如：僅顯示過去一年的月份）。
+- 減少樞紐化使用的維度數量（例如：考慮是否有必要同時按月份與瀏覽器拆分）。
+- 降低樞紐維度的粒度（例如：改按年份而非月份樞紐化）。
+- 將指標改為以列顯示（見下文）。
+
+#### 當指標作為列顯示時
+
+當您啟用 **Show metrics as rows (將指標顯示為列)** 時，無論有多少個指標，每個樞紐化的維度值僅會建立 **一欄**。指標會改為以獨立的列顯示。
+
+例如，如果您將 `partner_name` 作為列維度（有 5 個合作夥伴），按 `order_date_month`（有 12 個月）樞紐化，且有 3 個指標：
+- 總欄位數：12 欄（每月一欄）。
+- 每一列會為每個指標重複一次 —— 故您會看到 5 × 3 = 15 列。
+
+以下是同一份數據在指標作為列顯示（列維度為 `partner_name`）時的外觀：
+
+<img src="/images/references/chart-types/table/metrics_as_rows_light.png" alt="指標作為列" className="block dark:hidden" />
+<img src="/images/references/chart-types/table/metrics_as_rows_dark.png" alt="指標作為列" className="hidden dark:block" />
+
+在有 12 個月數據的情況下，這僅會產生 12 欄；而指標作為欄位時則會產生 36 欄。
+
+這意味著當您需要跨時段或其他維度比較多個指標時，使用「指標作為列」可以顯示更多的維度值。
+
+## 總計 (Totals)
+
+您可以透過在圖表配置面板選取 `Show column totals` (顯示欄總計) 或 `Show row totals` (顯示列總計，僅限樞紐表)，為表格添加總計。結果與表格視覺化中的總計是使用表格的底層數據計算的，而不僅僅是表格中可見的數值。
+
+<Info>
+  總計不適用於「表格計算」。此外，在樞紐表中，總計僅顯示於 `count` 和 `sum` 類型的指標。
+</Info>
+
+### 總計數值不符的常見原因
+
+**為什麼總計數值比想像中少？**
+
+使用 `count_distinct` (不重複計數) 類型的指標時，得到的總計有時會比手動加總表格中各行數值的結果小。
+
+例如：計算每月造訪我們網站的不重複裝置數量，結果如下：
+
+<Frame>
+  ![](/images/references/chart-types/tables-lower-total-17b9669a5d61613bf9d9a1a800138fd7.png)
+</Frame>
+
+如果您手動加總 `Anonymous device count` 欄位的每一行，得到的數值會遠高於表格顯示的總計。這是因為同一個裝置可能在多個月份內重複造訪。手動加總會重複計算這些裝置。
+
+Lightdash 使用 SQL 查詢來計算所有月份內真正不重複的裝置數量，從而避免重複計算。
+
+**為什麼總計數值比想像中多？**
+
+可能有以下兩個原因：
+
+1. 您的查詢設定了「行數限制 (Row limit)」導致結果被截斷。如果查詢的潛在結果多於設定的限制，Lightdash 仍會使用「所有」結果（包含因限制而被移除的行）來計算總計。
+2. 您使用了指標或表格計算過濾器。在套用這些過濾器「之前」，總計就已經計算完成了。
+
+**如何計算僅基於表格可見數值的總計？**
+
+如果您想根據表格中目前顯示的數值計算總計，可以建立一個新的表格計算欄位來達成：
+
+所需使用的表格計算公式如下：
+
+```sql
+SUM(${我的表名.我的指標名}) OVER()
+```
+
+<Info>
+  當使用 `count_distinct` 類型指標時，此計算並非「真實」的不重複總計！
+</Info>
+
+## 小計 (Subtotals)
+
+您可以透過在圖表配置面板選取 `Show subtotals` (顯示小計) 為表格添加小計。
+
+<Frame>
+  ![](/images/references/chart-types/subtotals-69de33b7bb4a868d33b713d61002a782.png)
+</Frame>
+
+要使用小計功能，您的表格視覺化中至少需要有 2 個或以上的維度。
+
+## 凍結欄位 (Freeze columns)
+
+如果您的表格非常寬，您可能希望在滾動時將某些欄位鎖定在左側。點擊您想固定在左側欄位旁邊的鎖頭圖示即可將其鎖定。
+
+![](/images/references/chart-types/table-freeze-column.png)
+
+## 調整欄位寬度 (Resize columns)
+
+在樞紐表與非樞紐表中，您都可以拖拽來調整欄位寬度。此功能在探索視圖的編輯模式下可用。
+
+調整步驟：
+1. 將滑鼠懸停在欄位標題的右緣，會出現調整手柄。
+2. 向左或向右拖拽手柄以調整寬度。
+3. 放開滑鼠以設定新寬度。
+
+欄位寬度會隨圖表配置一併儲存，因此所有查看該圖表的人都能看到調整後的寬度。超出寬度的文字將以省略號 (...) 顯示。
+
+![](/images/references/chart-types/table/resize-columns.gif)
+
+<Tip>
+您可以在欄位配置面板中查看目前的欄位寬度，該處亦提供重置按鈕以恢復預設寬度。欄位最小寬度為 50px，以防欄位完全消失。
+</Tip>
+
+## 條件格式化 (Conditional formatting)
+
+有時，當數值符合特定條件時，高亮顯示表格中的某些數值會很有幫助。您可以透過 **Configure** 標籤下的 **Conditional Formatting** 來設定規則。
+
+![](/images/references/chart-types/conditional-formatting-d7ad3652e9381b8bf60b416a110e7760.png)
+
+### 高亮單元格
+
+新增規則時，您需要先挑選要高亮的欄位，以及要套用的規則類型（**Single** 單一顏色或 **Range** 顏色範圍）。每種規則有三種比較數據的方式：
+
+1. **Values (數值)**：將選定欄位與手動輸入的數值進行比較。
+   - 例如：當 `Profit` (利潤) 欄位小於 $10,000 時顯示為紅色。
+
+2. **Field (欄位)**：將選定欄位與結果中的另一個欄位進行比較。
+   - 例如：當 `Revenue` (營收) 大於 `Target revenue` (目標營收) 欄位時顯示為綠色。
+
+3. **Field values (欄位數值)**：將結果中的另一個欄位與手動輸入值比較，進而格式化目前選定的欄位。
+   - 例如：當 `Total orders` (總訂單) 大於 1,000 時，將 `Partner name` (合作夥伴名稱) 欄位顯示為橘色。
+
+您可以為表格設定任意數量的規則。如果兩項或多項規則發生衝突，列表最底部的規則將優先套用。
+
+### 顏色範圍 (Color ranges)
+
+若要使用顏色範圍規則，請在 **Conditional Formatting** 下選擇 **Range**。您可以指定最小與最大值，或者根據結果中的數值自動設定。
+
+![](/images/references/chart-types/table-conditional-format-range.png)
+
+顏色範圍將使用一組 5 種顏色，映射於您選定的最小與最大顏色之間。

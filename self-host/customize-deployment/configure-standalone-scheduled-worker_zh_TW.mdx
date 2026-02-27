@@ -1,0 +1,89 @@
+---
+title: "為自託管 Lightdash 配置獨立排程工作節點 (Standalone Scheduler Worker)"
+sidebarTitle: 獨立排程工作節點
+---
+
+預設情況下，Lightdash 伺服器會執行一個排程工作節點。針對更進階的基礎設施，我們可以將排程工作節點與主伺服器分開執行。
+
+### 1. 在主伺服器中停用排程工作節點
+
+設定以下環境變數值：
+
+```bash
+SCHEDULER_ENABLED=false
+```
+
+### 2. 執行獨立排程工作節點
+
+啟動排程工作節點的指令：
+
+```bash
+yarn workspace backend scheduler
+```
+
+請注意，它需要與主伺服器相同的環境變數配置。
+
+### docker-compose.yml 範例
+
+```yaml
+version: "3.8"
+x-environment: &commonEnvironment
+  - PGHOST=${PGHOST:-db}
+  - PGPORT=${PGPORT:-5432}
+  - PGUSER=${PGUSER:-postgres}
+  - PGPASSWORD=${PGPASSWORD}
+  - PGDATABASE=${PGDATABASE:-postgres}
+  - SECURE_COOKIES=${SECURE_COOKIES:-false}
+  - TRUST_PROXY=${TRUST_PROXY:-false}
+  - LIGHTDASH_SECRET=${LIGHTDASH_SECRET}
+  - PORT=${PORT:-8080}
+  - SITE_URL=${SITE_URL}
+  - EMAIL_SMTP_HOST=${EMAIL_SMTP_HOST}
+  - EMAIL_SMTP_PORT=${EMAIL_SMTP_PORT}
+  - EMAIL_SMTP_SECURE=${EMAIL_SMTP_SECURE}
+  - EMAIL_SMTP_USER=${EMAIL_SMTP_USER}
+  - EMAIL_SMTP_PASSWORD=${EMAIL_SMTP_PASSWORD}
+  - EMAIL_SMTP_ALLOW_INVALID_CERT=${EMAIL_SMTP_ALLOW_INVALID_CERT}
+  - EMAIL_SMTP_SENDER_NAME=${EMAIL_SMTP_SENDER_NAME}
+  - EMAIL_SMTP_SENDER_EMAIL=${EMAIL_SMTP_SENDER_EMAIL}
+  - HEADLESS_BROWSER_HOST=headless-browser
+  - HEADLESS_BROWSER_PORT=3000
+services:
+  headless-browser:
+    image: browserless/chrome
+    restart: always
+    ports:
+      - "3001:3000"
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+      POSTGRES_USER: ${PGUSER:-postgres}
+      POSTGRES_DB: ${PGDATABASE:-postgres}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  lightdash:
+    image: lightdash/lightdash:latest
+    depends_on:
+      - db
+    environment:
+       <<: *commonEnvironment
+       SCHEDULER_ENABLED: 'false'
+    volumes:
+      - "${DBT_PROJECT_DIR}:/usr/app/dbt"
+    ports:
+      - ${PORT:-8080}:${PORT:-8080}
+
+  scheduler:
+    image: lightdash/lightdash:latest
+    entrypoint: ["yarn", "workspace", "backend", "scheduler"]
+    depends_on:
+      - db
+    environment: *commonEnvironment
+
+volumes:
+  db-data:
+```

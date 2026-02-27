@@ -1,0 +1,550 @@
+---
+title: "使用 React SDK 進行嵌入"
+sidebarTitle: "React SDK"
+description: "Lightdash React SDK 參考文件，用於在 React 應用程式中實現無縫嵌入"
+---
+
+## 概覽
+
+Lightdash React SDK (`@lightdash/sdk`) 提供 React 組件，用於在您的 React 或 Next.js 應用程式中嵌入 Lightdash 內容。相比於 iframe 嵌入，SDK 具備以下優勢：
+
+- 與您的 React 應用程式無縫整合
+- 可透過程式化方式為儀表板設定篩選器
+- 支援使用者互動的回呼 (Callbacks)（例如：導覽至探索視圖）
+- 自定義樣式以匹配您的應用程式介面
+- 提供完整的 TypeScript 類型定義支援
+
+欲了解 iframe 嵌入方式，請參考[嵌入參考指南](/references/embedding_zh_TW)。
+
+## 設定 CORS
+
+要使用 React SDK，您需要更新「跨來源資源共享」(CORS) 政策。
+
+這透過環境變數來完成。Lightdash Cloud 客戶請聯繫 Lightdash 團隊協助您更新。
+
+```bash
+LIGHTDASH_CORS_ENABLED=true
+LIGHTDASH_CORS_ALLOWED_DOMAINS=https://您將使用-sdk-的網域.com
+```
+
+<Info>
+  **為什麼需要設定 CORS**
+
+  啟用 CORS 是必要的，因為瀏覽器會執行安全政策，防止網頁應用程式向不同於其自身來源的網域發起請求（稱為**同源政策 (Same-Origin Policy)**）。
+
+  由於 **Lightdash React SDK** 會與 Lightdash API 互動，您需要在 Lightdash 執行體上配置 CORS，以允許您的前端應用程式與 Lightdash 伺服器通訊而不被瀏覽器阻擋。
+</Info>
+
+<Warning>
+CORS **僅在使用 React SDK 時需要**。iframe 嵌入不需要配置 CORS。
+</Warning>
+
+## 安裝 Lightdash SDK
+
+在您的前端專案中，使用您偏好的套件管理員安裝 SDK。
+
+```bash
+npm install @lightdash/sdk
+# 或
+pnpm add @lightdash/sdk
+# 或
+yarn add @lightdash/sdk
+```
+
+<Info>
+  目前我們支援 React 18 與 19，請確保您的前端專案使用 React 18 或更高版本。
+  對於 Next.js，需要版本 15 或更高。
+</Info>
+
+### 匯入 CSS 樣式
+
+Lightdash SDK 需要 CSS 樣式才能正確渲染組件。請在 React 應用程式的進入點 (Entry point) 檔案中，將 SDK 的 CSS 檔案作為**第一個匯入項**：
+
+```tsx
+import "@lightdash/sdk/sdk.css";
+
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+```
+
+<Warning>
+CSS 匯入必須位於進入點檔案的第一行，以確保 Lightdash 樣式優先載入並避免與其他樣式產生衝突。
+</Warning>
+
+## 組件 (Components)
+
+Lightdash SDK 導出了三個組件來嵌入不同類型的內容：
+
+- `Lightdash.Dashboard` —— 嵌入包含多個磚塊的完整儀表板
+- `Lightdash.Chart` —— 嵌入單個儲存圖表
+- `Lightdash.Explore` —— 嵌入互動式數據探索介面
+
+所有組件共享共通的身份驗證與樣式屬性 (Props)。
+
+### Lightdash.Dashboard
+
+嵌入完整的 Lightdash 儀表板，具備多種視覺化、篩選器與互動功能。
+
+#### 屬性 (Props)
+
+```typescript
+type DashboardProps = {
+  // 必要
+  instanceUrl: string;              // 您的 Lightdash 執行體網址
+  token: string | Promise<string>;  // JWT (支援非同步)
+
+  // 選填
+  styles?: {
+    backgroundColor?: string;       // 背景顏色或 'transparent'
+    fontFamily?: string;            // 所有文字的字體
+  };
+  filters?: SdkFilter[];            // 透過程式碼套用篩選器
+  contentOverrides?: LanguageMap;   // 在地化/翻譯覆蓋
+  onExplore?: (options: {
+    chart: SavedChart
+  }) => void;                       // 當使用者導覽至探索視圖時的回呼
+};
+```
+
+#### 基本用法
+
+```tsx
+import Lightdash from '@lightdash/sdk';
+
+function MyDashboard() {
+  return (
+    <Lightdash.Dashboard
+      instanceUrl="https://app.lightdash.cloud"
+      token={generateToken()} // 伺服器端函數
+    />
+  );
+}
+```
+
+#### 帶有篩選器
+
+透過 `filters` 屬性以程式化方式套用篩選器：
+
+```tsx
+import Lightdash, { FilterOperator } from '@lightdash/sdk';
+
+<Lightdash.Dashboard
+  instanceUrl="https://app.lightdash.cloud"
+  token={token}
+  filters={[
+    {
+      model: 'orders',
+      field: 'status',
+      operator: FilterOperator.EQUALS,
+      value: 'completed',
+    },
+    {
+      model: 'orders',
+      field: 'created_date',
+      operator: FilterOperator.IN_BETWEEN,
+      value: ['2024-01-01', '2024-12-31'],
+    },
+  ]}
+/>
+```
+
+參考[過濾數據](#過濾數據)章節了解完整的篩選器說明。
+
+#### 自定義樣式
+
+```tsx
+<Lightdash.Dashboard
+  instanceUrl="https://app.lightdash.cloud"
+  token={token}
+  styles={{
+    backgroundColor: '#f5f5f5',
+    fontFamily: 'Inter, sans-serif',
+  }}
+/>
+```
+
+#### 使用探索回呼
+
+追蹤使用者何時導覽至探索視圖：
+
+```tsx
+<Lightdash.Dashboard
+  instanceUrl="https://app.lightdash.cloud"
+  token={generateToken({ canExplore: true })}
+  onExplore={({ chart }) => {
+    console.log('使用者正在探索圖表：', chart.name);
+    // 可在此處追蹤分析數據、顯示說明指南等。
+  }}
+/>
+```
+
+### Lightdash.Chart
+
+嵌入單個儲存圖表，以極簡 UI 呈現專注的單一指標。
+
+#### 屬性 (Props)
+
+```typescript
+type ChartProps = {
+  // 必要
+  instanceUrl: string;              // 您的 Lightdash 執行體網址
+  id: string;                       // 圖表 UUID (savedQueryUuid)
+  token: string | Promise<string>;  // JWT 且內容類型需設為 'chart'
+
+  // 選填
+  styles?: {
+    backgroundColor?: string;       // 背景顏色或 'transparent'
+    fontFamily?: string;            // 所有文字的字體
+  };
+  contentOverrides?: LanguageMap;   // 在地化/翻譯覆蓋
+};
+```
+
+<Info>
+與 Dashboard 不同，Chart 組件不支援 `filters` 或 `onExplore` 屬性，因為圖表是唯讀的且無法進一步導覽至探索視圖。
+</Info>
+
+#### 基本用法
+
+```tsx
+import Lightdash from '@lightdash/sdk';
+
+function MyChart() {
+  return (
+    <Lightdash.Chart
+      instanceUrl="https://app.lightdash.cloud"
+      id="您的圖表-uuid"
+      token={generateChartToken()} // 伺服器端函數
+    />
+  );
+}
+```
+
+#### 圖表權杖 (Token) 生成
+
+圖表需要一個包含 `type: 'chart'` 的 JWT：
+
+```javascript
+// 後端 API 端點範例
+import jwt from 'jsonwebtoken';
+
+export function generateChartToken(chartId) {
+  return jwt.sign({
+    content: {
+      type: 'chart',
+      contentId: chartId,  // savedQueryUuid
+      canExportCsv: true,
+      canExportImages: false,
+      canViewUnderlyingData: true,
+    },
+  }, process.env.LIGHTDASH_EMBED_SECRET, { expiresIn: '24h' });
+}
+```
+
+詳情請參考[嵌入圖表指南](/guides/embedding/charts_zh_TW)。
+
+### Lightdash.Explore
+
+嵌入互動式數據探索介面，具備完整的查詢構建能力。
+
+#### 屬性 (Props)
+
+```typescript
+type ExploreProps = {
+  // 必要
+  instanceUrl: string;              // 您的 Lightdash 執行體網址
+  token: string | Promise<string>;  // JWT 且具備 canExplore: true
+
+  // 選填
+  styles?: {
+    backgroundColor?: string;       // 背景顏色或 'transparent'
+    fontFamily?: string;            // 所有文字的字體
+  };
+  contentOverrides?: LanguageMap;   // 在地化/翻譯覆蓋
+};
+```
+
+#### 探索權杖 (Token) 生成
+
+探索介面需要 JWT 中包含 `canExplore: true`：
+
+```javascript
+// 後端 API 端點範例
+import jwt from 'jsonwebtoken';
+
+export function generateExploreToken() {
+  return jwt.sign({
+    content: {
+      type: 'dashboard',  // 可使用 dashboard 類型
+      dashboardUuid: '初始儀表板-uuid',
+      canExplore: true,   // 造訪探索視圖必填
+      canExportCsv: true,
+      canExportImages: true,
+    },
+  }, process.env.LIGHTDASH_EMBED_SECRET, { expiresIn: '4h' });
+}
+```
+
+## 生成嵌入權杖
+
+所有 SDK 組件都需要在伺服器端生成的 JWT。以下是一個完整範例：
+
+### 後端 API 端點 (Node.js)
+
+```typescript
+// server/api/embed-token.ts
+import jwt from 'jsonwebtoken';
+
+export async function generateEmbedToken(req, res) {
+  // 驗證使用者身分
+  const userId = req.user.id;
+  const user = await getUserFromDatabase(userId);
+
+  // 根據使用者屬性生成權杖
+  const token = jwt.sign({
+    content: {
+      type: 'dashboard',
+      dashboardUuid: '您的儀表板-uuid',
+      dashboardFiltersInteractivity: {
+        enabled: 'all',
+      },
+      canExportCsv: true,
+      canExplore: true,
+    },
+    userAttributes: {
+      tenant_id: user.tenantId,  // 用於行級過濾
+    },
+    user: {
+      externalId: user.id,
+      email: user.email,
+    },
+  }, process.env.LIGHTDASH_EMBED_SECRET, { expiresIn: '1h' });
+
+  res.json({ token });
+}
+```
+
+### 前端 React 組件
+
+```tsx
+import Lightdash from '@lightdash/sdk';
+import { useState, useEffect } from 'react';
+
+function EmbeddedDashboard() {
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    // 從您的後端獲取權杖
+    fetch('/api/embed-token')
+      .then(res => res.json())
+      .then(data => setToken(data.token));
+  }, []);
+
+  if (!token) return <div>載入中...</div>;
+
+  return (
+    <Lightdash.Dashboard
+      instanceUrl="https://app.lightdash.cloud"
+      token={token}
+    />
+  );
+}
+```
+
+<Warning>
+  為確保安全，JWT 生成代碼必須運行在**您的後端**，且 **Lightdash 嵌入秘密 (Embed Secret)** 絕不能暴露在前端代碼中。這能防止未經授權的存取並保護敏感數據。
+</Warning>
+
+## 套用樣式
+
+您可以覆蓋 Lightdash 組件的樣式，以匹配您應用程式的設計。
+
+### 支援的樣式覆蓋
+
+```typescript
+styles?: {
+  fontFamily?: string;       // 設定組件內部的所有字體
+  backgroundColor?: string;  // 設定背景顏色或 'transparent'
+}
+```
+
+這兩個屬性都接受標準的 CSS 值。
+
+### 字體 (Font family)
+
+```typescript
+<Lightdash.Dashboard
+  instanceUrl={lightdashUrl}
+  token={lightdashToken}
+  styles={{
+    fontFamily: 'Inter, sans-serif',
+  }}
+/>
+```
+
+<Info>
+部分圖表與組件會明確設定 `font-family`，因此 `fontFamily` 樣式會以較高的權重套用以覆蓋這些預設值。
+</Info>
+
+### 背景顏色 (Background color)
+
+```typescript
+<Lightdash.Dashboard
+  instanceUrl={lightdashUrl}
+  token={lightdashToken}
+  styles={{
+    backgroundColor: 'transparent',
+  }}
+/>
+```
+
+## 過濾數據
+
+您可以將篩選器傳遞給 `<Lightdash.Dashboard/>` 以根據數值過濾維度。多個篩選器會以 AND 運算套用。
+
+<Info>
+過濾功能**僅適用於 Dashboard** 組件。Chart 與 Explore 組件不支援 `filters` 屬性。
+</Info>
+
+<Warning>
+為了讓 `filters` 屬性生效，您的 JWT 必須將 `dashboardFiltersInteractivity` 設為 `enabled: 'all'`。否則篩選器將不會被套用。
+</Warning>
+
+### 篩選器結構
+
+```typescript
+type SdkFilter = {
+  model: string;             // 維度所屬的模型名稱
+  field: string;             // 用於過濾的維度名稱
+  operator: FilterOperator;  // 過濾運算子 (列舉)
+  value: unknown | unknown[]; // 用於過濾的數值
+};
+```
+
+### FilterOperator 列舉
+
+從 SDK 匯入 `FilterOperator`：
+
+```typescript
+import Lightdash, { FilterOperator } from '@lightdash/sdk';
+```
+
+可用運算子列表：
+
+| 運算子 | 描述 | 數值類型 |
+|----------|-------------|------------|
+| `FilterOperator.IS_NULL` | 欄位為空 | 不適用 |
+| `FilterOperator.NOT_NULL` | 欄位不為空 | 不適用 |
+| `FilterOperator.EQUALS` | 欄位等於該值 | 單一數值 |
+| `FilterOperator.NOT_EQUALS` | 欄位不等於該值 | 單一數值 |
+| `FilterOperator.STARTS_WITH` | 欄位開頭為該值 | 單一數值 |
+| `FilterOperator.ENDS_WITH` | 欄位結尾為該值 | 單一數值 |
+| `FilterOperator.INCLUDE` | 欄位包含陣列中的任一值 | 陣列 |
+| `FilterOperator.NOT_INCLUDE` | 欄位不包含陣列中的值 | 陣列 |
+| `FilterOperator.LESS_THAN` | 欄位小於該值 | 單一數值 |
+| `FilterOperator.LESS_THAN_OR_EQUAL` | 欄位小於等於該值 | 單一數值 |
+| `FilterOperator.GREATER_THAN` | 欄位大於該值 | 單一數值 |
+| `FilterOperator.GREATER_THAN_OR_EQUAL` | 欄位大於等於該值 | 單一數值 |
+| `FilterOperator.IN_THE_PAST` | 日期在過去 N 個單位內 | 單一數值 |
+| `FilterOperator.NOT_IN_THE_PAST` | 日期不在過去 N 個單位內 | 單一數值 |
+| `FilterOperator.IN_THE_NEXT` | 日期在未來 N 個單位內 | 單一數值 |
+| `FilterOperator.IN_THE_CURRENT` | 日期在目前時段內 | 單一數值 |
+| `FilterOperator.NOT_IN_THE_CURRENT` | 日期不在目前時段內 | 單一數值 |
+| `FilterOperator.IN_BETWEEN` | 數值介於兩者之間 | 包含 2 個數值的陣列 |
+| `FilterOperator.NOT_IN_BETWEEN` | 數值不在兩者之間 | 包含 2 個數值的陣列 |
+
+## 在地化 (Localization)
+
+**Lightdash SDK** 支援使用標準的 i18n 翻譯物件進行多國語系切換。
+
+### 建議工具
+
+- **翻譯對照表 (Translation maps)** —— Lightdash CLI 可以在以下載為代碼時生成翻譯對照表。
+- **運行時翻譯管理** —— 使用 `i18next` 等翻譯函式庫。
+- **翻譯生產工具** —— 使用 **Locize** 等工具高效管理翻譯。
+
+### 翻譯對照表
+
+Lightdash CLI 可以為儀表板與圖表產出翻譯對照表。下載內容時請添加 `--language-map` 標記：
+
+```bash
+lightdash download --language-map
+```
+
+每個下載的檔案旁都會多出一個 `<檔名>.language.map.yml` 檔案，包含所有可翻譯的字串。
+
+### 運行時翻譯
+
+在運行時，將翻譯物件傳遞給 SDK 的 `contentOverrides` 屬性。建議使用 `i18next` 載入資源：
+
+```typescript
+import i18n from 'i18next';
+
+<Lightdash.Dashboard
+  instanceUrl={lightdashUrl}
+  token={lightdashToken}
+  contentOverrides={i18n.getResourceBundle(
+    i18n.language,      // 指定語言
+    'demo-dashboard',   // 指定命名空間
+  )}
+/>
+```
+
+### 哪些內容可以被翻譯
+
+**可以翻譯的**（Lightdash 定義的 UI 字串）：
+- 儀表板名稱與描述
+- 磚塊標題
+- 圖表名稱
+- 軸線標籤 (Axis labels)
+- 序列名稱 (Series names)
+- Markdown 內容
+
+**無法翻譯的**（來自數據倉庫的數據）：
+- 圖表中的字串值
+- 維度的數值
+- 資料庫中的指標名稱
+- 表格中的原始數據
+
+<Info>
+來自數據倉庫的字串無法透過 SDK 翻譯。它們會直接呈現資料庫中的原始狀態。
+</Info>
+
+## 完整範例 (後端 + 前端)
+
+請參考英文文件中的程式碼片段，整合 Express 後端與 React 前端實作。
+
+## 另請參閱
+
+<CardGroup cols={2}>
+  <Card title="嵌入快速入門" icon="rocket" href="/guides/embedding/how-to-embed-content_zh_TW">
+    5 分鐘快速上手嵌入功能
+  </Card>
+
+  <Card title="嵌入 API 參考" icon="book" href="/references/embedding_zh_TW">
+    完整的 JWT 結構與配置說明
+  </Card>
+
+  <Card title="iframe 嵌入參考" icon="code" href="/references/iframe-embedding_zh_TW">
+    iframe URL 模式與 HTML 嵌入細節
+  </Card>
+
+  <Card title="嵌入儀表板" icon="grid-2" href="/guides/embedding/dashboards_zh_TW">
+    完整的儀表板嵌入指南
+  </Card>
+
+  <Card title="嵌入圖表" icon="chart-line" href="/guides/embedding/charts_zh_TW">
+    完整的圖表嵌入指南
+  </Card>
+
+  <Card title="使用者屬性" icon="shield-check" href="/references/workspace/user-attributes_zh_TW">
+    使用使用者屬性實作行級安全
+  </Card>
+</CardGroup>

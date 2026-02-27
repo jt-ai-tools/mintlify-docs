@@ -1,0 +1,35 @@
+---
+title: "SQL 變數"
+description: "在 Lightdash 模型中編寫 SQL 時，您可以使用以下引用方式來範本化您的 SQL，使其更具重用性。"
+---
+
+- `${field}` - 引用當前模型中的欄位
+- `${model.field}` - 引用另一個模型中的欄位
+- `${TABLE}` - 引用當前表格的 SQL 引用
+- `${lightdash.attributes.my_attr_1}` - 引用名為 `my_attr_1` 的使用者屬性
+  - （選填）`ld` 作為 `lightdash` 的別名
+  - （選填）`attribute` 或 `attr` 作為 `attributes` 的別名
+- `${lightdash.user.<intrinsic_attribute>}` - 引用當前 Lightdash 使用者的「內建屬性」
+  - （選填）`ld` 作為 `lightdash` 的別名
+  - 可用的內建使用者屬性：
+    - `email` (電子郵件)
+
+<Info>
+  **使用者電子郵件屬性僅在電子郵件已驗證時可用。**
+
+  這是一項安全措施，旨在防止使用者使用不屬於自己的電子郵件建立/更新帳號，從而造訪不應看到的數據。
+
+  如果使用者電子郵件未經驗證，您將收到以下錯誤：
+
+  <Frame>
+    ![](/images/references/workspace/user-attributes-info.png)
+  </Frame>
+  ```yaml
+  models:
+    - name: example
+      meta:
+        sql_filter: ${lightdash.user.email} = 'example@lightdash.com'
+  ```
+
+  如果您是自託管使用者，可以啟用 [SMTP](/self-host/customize-deployment/configure-smtp-for-lightdash-email-notifications_zh_TW) 或 [SSO](/self-host/customize-deployment/use-sso-login-for-self-hosted-lightdash_zh_TW) 驗證，以便使用者驗證其電子郵件地址。
+</Info>

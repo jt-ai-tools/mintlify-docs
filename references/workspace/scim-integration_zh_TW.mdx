@@ -1,0 +1,449 @@
+---
+title: "SCIM 整合"
+---
+
+<CardGroup cols={3}>
+  <Card title="Cloud 企業版" icon="rocket" horizontal>
+    
+  </Card>
+</CardGroup>
+
+<Info>
+  **SCIM 整合僅適用於 Lightdash 企業版 (Enterprise) 方案。**
+
+  欲了解更多關於方案的資訊，請造訪我們的[定價頁面](https://www.lightdash.com/pricing)。
+</Info>
+
+## 摘要
+
+SCIM (System for Cross-domain Identity Management) 是用於自動化使用者配置 (User Provisioning) 的開放標準協定。Lightdash 支援任何實作了 SCIM 2.0 標準的身分提供商 (IdP)，包括 Azure, Okta, OneLogin 等。
+
+本文件說明了將 SCIM 整合到您的企業版執行體所需的步驟，讓您的 IdP 能夠管理組織內的使用者與群組。
+
+<Warning>
+  **重要提示：** 如果您是自託管 Lightdash，且同時使用 SCIM 與 SSO，應啟用 `AUTH_ENABLE_OIDC_TO_EMAIL_LINKING` 環境變數。這允許透過電子郵件將 OIDC 身分連結到現有使用者。若未進行此設定，Lightdash 在使用者透過 SSO 登入時會嘗試建立新使用者，若該使用者已透過 SCIM 配置完成，則會導致登入失敗。
+
+  ```bash
+  AUTH_ENABLE_OIDC_TO_EMAIL_LINKING=true
+  ```
+</Warning>
+
+## 在 Lightdash 內設定 SCIM
+
+1. 登入您的 Lightdash 執行體，點擊右上角的姓名縮寫，選擇 **User Settings (使用者設置)**。
+
+<Frame>
+  ![](/images/references/workspace/scim-lightdash-user-settings-9f554881763a721af6463096fe8e1d59.png)
+</Frame>
+
+2. 在側邊欄中，選擇 **SCIM Access Tokens (SCIM 存取權杖)**。
+
+<Frame>
+  ![](/images/references/workspace/scim-lightdash-tokens-list-b060b94f0b68fc67274186809043c175.png)
+</Frame>
+
+3. 點擊 **Generate new token (建立新權杖)**。
+
+- 為其命名並設定選填的到期日期。
+
+<Frame>
+  ![](/images/references/workspace/scim-lightdash-generate-token-fd03c005c465260741db9f144782d7e4.png)
+</Frame>
+
+4. 權杖生成後，請將其複製並儲存在安全的地方，因為關閉視窗後將無法再次查看。
+
+<Frame>
+  ![](/images/references/workspace/scim-lightdash-generated-token-851f5ec6141dbd3dcb35910687f579fa.png)
+</Frame>
+
+5. 注意：您現在也可以在頁面頂部看到您的 **SCIM URL**。在連接外部 SCIM 服務（如 Okta 或 Azure）時會需要此網址。
+
+<Frame>
+  ![](/images/references/workspace/scim-lightdash-view-url-3cfc6eb4588ba52111f287b6a5f08603.png)
+</Frame>
+
+## 整合指南
+
+<AccordionGroup>
+  <Accordion title="Okta">
+    <Info>
+      您需要具備管理員權限才能為組織配置 SCIM。
+    </Info>
+    ### 步驟 1 - 在 Okta 中新增或建立應用程式
+
+    <Info>
+      如果您已配置 Okta SSO，則可跳過此步驟。應用程式應該已經存在。
+    </Info>
+    1. 登入您的 Okta 帳號。
+    2. 在側邊欄點擊 **Applications \> Browse App Catalog**。
+    3. 搜尋 "SCIM" 並選擇 **SCIM 2.0 Test App (Header Auth)**。
+    4. 點擊 **\+ Add Integration**。
+
+    <Frame>
+      ![](/images/references/workspace/scim-okta-create-integration-b666384a8b1a307b610ccdef67667dcd.png)
+    </Frame>
+    5. 為其取一個好記的名稱並點擊 **Next**。
+
+    <Frame>
+      ![](/images/references/workspace/scim-okta-name-app-0c844947069855ee82176c7893a4291c.png)
+    </Frame>
+    6. 將 **Application username format** 更改為 email。
+    7. 點擊 **Done** 儲存配置。
+
+    ### 步驟 2 - 從 Okta 將 SCIM 連接至 Lightdash
+
+    1. 在側邊欄點擊 **Applications \> Applications**。
+    2. 選擇您的應用程式並前往 **Provisioning** 標籤。
+
+    <Frame>
+      ![](/images/references/workspace/scim-okta-provisioning-3bacb4dce7b8a7229d5a93d71b89f016.png)
+    </Frame>
+    3. 選擇 **Configure API Integration**。
+
+    <Frame>
+      ![](/images/references/workspace/scim-okta-configure-api-integration-78a059f5ef6167aa33206c2c8ec2b2d0.png)
+    </Frame>
+    4. 勾選 **Enable API integration** 核取方塊。
+    5. 填寫以下欄位：
+
+    - **Base URL**: `https://您的應用網址/api/v1/scim/v2/`
+    - **API Token**: `Bearer 您的_SCIM_TOKEN`（參考上文在 Lightdash 內生成權杖的方法）
+
+    6. 儲存配置。
+    7. 現在應有更多選項可用。在 **Provisioning \> To App** 中選擇 **Edit**。
+
+    - 啟用 **Create Users** (建立使用者)。
+    - 啟用 **Update User Attributes** (更新使用者屬性)。
+    - 啟用 **Deactivate Users** (停用使用者)。
+    - 點擊 **Save**。
+
+    8. 點擊 **Assignments** 測試整合。選擇 **Assign \> Assign to people**。選取一個使用者並點擊 **Assign \> Save and Go Back**。該使用者應會同步建立在您的 Lightdash 執行體中。
+
+    <Frame>
+      ![](/images/references/workspace/scim-okta-assign-users-4cbb63bebcfc37077bbbdca39552e001.png)
+    </Frame>
+    <Info>
+      **Lightdash 會將 Okta 的活躍狀態同步至 Lightdash。**
+
+      例如，如果某個使用者在 Okta 中被配置為非活躍或被停用，該使用者在 Lightdash 中仍會存在，但會被標記為非活躍 (inactive)，這表示他們將無法使用該平台。
+    </Info>
+
+    ### 步驟 3 - 在 Okta 中管理角色（選填）
+
+    #### 建立用於角色管理的屬性
+
+    1. 前往 **Provisioning \> Profile Editor**。
+    2. 點擊 **Add attribute**，為組織和專案角色建立屬性。
+
+    **針對組織角色 (Organization Role)：**
+    - **Variable name**: `org_role` (或您偏好的名稱)
+    - **External name**: `roles.^[type=='org'].value`
+    - **External namespace**: `urn:ietf:params:scim:schemas:core:2.0:User`
+
+    <Frame>
+      ![](/images/references/workspace/scim-okta-org-role-attribute.png)
+    </Frame>
+
+    **針對專案角色 (Project Roles)：**
+    - **Variable name**: `project_role` (或您偏好的名稱)
+    - **External name**: `roles.^[type=='專案名稱'].value`
+    - **External namespace**: `urn:ietf:params:scim:schemas:core:2.0:User`
+
+    <Warning>
+      **注意**：在建立角色屬性時，如果專案名稱中包含雙引號或其他特殊字元，Okta 的運作可能不如預期。
+    </Warning>
+
+    <Frame>
+      ![](/images/references/workspace/scim-okta-project-role-attribute.png)
+    </Frame>
+
+    #### 定義角色映射 (Role Mappings)
+
+    1. 在 **Profile Editor** 中，前往 **Mappings \> Okta User to Lightdash**。
+    2. 根據 Okta 群組成員身分配置映射關係。
+
+    **組織角色映射範例：**
+    ```
+    isMemberOfGroupName("Lightdash - Admin") ? 'admin' :
+    isMemberOfGroupName("Lightdash - Editor") ? 'editor' : 'member'
+    ```
+
+    **專案角色映射範例：**
+    ```
+    isMemberOfGroupName("Marketing - Admin") ? '3675b69e-8324-4110-bdca-059031aa8da3:admin' :
+    isMemberOfGroupName("Marketing - Editor") ? '3675b69e-8324-4110-bdca-059031aa8da3:editor' :
+    '3675b69e-8324-4110-bdca-059031aa8da3:no-role'
+    ```
+
+    將 `3675b69e-8324-4110-bdca-059031aa8da3` 替換為您實際的專案 UUID，並根據您的 Okta 群組調整名稱。
+
+    <Frame>
+      ![](/images/references/workspace/scim-okta-role-mapping.png)
+    </Frame>
+  </Accordion>
+  <Accordion title="Azure (Entra ID)">
+    <Info>
+      您需要具備 `Hybrid identity administrator` 權限才能為組織配置 SCIM。
+    </Info>
+    ### 步驟 1 - 從 Azure 將 SCIM 連接至 Lightdash
+
+    1. 登入 [Entra ID (原 Azure AD)](https://entra.microsoft.com)。
+    2. 在側邊欄點擊 **Enterprise applications**。
+    3. 選擇 **\+ New Registration**。
+    4. 在頁面頂部選擇 **\+ Create Your own application**。
+
+    - 輸入一個易於識別的標題。
+    - 維持預設的「Non-gallery」選項。
+
+    5. 點擊 **Create** 儲存配置。
+
+    <Frame>
+      ![](/images/references/workspace/scim-azure-create-app-3bb17d51662b8667f958aefbd2fea4ef.png)
+    </Frame>
+    ### 步驟 2 - 為應用程式分配使用者與群組
+
+    1. 導覽至 **Enterprise applications** 並選擇您的應用程式。
+    2. 選擇 **Users and groups \> + Add user/group**。
+    3. 點擊 **None selected**，這將開啟一個視窗。
+
+    - 選取您想要配置的所有使用者與群組，然後點擊 **Select** 關閉視窗。
+
+    4. 點擊 **Assign** 儲存。
+
+    <Frame>
+      ![](/images/references/workspace/scim-azure-edit-app-2b718ab6803faea2bae1f5ed40877256.png)
+    </Frame>
+    ### 步驟 3 - 在 Azure 中配置 SCIM 配置
+
+    1. 導覽至 **Enterprise applications** 並選擇您的應用程式。
+    2. 選擇 **Provision \> Connect your application**。
+    3. 根據 Lightdash SCIM 設置頁面中的值，設定 **Tenant URL** 與 **secret token**。
+    4. 測試連接以確認數值正確。
+    5. 點擊 **Create** 儲存。
+
+    <Frame>
+      ![](/images/references/workspace/scim-azure-configure-provisioning-0913ad7db2b504ecbee342922e84da98.png)
+    </Frame>
+    ### 步驟 4 - 開始配置
+
+    1. 導覽至 **Enterprise applications** 並選擇您的應用程式。
+    2. 選擇 **Provision**。
+    3. 點擊 **Start provisioning**。
+    4. 幾分鐘後，您的使用者與群組將完成同步。
+
+    <Info>
+      **Lightdash 會將 Azure 的活躍狀態同步至 Lightdash。**
+
+      例如，如果某個使用者在 Azure 中被配置為非活躍或被停用，該使用者在 Lightdash 中仍會存在，但會被標記為非活躍 (inactive)，這表示他們將無法使用該平台。
+    </Info>
+  </Accordion>
+</AccordionGroup>
+
+## API 文件
+
+您可以在[此處](https://docs.lightdash.com/api-reference/scim/list-users)找到 SCIM 的完整 API 文件與範例。
+
+## SCIM 行為與實作細節
+
+- `userName` 會對應至 Lightdash 中的主要電子郵件 (Primary email)。請確保您的身分提供商將 `userName` 設定為使用者的主要電子郵件（若發送 `emails` 陣列，主要電子郵件應與其相符）。
+- 當使用者透過 SCIM 被更新為非活躍 (`active: false`) 時，Lightdash 會將該使用者標記為非活躍，將其組織角色調降為 `member`，並移除其在所有專案與群組中的造訪權限。若日後重新啟用該使用者，您需要透過 SCIM 或在 Lightdash 中重新分配其群組與專案權限。
+- 組織必須始終具備至少一位 `admin`。任何會導致組織沒有管理員的 SCIM 請求（例如：降級或停用最後一位管理員）都將被拒絕並報錯。
+- 每位使用者在每個組織與每個專案中僅能擁有一種角色。
+- 使用者必須具備組織角色。
+- 建立使用者時若未提供 `roles`，組織角色預設為 `member`。
+- 編輯使用者 (PUT/PATCH) 時若未提供 `roles`，則不會變更該使用者的角色。
+- 若 SCIM 請求中沒有對應的專案角色條目，或者數值為 `<project_uuid>:no-role`，則會移除該使用者在該專案的角色。這允許明確地從專案中移除角色。
+- 為了減少數據污染，預覽專案 (Preview projects) 的角色無法透過 SCIM 管理，因為這些專案旨在短期存在。
+
+### IdP 提供的 SCIM 電子郵件可以信任嗎？
+
+在大多數情況下，透過 SCIM 發送的電子郵件屬性是值得信任的。然而，請務必與您的 IdP 確認，因為部分提供商允許使用者更改其電子郵件地址。如果可靠性無法保證，請改用穩定的、使用者無法編輯的識別碼（例如：OIDC sub, SAML NameID, 或 Microsoft Entra ID UPN）。
+
+請參閱下方特定提供商的建議。
+
+##### Microsoft / Azure AD / Entra ID
+
+`email` 欄位是不被信任的。Microsoft 使用者擁有一個 UPN (userPrincipalName)，這是不可變的登入識別碼。然而，`email` 欄位僅是連絡用電子郵件，使用者可以隨意自行更改。
+
+**參考資料**：
+
+- https://www.reddit.com/r/AZURE/comments/184w8i0/comment/kay91kz/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+- https://www.crowdstrike.com/en-us/blog/noauth-microsoft-azure-ad-vulnerability/
+- https://learn.microsoft.com/en-us/entra/identity-platform/migrate-off-email-claim-authorization
+- https://www.bleepingcomputer.com/news/security/microsoft-fixes-azure-ad-auth-flaw-enabling-account-takeover/
+
+##### 在 OIDC 中使用 UPN 作為 email 宣告 (Claim)
+
+1. 導覽至 App Registrations：在左側導覽窗格中，選擇「Azure Active Directory」，然後點擊「App registrations」。
+2. 選擇您的應用程式：找到並選取您想要更新的應用程式。
+3. 開啟 Manifest：在應用程式設置中，選擇「Manifest」以開啟 JSON 編輯器。
+4. 編輯 Manifest：在 `optionalClaims` 章節中添加以下內容，將 UPN 映射到 email 宣告：
+
+```json
+{
+  "optionalClaims": {
+    "idToken": [
+      {
+        "name": "email",
+        "source": "userPrincipalName",
+        "essential": true
+      }
+    ]
+  }
+}
+```
+
+## 使用者角色配置 (User Role Provisioning)
+
+Lightdash 支援透過 SCIM 配置使用者角色，允許身分提供商在配置使用者時指定並管理其角色（admin, member 等）。這讓您能直接從身分提供商管理使用者權限，無需在 Lightdash 中執行額外步驟。
+
+我們支援 [RFC 7643](https://datatracker.ietf.org/doc/html/rfc7643#section-7) 中定義的標準 SCIM 2.0 `roles` 屬性。請使用此屬性來配置使用者的組織與專案角色。
+
+### 角色類型
+
+Lightdash 定義了兩個角色範圍：組織 (Organization) 與專案 (Project)。組織角色可設為 member, viewer, interactive viewer, editor, developer, 或 admin。專案角色可為 viewer, interactive viewer, editor, developer, admin, 或[自定義角色](/references/workspace/custom-roles_zh_TW)。
+
+<Info>
+  專案角色的數值是專案 ID 與角色識別碼的組合。
+</Info>
+
+範例：
+
+```
+[
+   {
+        schemas: [ScimSchemaType.ROLE],
+        id: 'member',
+        value: 'member',
+        display: 'Member',
+        type: 'Organization',
+        supported: true,
+    },
+    {
+        schemas: [ScimSchemaType.ROLE],
+        id: '3675b69e-8324-4110-bdca-059031aa8da3:viewer',
+        value: '3675b69e-8324-4110-bdca-059031aa8da3:viewer',
+        display: 'Jaffle shop - Viewer',
+        type: 'Project - Jaffle shop',
+        supported: true,
+    },
+    {
+        schemas: [ScimSchemaType.ROLE],
+        id: '3675b69e-8324-4110-bdca-059031aa8da3:da116e0f-2b96-4af4-93b7-b2636a26853d',
+        value:
+            '3675b69e-8324-4110-bdca-059031aa8da3:da116e0f-2b96-4af4-93b7-b2636a26853d',
+        display: 'Jaffle shop - 我的自定義角色',
+        type: 'Project - Jaffle shop',
+        supported: true,
+    },
+]
+```
+
+### 在您的身分提供商 (IdP) 中配置可用角色
+
+SCIM 角色模型目前仍處於 [IETF 草案階段](https://datatracker.ietf.org/doc/draft-ietf-scim-roles-entitlements)，因此透過 `/Roles` 端點自動探索角色的原生支援程度因提供商而異。
+
+- Okta：不支援透過消費 SCIM `/Roles` 端點來自動填充角色下拉選單。您仍可[手動](https://help.okta.com/en-us/content/topics/users-groups-profiles/usgp-add-custom-user-attributes.htm)配置 `roles`，或使用 [Okta Workflows](https://help.okta.com/wf/en-us/content/topics/workflows/workflows-main.htm) 或[自定義 App](https://help.okta.com/en-us/content/topics/apps/apps_app_integration_wizard.htm) 實作自定義同步。
+- Microsoft Entra ID (Azure AD)：目前不支援從 `/Roles` 自動探索角色。請使用[手動配置](https://learn.microsoft.com/azure/active-directory/app-provisioning/customize-application-attributes)允許的角色。
+- Google Cloud Identity / Workspace：不支援自動消費 `/Roles`。請使用[手動配置](https://support.google.com/cloudidentity/answer/6208725)允許的角色。
+- SailPoint (IdentityNow/IdentityIQ)：支援 SCIM 角色收集；配合正確的連接器配置，它可以從 `/Roles` 等自定義端點獲取角色。
+- 其他 IGA/IM 工具 (如 OneLogin)：部分工具支援從 SCIM App 匯入角色；具體取決於連接器。
+
+如何判斷您的 IdP 是否支援：
+
+- 檢查您的 IdP/連接器文件是否提及 SCIM "roles" 或明確提及該角色草案。
+- 檢查配置或探索日誌：如果 IdP 在探索期間發出 `GET /Roles` 請求，則可能支援。
+- 如果連接器支援自定義探索端點或 schema 擴充，您或許能手動加入 `/Roles`。
+
+如果您的 IdP 不支援 `/Roles`，請參考其文件進行手動配置。請記住：Lightdash 僅需要 `value` 欄位。
+
+### Lightdash 擴充 Schema (已棄用)
+
+<Warning>
+  此章節說明的是舊版 Lightdash 專屬的 SCIM 擴充，現已棄用。新的整合應使用 [RFC 7643](https://datatracker.ietf.org/doc/html/rfc7643#section-7) 定義的標準 SCIM `roles` 屬性。此擴充將在未來的版本中移除。
+</Warning>
+
+要設定使用者角色，Lightdash 提供了一個可包含在 SCIM 請求中的擴充 schema：
+
+```
+urn:lightdash:params:scim:schemas:extension:2.0:User
+```
+
+此擴充 schema 支援以下屬性：
+
+| 屬性 | 描述 | 必填 | 預設值 |
+| :--- | :--- | :--- | :--- |
+| `role` | 使用者在組織中的角色 | 否 | `member` |
+
+在 Azure 或 Okta 中映射屬性時，必須在屬性名稱前加上完整的 schema 名稱。例如：設定 `role` 屬性時，必須使用 `urn:lightdash:params:scim:schemas:extension:2.0:User:role` 作為屬性路徑。
+
+## 群組角色配置 (Group role provisioning)
+
+在 SCIM 中，您無法直接為「群組 (Group)」資源分配角色屬性。群組僅包含成員。
+
+組織通常會選擇以下模式之一：
+
+1. Lightdash 中不使用群組
+
+- 不在 Lightdash 中管理群組。任何透過 Lightdash UI 建立的群組應在 SCIM 定期同步期間被移除（這可能需要在您的 IdP SCIM App 中進行配置，例如啟用群組取消配置或群組推送）。
+- 透過 SCIM 為使用者配置組織與專案角色。
+
+2. 在 Lightdash 管理群組專案角色，透過 SCIM 配置群組成員身分
+
+- 直接在 Lightdash 中管理群組的專案角色。
+- 透過 SCIM 配置使用者的組織角色與群組成員身分（不要透過 SCIM 直接為使用者分配專案角色）。
+- 使用者不應具備直接的專案造訪權，而是透過其組織角色與群組成員身分繼承權限。
+- 在定期同步期間，SCIM 會移除任何透過 Lightdash UI 手動分配給使用者的專案角色。
+
+## 輪換 SCIM 存取權杖 (Rotating a SCIM access token)
+
+為了維護安全性，您可能需要定期輪換 SCIM 存取權杖。請依照以下步驟輪換現有權杖。
+
+輪換需求：
+
+- **權杖 UUID**：您需要權杖的唯一識別碼 (UUID)，可以在組織設置的權杖頁面找到。
+- **到期日期**：輪換權杖時必須指定新的到期日期。不具備到期時間的權杖無法被輪換。
+- **時間間隔**：權杖每小時僅能輪換一次。
+
+使用以下 curl 指令來輪換 SCIM 存取權杖。將 `<scim-access-token-uuid>` 替換為您要輪換的權杖 UUID，並將 `<personal-access-token>` 替換為您的[個人存取權杖](/references/workspace/personal-tokens_zh_TW)。此過程將使舊權杖失效，並回傳一個具有新到期日期的全新權杖。
+
+```bash
+curl --location --request PATCH 'https://您的Lightdash網址/api/v1/scim/organization-access-tokens/<scim-access-token-uuid>/rotate' 
+--header 'Content-Type: application/json' 
+--header 'Authorization: ApiKey <personal-access-token>' 
+--data '{
+    "expiresAt": "2025-12-13T16:10:04.976Z"
+}'
+```
+
+回應範例：
+
+```json
+{
+    "status": "ok",
+    "results": {
+        "uuid": "bf677698-502e-4ed6-aa90-02a17999c379",
+        "organizationUuid": "172a2270-000f-42be-9c68-c4752c23ae51",
+        "description": "輪換權杖",
+        "createdAt": "2024-11-18T13:50:21.241Z",
+        "expiresAt": "2025-12-13T16:10:04.976Z",
+        "lastUsedAt": "2024-11-18T14:24:41.367Z",
+        "rotatedAt": "2024-11-18T15:15:24.361Z",
+        "token": "scim_204b5ccaf4d11e656efbf1f68986028a"
+    }
+}
+```
+
+要獲取權杖的元數據：
+
+```bash
+curl --location 'https://您的Lightdash網址/api/v1/scim/organization-access-tokens/<scim-access-token-uuid>' 
+--header 'Authorization: ApiKey <personal-access-token>'
+```
+
+列出所有權杖：
+
+```bash
+curl --location 'https://您的Lightdash網址/api/v1/scim/organization-access-tokens' 
+--header 'Authorization: ApiKey <personal-access-token>'
+```

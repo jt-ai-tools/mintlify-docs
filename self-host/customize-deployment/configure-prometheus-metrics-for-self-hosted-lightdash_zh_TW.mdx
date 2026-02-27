@@ -1,0 +1,162 @@
+---
+title: "為自託管 Lightdash 配置 Prometheus 指標"
+sidebarTitle: Prometheus 指標
+---
+
+Lightdash 可以暴露 Prometheus 指標，協助您監控 Lightdash 執行體的效能與健康狀況。本指南將說明如何為您的自託管 Lightdash 部署啟用並配置 Prometheus 指標。
+
+## 啟用 Prometheus 指標
+
+預設情況下，Lightdash 停用了 Prometheus 指標。要啟用它們，請設定以下環境變數：
+
+```bash
+LIGHTDASH_PROMETHEUS_ENABLED=true
+```
+
+## 配置選項
+
+您可以使用以下環境變數自定義 Prometheus 指標端點：
+
+| 變數 | 描述 | 必填？ | 預設值 |
+|:--------------------------------------------|:--------------------------------------------------------------------------------|:---------:|:---------------------------:|
+| `LIGHTDASH_PROMETHEUS_ENABLED` | 啟用/停用 Prometheus 指標端點 | | `false` |
+| `LIGHTDASH_PROMETHEUS_PORT` | Prometheus 指標端點的連接埠 | | `9090` |
+| `LIGHTDASH_PROMETHEUS_PATH` | Prometheus 指標端點的路徑 | | `/metrics` |
+| `LIGHTDASH_PROMETHEUS_PREFIX` | 指標名稱的前綴 | | |
+| `LIGHTDASH_GC_DURATION_BUCKETS` | 時長直方圖的桶 (Buckets)（秒） | | `0.001, 0.01, 0.1, 1, 2, 5` |
+| `LIGHTDASH_EVENT_LOOP_MONITORING_PRECISION` | 事件迴圈監控的精度（毫秒）。必須大於零。 | | `10` |
+| `LIGHTDASH_PROMETHEUS_LABELS` | 要添加到所有指標的標籤。必須是有效的 JSON。 | | |
+
+## 可用的指標
+
+Lightdash 暴露以下指標：
+
+### 進程指標 (Process metrics)
+
+這些指標提供關於執行 Lightdash 的 Node.js 進程資訊：
+
+| 指標 | 類型 | 描述 |
+| :----- | :--- | :---------- |
+| `process_cpu_user_seconds_total` | counter | 使用者 CPU 總耗時（秒） |
+| `process_cpu_system_seconds_total` | counter | 系統 CPU 總耗時（秒） |
+| `process_cpu_seconds_total` | counter | 使用者與系統 CPU 總耗時（秒） |
+| `process_start_time_seconds` | gauge | 進程啟動時間（自 Unix 紀元起的秒數） |
+| `process_resident_memory_bytes` | gauge | 常駐記憶體大小（位元組） |
+| `process_virtual_memory_bytes` | gauge | 虛擬記憶體大小（位元組） |
+| `process_heap_bytes` | gauge | 進程堆積 (Heap) 大小（位元組） |
+| `process_open_fds` | gauge | 開啟的檔案描述符數量 |
+| `process_max_fds` | gauge | 最大檔案描述符數量 |
+
+### Node.js 指標
+
+這些指標提供關於 Node.js 執行階段的資訊：
+
+| 指標 | 類型 | 描述 |
+| :----- | :--- | :---------- |
+| `nodejs_eventloop_lag_seconds` | gauge | 事件迴圈延遲（秒） |
+| `nodejs_eventloop_lag_min_seconds` | gauge | 紀錄到的最小事件迴圈延遲 |
+| `nodejs_eventloop_lag_max_seconds` | gauge | 紀錄到的最大事件迴圈延遲 |
+| `nodejs_eventloop_lag_mean_seconds` | gauge | 紀錄到的事件迴圈延遲平均值 |
+| `nodejs_eventloop_lag_stddev_seconds` | gauge | 紀錄到的事件迴圈延遲標準差 |
+| `nodejs_eventloop_lag_p50_seconds` | gauge | 紀錄到的事件迴圈延遲第 50 百分位數 |
+| `nodejs_eventloop_lag_p90_seconds` | gauge | 紀錄到的事件迴圈延遲第 90 百分位數 |
+| `nodejs_eventloop_lag_p99_seconds` | gauge | 紀錄到的事件迴圈延遲第 99 百分位數 |
+| `nodejs_active_resources` | gauge | 當前維持事件迴圈活動的活動資源數（按非同步資源類型分組） |
+| `nodejs_active_resources_total` | gauge | 活動資源總數 |
+| `nodejs_active_handles` | gauge | 活動 libuv 控制代碼 (Handles) 數（按類型分組） |
+| `nodejs_active_handles_total` | gauge | 活動控制代碼總數 |
+| `nodejs_active_requests` | gauge | 活動 libuv 請求數（按類型分組） |
+| `nodejs_active_requests_total` | gauge | 活動請求總數 |
+| `nodejs_heap_size_total_bytes` | gauge | Node.js 進程堆積總大小 |
+| `nodejs_heap_size_used_bytes` | gauge | Node.js 已使用的進程堆積大小 |
+| `nodejs_external_memory_bytes` | gauge | Node.js 外部記憶體大小 |
+| `nodejs_heap_space_size_total_bytes` | gauge | Node.js 進程堆積空間總大小 |
+| `nodejs_heap_space_size_used_bytes` | gauge | Node.js 已使用的進程堆積空間大小 |
+| `nodejs_heap_space_size_available_bytes` | gauge | Node.js 可用的進程堆積空間大小 |
+| `nodejs_version_info` | gauge | Node.js 版本資訊 |
+| `nodejs_gc_duration_seconds` | histogram | 垃圾回收 (GC) 時長（按種類分組） |
+| `nodejs_eventloop_utilization` | gauge | 計算出的事件迴圈利用率 (ELU) 百分比 |
+
+### PostgreSQL 指標
+
+這些指標提供關於 PostgreSQL 連接池的資訊：
+
+| 指標 | 類型 | 描述 |
+| :----- | :--- | :---------- |
+| `pg_pool_max_size` | gauge | PG 連接池的最大容量 |
+| `pg_pool_size` | gauge | 當前 PG 連接池的大小 |
+| `pg_active_connections` | gauge | PG 連接池中的活動連接數 |
+| `pg_idle_connections` | gauge | PG 連接池中的空閒連接數 |
+| `pg_queued_queries` | gauge | 在 PG 連接池隊列中等待的查詢數 |
+| `pg_connection_acquire_time` | histogram | 從 PG 連接池獲取連接所需的時間（毫秒） |
+| `pg_query_duration` | histogram | PG 查詢執行時間的直方圖（毫秒） |
+
+### 隊列指標 (Queue metrics)
+
+| 指標 | 類型 | 描述 |
+| :----- | :--- | :---------- |
+| `queue_size` | gauge | 隊列中的作業 (Jobs) 數量 |
+
+## 使用指標進行監控與告警
+
+您可以使用這些指標在監控系統中建立儀表板與告警。常見案例包括：
+
+- 監控記憶體使用量並針對潛在的記憶體洩漏設定告警。
+- 追蹤 PostgreSQL 連接池利用率。
+- 監控事件迴圈延遲以偵測效能問題。
+- 針對高 CPU 使用率設定告警。
+
+例如，您可能想為以下項目建立告警：
+
+- 高記憶體使用量：`process_resident_memory_bytes > 門檻值`
+- 事件迴圈延遲：`nodejs_eventloop_lag_p99_seconds > 門檻值`
+- 資料庫連接池飽和：`pg_active_connections / pg_pool_max_size > 0.8`
+
+## OpenTelemetry 支援
+
+Lightdash 指標也與 OpenTelemetry 相容。您可以使用帶有 [Prometheus 接收器 (Prometheus receiver)](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver) 的 [OpenTelemetry Collector](https://opentelemetry.io/docs/collector) 來抓取 Lightdash 的 Prometheus 指標端點，並將其匯出到任何相容 OpenTelemetry 的後端。
+
+OpenTelemetry Collector 配置範例：
+
+```yaml
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'lightdash'
+          scrape_interval: 15s
+          static_configs:
+            - targets: ['lightdash:9090']
+
+exporters:
+  # 配置您偏好的匯出器 (例如：OTLP, Jaeger 等)
+  otlp:
+    endpoint: "您的-otlp-端點:4317"
+
+service:
+  pipelines:
+    metrics:
+      receivers: [prometheus]
+      exporters: [otlp]
+```
+
+## 設定 Prometheus 伺服器
+
+如果您尚未設定 Prometheus 伺服器，以下資源可協助您入門：
+
+### 一般 Prometheus 設定
+
+- [Prometheus 入門指南](https://prometheus.io/docs/prometheus/latest/getting_started) —— 關於如何安裝與配置 Prometheus 的官方文件。
+- [Prometheus 安裝](https://prometheus.io/docs/prometheus/latest/installation) —— 多種安裝 Prometheus 的方式。
+- [Prometheus 配置](https://prometheus.io/docs/prometheus/latest/configuration/configuration) —— 詳細的配置選項。
+
+### 在 Google Cloud Platform (GCP) 設定 Prometheus
+
+- [Google Cloud Managed Service for Prometheus](https://cloud.google.com/stackdriver/docs/managed-prometheus) —— Google Cloud 的託管式 Prometheus 服務。
+- [在 GKE 上安裝 Prometheus](https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed) —— 在 Google Kubernetes Engine 上進行設定。
+
+### 在 Amazon Web Services (AWS) 設定 Prometheus
+
+- [Amazon Managed Service for Prometheus](https://aws.amazon.com/prometheus) —— AWS 的託管式 Prometheus 服務。
+- [Amazon Managed Service for Prometheus 入門](https://docs.aws.amazon.com/prometheus/latest/userguide/what-is-Amazon-Managed-Service-Prometheus.html) —— AWS 官方文件。
+- [在 Amazon EKS 上設定 Prometheus](https://docs.aws.amazon.com/eks/latest/userguide/prometheus.html) —— 在 Amazon Elastic Kubernetes Service 上進行部署。

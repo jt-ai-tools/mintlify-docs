@@ -1,0 +1,43 @@
+---
+title: "自託管時加入無頭瀏覽器 (Headless Browser)"
+description: "我們使用 Chrome 無頭瀏覽器來為您的圖表與儀表板生成圖片，以便透過電子郵件或 Slack 發送。"
+sidebarTitle: 無頭瀏覽器
+---
+
+圖片請求可來自「Slack 連結展開 (unfurl)」或使用我們的「排程器 (Scheduler)」。
+
+如果您是在自託管環境下執行 Lightdash，您也必須在您的基礎設施上執行此無頭瀏覽器。
+
+## 運作機制
+
+<Frame>
+  ![](/images/self-host/customize-deployment/enable-headless-browser-for-lightdash/headless-browser-schema-62b496e0d9f5f705ae823c7d4fdec946.png)
+</Frame>
+
+當 Lightdash 需要生成圖片時，它會向無頭瀏覽器開啟一個 Socket 連線，網址為 `ws://HEADLESS_BROWSER_HOST:HEADLESS_BROWSER_PORT`。
+
+接著使用 `playwright` 在瀏覽器中造訪 `SITE_URL` 上的 Lightdash 圖表/儀表板。
+
+我們在瀏覽器中載入該圖表/儀表板，並在載入完成後進行截圖。
+
+隨後，我們會將該圖片儲存在 S3（若已啟用）或本地端，並回傳圖片 URL。
+
+如果圖片是因 Slack 展開而請求，我們將透過 Slack API 展開圖片。如果是由排程器請求，則會將圖片發送至目的地（電子郵件或 Slack）。
+
+## 在 Lightdash 上配置無頭瀏覽器
+
+<Note>
+  Lightdash 使用 Browserless 來提供無頭瀏覽器功能。我們建議使用 `ghcr.io/browserless/chromium` 鏡像，版本為 `v2.24.3`，這也是 Lightdash Cloud 部署中使用的版本。
+</Note>
+
+為了使其正常運作，有幾個關鍵的環境變數需要正確配置：
+
+* `HEADLESS_BROWSER_HOST`：如果您使用 Docker，這可能是 `headless-browser`；若是在本地執行（或使用 network:host），則為 `localhost`。
+* `HEADLESS_BROWSER_PORT`：無頭瀏覽器的連接埠，選填，預設為 3001。
+* `SITE_URL`：您的 Lightdash 執行體網址。
+
+<Info>
+  此 `SITE_URL` 變數（例如：[https://eu1.lightdash.cloud](https://eu1.lightdash.cloud)）必須能被無頭瀏覽器服務存取，不論是透過本地連線或網際網路。否則它將無法開啟頁面並生成圖片。
+
+  這意味著如果您在本地使用 Docker，請確保無頭瀏覽器的 Pod 可以連接到 Lightdash 的 Pod。或者參考 [Docker 文件](https://docs.docker.com/compose/compose-file/compose-file-v3/#network_mode) 啟用 `network:host`。
+</Info>

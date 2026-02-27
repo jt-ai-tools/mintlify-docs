@@ -1,0 +1,1007 @@
+---
+title: "Lightdash CLI 參考指南"
+sidebarTitle: "Lightdash CLI"
+description: "Lightdash CLI 是開發 Lightdash 專案的推薦方式。它使開發更快速、更輕鬆，並為您提供構建更強大自動化功能以管理 Lightdash 專案的選項。"
+---
+
+<Info>
+欲了解安裝說明，請參考[如何安裝 Lightdash CLI](/guides/cli/how-to-install-the-lightdash-cli_zh_TW)。
+</Info>
+
+## 依賴項 (Dependencies)
+
+Lightdash CLI 需要安裝 Node, NPM，以及 [dbt core](https://docs.getdbt.com/docs/core/installation-overview) 或 [dbt cloud](https://docs.getdbt.com/docs/cloud/cloud-cli-installation) CLI，並確保 `dbt` 指令可在終端機執行。
+
+### 使用 dbt cloud CLI 時的已知限制
+
+**部分指令依賴倉庫憑據**
+
+受影響的指令：`lightdash generate`, `lightdash preview` 以及 `lightdash start-preview`
+
+由於 dbt Cloud CLI 不直接暴露憑據，這些指令依賴於當前專案的數據倉庫憑據。請確保專案憑據具備造訪所有開發 (Dev) 與預發佈 (Staging) schema 的權限，以獲得流暢的使用體驗。
+
+**新專案的倉庫憑據為空**
+
+受影響的指令：`lightdash deploy --create`
+
+使用此指令建立非預覽專案的新專案時，數據倉庫憑據不會自動填充。使用者必須在專案建立後，手動在專案設置頁面更新數據倉庫憑據。
+
+
+## 全域選項 (Global options)
+
+有三個全域選項可用於任何 Lightdash CLI 指令：[version](#版本-version)、[help](#幫助-help) 以及 [verbose](#詳細日誌-verbose)。
+
+### 版本 (Version)
+
+`--version` 或 `-V`
+
+忽略前方的指令並顯示已安裝的 CLI 版本。通常緊接在 `lightdash` 之後使用：
+
+```bash
+lightdash --version
+```
+
+如果您需要升級 Lightdash CLI 版本，請根據您的安裝方式在終端機執行對應指令：
+
+<Tabs>
+  <Tab title="npm">
+    ```bash
+    npm install -g @lightdash/cli
+    lightdash --version
+    ```
+  </Tab>
+  <Tab title="Homebrew">
+    ```bash
+    brew upgrade lightdash
+    lightdash --version
+    ```
+  </Tab>
+</Tabs>
+
+### 幫助 (Help)
+
+`--help` 或 `-h`
+
+說明前方指令的功能並列出該指令的所有專屬選項。您可以像這樣查看 Lightdash CLI 幫助：
+
+```console
+lightdash --help
+```
+
+這會回傳 Lightdash CLI 幫助功能表：
+
+<Frame>
+  ![](/images/references/cli-lightdash-help-86d9d11f57ca516a722c0dfcf8f2919a.png)
+</Frame>
+
+當您對特定指令使用 `--help` 或 `-h` 選項時：
+
+```console
+lightdash validate -h
+```
+
+這會回傳該指令本身的詳情與範例：
+
+<Frame>
+  ![lightdash validate 幫助 CLI 結果](/images/references/cli-lightdash-validate-help-4716250d913c205b5899edad4b1eecf2.png)
+</Frame>
+
+### 詳細日誌 (Verbose)
+
+`--verbose`
+
+預設為關閉 (OFF)。開啟時，指令執行的每個步驟都會印出進度日誌。例如，這是 `lightdash generate-exposures` 的詳細版本：
+
+<Frame>
+  ![lightdash generate-exposures 詳細範例](/images/references/cli-verbose-example-d1324d705fe2d242bc4171d2261bed65.png)
+</Frame>
+
+## 指令 (Commands)
+
+下表包含 Lightdash CLI 中所有可用指令的完整列表。
+
+欲了解範例與特定指令的選項，請點擊表中的指令查看文件，或安裝 Lightdash CLI 並使用[全域幫助選項](#幫助-help)。
+
+| 指令 | 描述 |
+| --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+|[`lightdash login`](/references/lightdash-cli_zh_TW#lightdash-login) | 使用電子郵件/密碼或權杖登入 Lightdash 執行體 |
+|[`lightdash config set-project`](/references/lightdash-cli_zh_TW#lightdash-config-set-project) | 選擇或設定您正在處理的 Lightdash 專案 |
+|[`lightdash config get-project`](/references/lightdash-cli_zh_TW#lightdash-config-get-project) | 獲取當前活動專案 |
+|[`lightdash config list-projects`](/references/lightdash-cli_zh_TW#lightdash-config-list-projects) | 列出組織中所有非預覽專案 |
+|[`lightdash compile`](/references/lightdash-cli_zh_TW#lightdash-compile) | 使用本地專案檔案編譯 Lightdash 資源 |
+|[`lightdash preview`](/references/lightdash-cli_zh_TW#lightdash-preview) | 建立臨時預覽專案，並等待按鍵停止 |
+|[`lightdash start-preview`](/references/lightdash-cli_zh_TW#lightdash-start-preview) | 建立一個持續開啟直到手動停止的預覽專案 |
+|[`lightdash stop-preview`](/references/lightdash-cli_zh_TW#lightdash-stop-preview) | 關閉已開啟的預覽專案 |
+|[`lightdash deploy`](/references/lightdash-cli_zh_TW#lightdash-deploy) | 使用本地專案與憑據編譯並部署 Lightdash 專案 |
+|[`lightdash refresh`](/references/lightdash-cli_zh_TW#lightdash-refresh) | 使用遠端儲存庫重新整理 Lightdash 專案 |
+|[`lightdash validate`](/references/lightdash-cli_zh_TW#lightdash-validate) | 根據本地專案檔案驗證活動專案中的內容 |
+|[`lightdash generate`](/references/lightdash-cli_zh_TW#lightdash-generate) | 為選定模型生成或更新 `schema.yml` 檔案 |
+|[`lightdash dbt run`](/references/lightdash-cli_zh_TW#lightdash-dbt-run) | 執行 dbt，然後為選定模型生成或更新 `schema.yml` 檔案 |
+|[`lightdash generate-exposures`](/references/lightdash-cli_zh_TW#lightdash-generate-exposures) | [實驗性指令] 為 Lightdash 曝露 (Exposures) 生成 YAML 檔案 |
+|[`lightdash download`](/references/lightdash-cli_zh_TW#lightdash-download) | 以代碼形式從 Lightdash 專案下載所有圖表與儀表板 |
+|[`lightdash upload`](/references/lightdash-cli_zh_TW#lightdash-upload) | 將作為代碼的圖表與儀表板上傳至 Lightdash 專案 |
+|[`lightdash rename`](/references/lightdash-cli_zh_TW#lightdash-rename) | 在所有 Lightdash 內容中重新命名模型或欄位名稱 |
+|[`lightdash diagnostics`](/references/lightdash-cli_zh_TW#lightdash-diagnostics) | 顯示關於 CLI 環境的診斷資訊 |
+|[`lightdash sql`](/references/lightdash-cli_zh_TW#lightdash-sql) | 使用專案憑據對數據倉庫執行原始 SQL 查詢 |
+|[`lightdash lint`](/references/lightdash-cli_zh_TW#lightdash-lint) | 根據 JSON schema 驗證 Lightdash Code 檔案 |
+---
+
+### `lightdash login`
+
+使用電子郵件與密碼或權杖登入 Lightdash 執行體。
+
+```console
+lightdash login [URL]
+```
+
+**參數：**
+
+- `[URL]`
+  - 您的 Lightdash 執行體網址（參考下方範例）
+
+**選項：**
+
+- `--token <token>`
+  - 使用存取權杖登入（常見於 SSO 使用者）
+  - 若不使用此項，則以電子郵件與密碼登入
+- `--oauth`
+  - (預設：false)
+  - 使用 OAuth2 流程登入（開啟瀏覽器進行身份驗證）
+- `--project <project uuid>`
+  - 登入後透過 UUID 選擇專案（必須是有效的 UUID）
+
+
+**範例：**
+
+登入 Lightdash Cloud 美國執行體（適用於大多數 Starter 客戶）：
+
+```bash
+lightdash login https://app.lightdash.cloud
+```
+
+登入 Lightdash Cloud 歐洲執行體並顯示詳細登入日誌：
+
+```bash
+lightdash login https://eu1.lightdash.cloud --verbose
+```
+
+使用個人存取權杖登入自定義網域（排除 `--token` 則以電子郵件與密碼登入）：
+
+```bash
+lightdash login https://custom.lightdash.domain --token bv6105f53cb127087189cfib180a3131
+```
+
+### `lightdash config set-project`
+
+選擇您正在開發的專案，以便 CLI 知道在執行 `lightdash validate` 和 `lightdash preview` 等指令時應查看哪個專案內容。如果您的組織只有一個專案，則無需使用此項！
+
+```bash
+lightdash config set-project
+```
+
+此指令會彈出一個互動式列表，供您從組織的專案中進行選擇。
+
+如果您需要以非互動方式設定專案，可以使用以下兩個選填參數。
+
+**選項：**
+
+- `--name`
+  - 透過傳遞明確的專案名稱來設定專案
+- `--uuid`
+  - 透過傳遞明確的專案 UUID 來設定專案
+
+**範例：**
+
+設定專案為 "Healthcare Demo"：
+
+```bash
+lightdash config set-project --name "Healthcare Demo"
+```
+
+設定專案為指定的 UUID：
+
+```bash
+lightdash config set-project --uuid "d75379bc-f6e9-4e52-86b2-d897cabacd0c"
+```
+
+### `lightdash config get-project`
+
+獲取 CLI 目前設定使用的活動專案。
+
+```bash
+lightdash config get-project
+```
+
+此指令顯示目前為 CLI 操作設定的專案。用於驗證哪些專案將受 `lightdash validate`, `lightdash preview`, 以及 `lightdash deploy` 指令影響。
+
+### `lightdash config list-projects`
+
+列出組織中所有非預覽專案。
+
+```bash
+lightdash config list-projects
+```
+
+此指令顯示所有可用的專案（不含預覽專案），您可以使用 `lightdash config set-project` 進行選擇。
+
+### `lightdash compile`
+
+使用本地專案與資料庫憑據編譯 Lightdash 資源。會先編譯 dbt，接著編譯您的 Lightdash 探索 (Explores)。如果您使用 [dbt 節點選取](#dbt-節點選取-dbt-node-selection) 僅編譯模型子集，Lightdash 也會編譯與這些模型關聯的模型，以確保欄位引用完整。
+
+所有標準的 [dbt 選項](#dbt-選項-dbt-options) 皆可用於 `lightdash compile`。
+
+**選項：**
+
+- `--skip-dbt-compile`
+  - (預設：false)
+  - 跳過 `dbt compile` 並從現有的 ./target/manifest.json 部署
+- `--skip-warehouse-catalog`
+  - (預設：false)
+  - 跳過抓取倉庫編目，並使用 YAML 中定義的類型
+- `--no-warehouse-credentials`
+  - (預設：false)
+  - 在不使用任何倉庫憑據的情況下編譯。跳過 dbt 編譯與倉庫編目抓取
+
+**範例：**
+
+編譯整個專案：
+
+```bash
+lightdash compile
+```
+
+僅編譯 `accounts` dbt 模型，接著編譯對應的 Lightdash 探索：
+
+```bash
+lightdash compile -s accounts
+```
+
+編譯專案，但跳過 `dbt compile` 與倉庫編目：
+
+```bash
+lightdash compile --no-warehouse-credentials
+```
+
+### `lightdash preview`
+
+啟動一個臨時預覽專案，使用本地專案檔案與從[選定專案](#lightdash-config-set-project)複製的內容（圖表與儀表板）。
+
+所有標準的 [dbt 選項](#dbt-選項-dbt-options) 皆可用於 `lightdash preview`。
+
+**選項：**
+
+- `--name [preview name]`
+  - 預覽專案的自定義名稱。若未提供，將隨機生成一個唯一名稱
+- `--start-of-week [number]`
+  - 指定一週的第一天（供週相關日期函數使用）
+  - 0 (週一) 到 6 (週日)
+- `--skip-dbt-compile`
+  - (預設：false)
+  - 跳過 `dbt compile` 並從現有的 ./target/manifest.json 部署
+- `--skip-warehouse-catalog`
+  - (預設：false)
+  - 跳過抓取倉庫編目，並使用 YAML 中定義的類型
+- `--no-warehouse-credentials`
+  - (預設：false)
+  - 在不使用任何倉庫憑據的情況下編譯。跳過 dbt 編譯與倉庫編目
+- `--use-dbt-list [true/false]`
+  - (預設：true)
+  - 使用 `dbt list` 代替 `dbt compile` 來生成 dbt manifest.json
+- `--ignore-errors`
+  - (預設：false)
+  - 允許在編譯出錯時依然部署
+- `--table-configuration [prod/all]`  
+  - (預設：all)
+  - 若設為 'prod'，將從來源專案複製表格配置
+- `--skip-copy-content`
+  - (預設：false)
+  - 跳過從來源專案複製內容
+- `--use-batched-deploy`
+  - (預設：false)
+  - 分批部署探索而非單一請求。適用於超出負載限制的大型專案
+- `--batch-size [number]`
+  - (預設：50)
+  - 分批部署時每批包含的探索數量
+- `--parallel-batches [number]`
+  - (預設：1)
+  - 分批部署時同時上傳的批次數量。請謹慎使用，數值過高可能使伺服器超載
+
+**範例：**
+
+建立名為 **PR: Add Revenue Metric** 的臨時預覽專案，並在啟動時忽略驗證錯誤：
+
+```bash
+lightdash preview --name "PR: Add Revenue Metric" --ignore errors
+```
+
+建立隨機名稱的臨時預覽專案，將週起始日設為週一，僅包含帶有 `marketing` 標籤的 dbt 模型：
+
+```bash
+lightdash preview --start-of-week=0 --select "tag:marketing"
+```
+
+### `lightdash start-preview`
+
+建立一個持久性的預覽專案，使用本地專案檔案與從[選定專案](#lightdash-config-set-project)複製的內容。
+
+所有標準的 [dbt 選項](#dbt-選項-dbt-options) 皆可用於 `lightdash start-preview`。
+
+**必要參數：**
+
+- `--name [preview name]`
+  - 預覽專案的名稱。若同名專案已存在則更新，否則建立新專案。
+
+**選項：**
+
+- `--start-of-week [number]`
+  - 指定一週的第一天
+  - 0 (週一) 到 6 (週日)
+- `--skip-dbt-compile`
+  - (預設：false)
+  - 跳過 `dbt compile`
+- `--skip-warehouse-catalog`
+  - (預設：false)
+  - 跳過倉庫編目抓取
+- `--use-dbt-list [true/false]`
+  - (預設：true)
+  - 使用 `dbt list`
+- `--ignore-errors`
+  - (預設：false)
+  - 忽略錯誤部署
+- `--table-configuration [prod/all]`  
+  - (預設：all)
+- `--skip-copy-content`
+  - (預設：false)
+- `--use-batched-deploy`
+  - (預設：false)
+- `--batch-size [number]`
+  - (預設：50)
+- `--parallel-batches [number]`
+  - (預設：1)
+
+
+### `lightdash stop-preview`
+
+關閉由 `lightdash start-preview` 建立的專案。
+
+此指令不支援使用 dbt 選項。
+
+**必要參數：**
+
+- `--name [preview name]`
+  - 要刪除的預覽專案名稱。
+
+**範例：**
+
+關閉名為 **neon unicorn** 的預覽專案。
+
+```bash
+lightdash stop-preview "neon unicorn"
+```
+
+### `lightdash deploy`
+
+編譯目前專案並部署至您[選定的 Lightdash Cloud 專案](#lightdash-config-set-project)。
+
+<Warning>
+  **`lightdash deploy` 會直接推送到您的生產專案。**
+
+  從本地分支執行此指令將會用本地編譯的內容覆蓋生產語義層，包含您 `profiles.yml` 中的任何 dev 或 staging 目標。這可能會導致所有使用者的儀表板損壞。
+
+  **本地開發與測試請改用 [`lightdash preview`](#lightdash-preview)**。預覽功能會建立一個臨時且隔離的專案，不會影響生產環境。
+
+  對於生產部署，我們建議使用 [配合 GitHub Actions 的 CI/CD 流程](/guides/cli/how-to-use-lightdash-deploy_zh_TW#使用-github-action-自動將變更部署到-lightdash)。
+</Warning>
+
+所有標準的 [dbt 選項](#dbt-選項-dbt-options) 皆可用於 `lightdash deploy`。
+
+**選項：**
+
+- `--create [project_name]`
+  - 建立新專案。若未提供專案名稱，系統會提示輸入
+- `--ignore-errors`
+  - (預設：false)
+  - 允許在編譯出錯時部署
+- `--start-of-week [number]`
+  - 指定一週的第一天
+- `--skip-dbt-compile`
+  - (預設：false)
+- `--skip-warehouse-catalog`
+  - (預設：false)
+- `--no-warehouse-credentials`
+  - (預設：false)
+  - 無倉庫憑據編譯。跳過 dbt 編譯與倉庫編目
+- `--use-dbt-list [true|false]`
+  - (預設：true)
+- `--use-batched-deploy`
+  - (預設：false)
+- `--batch-size [number]`
+  - (預設：50)
+- `--parallel-batches [number]`
+  - (預設：1)
+
+
+**範例：**
+
+建立新專案，並使用本地 dbt `profiles.yml` 中的 `production` 憑據：
+
+```bash
+lightdash deploy --create --target production
+```
+
+使用分批部署來處理包含大量探索的模型的大型專案：
+
+```bash
+lightdash deploy --use-batched-deploy
+```
+
+為極大型專案設定自定義分批參數：
+
+```bash
+lightdash deploy --use-batched-deploy --batch-size 100 --parallel-batches 3
+```
+
+
+### `lightdash refresh`
+
+使用連結的 GitHub 儲存庫中的最新代碼重新整理您的代管 Lightdash 專案。這等同於管理員在 UI 中點擊 **Refresh dbt**。
+
+此指令不支援使用 dbt 選項。
+
+
+### `lightdash validate`
+
+透過比較目前選定專案中的內容與本地專案檔案來驗證專案。回傳所有包含錯誤的圖表與儀表板。
+
+所有標準的 [dbt 選項](#dbt-選項-dbt-options) 皆可用於 `lightdash validate`。
+
+**選項：**
+
+- `--project [project uuid]`
+  - 要驗證的專案 UUID，若未提供，則使用最後一個預覽專案
+- `--preview`
+  - (預設：false)
+  - 若可用，驗證最後一個預覽專案
+- `--skip-dbt-compile`
+  - (預設：false)
+- `--skip-warehouse-catalog`
+  - (預設：false)
+- `--use-dbt-list [true/false]`
+  - (預設：true)
+- `--only [elems...]`
+  - (預設：["charts","dashboards","tables"])
+  - 指定要驗證的專案元素
+
+
+**範例：**
+
+僅驗證儀表板，並使用現有的已編譯 dbt manifest：
+
+```bash
+lightdash validate --only ["dashboards"] --skip-dbt-compile
+```
+
+
+### `lightdash generate`
+
+為選定模型生成新的 `schema.yml` 檔案或更新現有檔案。
+
+所有標準的 [dbt 選項](#dbt-選項-dbt-options) 皆可用於 `lightdash generate`。
+
+
+**選項：**
+
+- `-y` 或 `--assume-yes`
+  - (預設：false)
+  - 對提示自動回答 yes
+- `--exclude-meta`
+  - (預設：false)
+  - 在生成的 .yml 中排除 Lightdash 元數據
+- `--preserve-column-case`
+  - (預設：false)
+  - 在生成的 schema 檔案中保留欄位名稱的原始大小寫
+- `--skip-existing`
+  - (預設：false)
+  - 跳過已存在的檔案
+
+**範例：**
+
+為單個 dbt 模型生成或更新 YAML 檔案，涵蓋資料庫中的所有欄位：
+
+```bash
+lightdash generate -s mymodel
+```
+
+### `lightdash generate-exposures`
+
+為 Lightdash 曝露 (Exposures) 生成 `schema.yml` 檔案。
+
+<Warning>
+  此指令仍處於 Beta 階段，可能會在未經警告的情況下移除或更新。
+
+  僅有專案管理員 (Project Admins) 可以執行此指令，因為它需要造訪所有空間（包含私有空間）。
+</Warning>
+
+此指令不支援使用 dbt 選項。
+
+
+**選項：**
+
+- `--project-dir [path]`
+  - (預設：".")
+  - dbt 專案目錄
+- `--output [path]`
+  - 輸出曝露 YAML 檔案的路徑
+
+
+**Example:**
+
+在當前目錄建立或更新名為 `lightdash-exposures.yml` 的檔案，包含 Lightdash 中的所有曝露：
+
+```bash
+lightdash generate-exposures --output ./lightdash-exposures.yml
+```
+
+
+### `lightdash dbt run`
+
+執行 dbt，接著為那些相對於現有 `schema.yml` 有欄位缺失或變更的模型，生成或更新 `schema.yml` 檔案。
+
+任何可用於 `dbt run` 的選項皆可用於 `lightdash dbt run`。這包含了所有的 [Lightdash dbt 選項](#dbt-選項-dbt-options) 及更多內容（[請參考 dbt run 文件](https://docs.getdbt.com/reference/commands/run)）。
+
+
+**選項：**
+
+- `--exclude-meta`
+  - (預設：false)
+  - 排除元數據
+- `--assume-yes` 或 `-y`
+  - 自動回答 yes
+- `--assume-no` 或 `-no`
+  - 自動回答 no
+- `--preserve-column-case`
+  - (預設：false)
+  - 保留欄位大小寫
+
+
+**範例：**
+
+執行單個模型並建立或更新其 `schema.yml` 檔案：
+
+```bash
+lightdash dbt run --select mymodel
+```
+
+
+### `lightdash download`
+
+以代碼形式從您的 Lightdash 專案下載所有圖表與儀表板。系統會在您的工作目錄中建立一個 `lightdash` 目錄，所有內容都會以 .yml 檔案格式寫入該處。
+
+例如：如果您在 dbt 目錄（如：`/home/javi/dbt`）下執行此指令，它會建立資料夾 `/home/javi/dbt/lightdash`。
+
+您可以修改代碼並將變更上傳回 Lightdash。以代碼下載的內容仍可在 Lightdash UI 中管理。
+
+
+**選項：**
+
+- `--charts` 或 `-c`
+  - 選擇要下載的特定圖表代碼。使用圖表的 SLUG, UUID 或 URL 指定
+- `--dashboards` 或 `-d`
+  - 選擇要下載的特定儀表板代碼。也會一併下載該儀表板內的所有圖表。使用 SLUG, UUID 或 URL 指定
+- `--path` 或 `-p`
+  - 指定下載檔案寫入的自定義路徑。可使用完整路徑或相對路徑
+- `--project <project uuid>`
+  - 下載特定專案的所有圖表與儀表板。專案 UUID 可從 Lightdash URL 中取得（例如 `projects/` 之後的部分）
+- `--language-map` 或 `-l`
+  - (預設：false)
+  - 為下載內容生成 `<項目名稱>.language.map.yml` 檔案，包含所有可翻譯文字
+
+**範例：**
+
+下載專案中的所有圖表與儀表板。
+
+```bash
+lightdash download
+```
+
+下載 Lightdash 專案中的特定儀表板。
+
+```bash
+lightdash download -d https://app.lightdash.cloud/my-dashboard-url
+```
+
+下載所有內容至指定目錄 `/Users/katiehindson/lightdash/lightdash-analytics/`
+
+```bash
+lightdash download -p /Users/katiehindson/lightdash/lightdash-analytics/
+```
+
+這將建立 `charts/` 與 `dashboards/` 資料夾並儲存內容。
+
+也可以使用相對路徑：
+
+```bash
+lightdash download -p ../
+```
+
+下載特定專案的所有內容並生成語言對照表 (Language maps)：
+
+```bash
+lightdash download --project 21eef0b9-5bae-40f3-851e-9554588e71a6 -l
+```
+
+
+### `lightdash upload`
+
+將您在 dbt 專案 `lightdash/` 目錄中修改過的圖表與儀表板上傳至 Lightdash 專案。要上傳全新建立的代碼內容，需使用 `--force` 選項。
+
+如果應用程式中對應的內容在代碼上傳前已在 UI 中被修改，`lightdash upload` 將會覆蓋那些變更。
+
+**選項：**
+
+- `--force`
+  - 若您建立了 Lightdash 專案中尚不存在的新內容，需使用此項來建立；否則 `lightdash upload` 僅會更新現有內容
+- `--charts` 或 `-c`
+  - 選擇要上傳回專案的特定圖表代碼。使用 SLUG 指定
+- `--dashboards` 或 `-d`
+  - 選擇要上傳回專案的特定儀表板代碼。使用 SLUG 指定
+- `--path` 或 `-p`
+  - 指定上傳檔案所在的自定義路徑
+- `--project <project uuid>`
+  - 上傳至特定專案
+- `--skip-space-create`
+  - (預設：false)
+  - 若空間不存在，跳過建立空間
+- `--include-charts`
+  - (預設：false)
+  - 上傳儀表板時同時包含圖表的更新
+- `--public`
+  - (預設：false)
+  - 建立新空間時設為公開而非私有
+- `--validate`
+  - (預設：false)
+  - 上傳後驗證圖表與儀表板並顯示錯誤
+
+**範例：**
+
+上傳 `lightdash/` 目錄中的所有代碼內容至 Lightdash 專案。
+
+```bash
+lightdash upload
+```
+
+上傳特定儀表板。
+
+```bash
+lightdash upload -d my-dashboard-slug
+```
+
+上傳特定儀表板並包含其引用的所有圖表變更。
+
+```bash
+lightdash upload -d my-dashboard-slug --include-charts
+```
+
+從指定路徑上傳：
+
+```bash
+lightdash upload -p /Users/katiehindson/lightdash/lightdash-analytics/
+```
+
+上傳至特定專案：
+
+```bash
+lightdash upload --project 21eef0b9-5bae-40f3-851e-9554588e71a6
+```
+
+上傳後立即執行驗證以檢查錯誤：
+
+```bash
+lightdash upload --validate
+```
+
+
+### `lightdash rename`
+
+在整個 Lightdash 專案中重新命名模型或欄位名稱。此指令會執行完整的尋找與替換，同步更新圖表欄位、儀表板篩選器、表格計算以及自定義指標等引用。
+
+
+**參數：**
+
+- `--type`
+  - 指定重新命名的類型
+  - 接受值：`field` (欄位) 或 `model` (模型)
+- `--from`
+  - 目前的名稱（YAML 定義中的 slug，如 `num_users`）
+- `--to`
+  - 新名稱（需與 YAML 中更新後的 slug 相符，如 `count_distinct_user_id`）
+
+
+**選項：**
+
+- `--project`, `-p`
+  - 指定目標專案的 UUID
+  - (預設：最後一次透過 `lightdash config set-project` 設定的專案)
+- `--model`, `-m`
+  - 欄位重新命名時的目標模型。僅在當前欄位名稱在專案中不唯一時需要
+- `--dry-run`
+  - 預覽動作將變更的所有內容，不實際執行修改
+- `--list`
+  - 指令完成後列出所有已更名的圖表與儀表板
+- `--assume-yes`, `-y`
+  - 對所有提示自動回答 yes
+
+
+**範例：**
+
+將 `num_users` 欄位重新命名為 `count_distinct_user_id`：
+
+```bash
+lightdash rename --type field --from num_users --to count_distinct_user_id
+```
+
+預覽將 `users_mart_v1` 表格引用變更為 `users` 的影響：
+
+```bash
+lightdash rename --type model --from users_mart_v1 --to users --dry-run
+```
+
+在 `orders` 模型中將 `count` 欄位更名為 `count_distinct_order_id` 並列出受影響內容：
+
+```bash
+lightdash rename --type field --model orders --from count --to count_distinct_order_id --list
+```
+
+### `lightdash diagnostics`
+
+顯示 CLI 環境的診斷資訊。適用於排除 CLI 問題或與 Lightdash 支援團隊交流時使用。
+
+```console
+lightdash diagnostics
+```
+
+**選項：**
+
+- `--dbt`
+  - 在輸出中包含 dbt 除錯資訊
+- `--project-dir <path>`
+  - dbt 專案目錄（搭配 --dbt 使用）
+- `--profiles-dir <path>`
+  - dbt 設定檔目錄（搭配 --dbt 使用）
+- `--defer`
+  - dbt defer 選項
+- `--no-defer`
+  - dbt no-defer 選項
+
+**顯示的資訊：**
+- CLI 版本
+- Node.js 版本與優化狀態
+- 驗證狀態（API key, 伺服器網址, 組織, 專案）
+- dbt 除錯輸出（若有標記 --dbt）
+
+**範例：**
+
+顯示基本診斷資訊：
+
+```bash
+lightdash diagnostics
+```
+
+顯示包含 dbt 除錯資訊的診斷結果：
+
+```bash
+lightdash diagnostics --dbt
+```
+
+### `lightdash sql`
+
+使用目前選定專案的憑據對數據倉庫執行原始 SQL 查詢。結果將匯出為 CSV 檔案。
+
+```console
+lightdash sql <query> -o <output_file>
+```
+
+**必要參數：**
+
+- `<query>`
+  - 要執行的 SQL 查詢語句
+
+**必要選項：**
+
+- `-o, --output <file>`
+  - CSV 結果輸出的檔案路徑
+
+**選項：**
+
+- `--limit <number>`
+  - 回傳結果的最大行數
+- `--page-size <number>`
+  - 每頁行數（預設 500，最高 5000）
+- `--verbose`
+  - (預設：false)
+  - 顯示詳細進度輸出
+
+**範例：**
+
+執行簡單查詢並存為 CSV：
+
+```bash
+lightdash sql "SELECT * FROM users LIMIT 100" -o users.csv
+```
+
+### `lightdash lint`
+
+根據 JSON schema 驗證 Lightdash Code 檔案（模型、圖表、儀表板）。此指令在您部署前檢查 YAML 檔案是否符合預期結構。
+
+```console
+lightdash lint [options]
+```
+
+此指令不支援使用 dbt 選項。
+
+**選項：**
+
+- `-p, --path <path>`
+  - 要檢查的檔案或目錄路徑
+  - (預設：目前目錄)
+- `--verbose`
+  - (預設：false)
+  - 顯示詳細驗證輸出，包含所有通過檢查的檔案
+- `-f, --format <format>`
+  - 輸出格式：`cli` (預設) 或 `json` (SARIF 格式)
+
+**驗證檔案類型：**
+
+lint 指令驗證三種 Lightdash Code 檔案：
+
+| 檔案類型 | Schema 檔案 | 描述 |
+|-----------|--------|-------------|
+| 模型 (Models) | [model-as-code-1.0.json](https://github.com/lightdash/lightdash/blob/main/packages/common/src/schemas/json/model-as-code-1.0.json) | Lightdash YAML 模型定義 |
+| 圖表 (Charts) | [chart-as-code-1.0.json](https://github.com/lightdash/lightdash/blob/main/packages/common/src/schemas/json/chart-as-code-1.0.json) | 以下載為代碼的圖表 |
+| 儀表板 (Dashboards) | [dashboard-as-code-1.0.json](https://github.com/lightdash/lightdash/blob/main/packages/common/src/schemas/json/dashboard-as-code-1.0.json) | 以下載為代碼的儀表板 |
+
+**範例：**
+
+驗證目前目錄下的所有 Lightdash Code 檔案：
+
+```bash
+lightdash lint
+```
+
+驗證單個圖表檔案：
+
+```bash
+lightdash lint --path ./lightdash/charts/my-chart.yml
+```
+
+---
+
+## dbt 選項 (dbt options)
+
+這些是來自 dbt Core CLI 的選項，也適用於部分 Lightdash CLI 指令。
+
+### dbt 節點選取 (dbt node selection)
+
+您可以在支援 dbt 選項的 Lightdash 指令中使用以下選取器來指定模型子集。
+
+**節點選取：**
+
+- `--select [models...]` 或 `-s [models...]`
+  - [參考 dbt 選取語法文件](https://docs.getdbt.com/reference/node-selection/syntax#shorthand)
+- `--exclude [models...]`
+  - [參考 dbt 排除語法文件](https://docs.getdbt.com/reference/node-selection/exclude)
+- `--selector [selector_name]`
+  - [參考 dbt 選擇器文件](https://docs.getdbt.com/reference/node-selection/yaml-selectors)
+
+### dbt 標記 (dbt flags)
+
+這些 dbt 標記適用於支援 dbt 選項的指令。[請參考 dbt 全域配置標記](https://docs.getdbt.com/reference/global-configs/about-global-configs#available-flags)了解詳情。
+
+- `--project-dir [path]`
+- `--profiles-dir [path]`
+- `--profile [name]`
+- `--target [name]`
+- `--no-version-check`
+- `--state [state]`
+- `--full-refresh`
+- `--defer`（適用於 `lightdash preview` 與 `lightdash compile`）
+
+### dbt 專案變數 (dbt project variables)
+
+您可以在支援 dbt 選項的 Lightdash 指令中設定 dbt 專案變數。詳情請參考 [dbt 專案變數文件](https://docs.getdbt.com/docs/build/project-variables)。
+
+`--vars [vars]`
+
+### dbt 執行緒 (dbt threads)
+
+您可以在支援 dbt 選項的 Lightdash 指令中設定 dbt 執行緒數量。詳情請參考 [dbt 執行緒文件](https://docs.getdbt.com/docs/running-a-dbt-project/using-threads)。
+
+`--threads [number]`
+
+---
+
+## 環境變數 (Environment Variables)
+
+Lightdash CLI 支援多種環境變數來配置其行為。在 CI/CD 環境中，當您想避免互動式提示或需要程式化設定憑據時，這些變數特別有用。
+
+### 核心 Lightdash 配置
+
+- **`LIGHTDASH_API_KEY`**
+  - 用於身份驗證的 API 存取權杖。
+  - 會覆蓋儲存在設定檔 (`~/.config/lightdash/config.yaml`) 中的 API key。
+  - 適用於不想在檔案中儲存憑據的 CI/CD 管道。
+
+- **`LIGHTDASH_URL`**
+  - Lightdash 伺服器網址（如 `https://app.lightdash.cloud`）。
+  - 會覆蓋設定檔中的網址。
+
+- **`LIGHTDASH_PROJECT`**
+  - CLI 指令使用的專案 UUID。
+  - 會覆蓋設定檔中的專案 UUID。
+  - 當您不想使用 `--project` 標記而想直接指定專案時非常有用。
+
+- **`LIGHTDASH_PROXY_AUTHORIZATION`**
+  - 代理授權標頭。
+  - 若您的 Lightdash 執行體位於需要驗證的代理伺服器後方，請使用此項。
+
+### CI/CD 環境
+
+- **`CI`**
+  - 設定 `CI=true` 以在 CI/CD 環境中停用互動式提示並以非互動模式執行指令。
+  - 啟用後，CLI 將：
+    - 靜默所有互動式提示（包含確認對話框）。
+    - 採納預設值，或在缺少必要輸入時報錯。
+    - 跳過特定版本檢查。
+    - 調整非互動模式下的行為。
+  - 大多數 CI/CD 平台（GitHub Actions, GitLab CI, CircleCI 等）會自動偵測此變數。
+  - **用法：** 在任何 Lightdash 指令前加上 `CI=true` 以靜默提示：
+    ```bash
+    CI=true lightdash deploy
+    ```
+
+### dbt 配置
+
+這些環境變數會傳遞給 dbt 以配置其行為：
+
+- **`DBT_PROJECT_DIR`**
+  - dbt 專案目錄（預設為當前目錄 `.`）。
+  - 亦可透過 `--project-dir` 標記設定。
+
+- **`DBT_PROFILES_DIR`**
+  - dbt 設定檔目錄（預設為 `~/.dbt`）。
+  - 亦可透過 `--profiles-dir` 標記設定。
+
+### 範例：在 CI/CD 中使用環境變數
+
+以下是在 GitHub Actions 工作流程中使用環境變數的範例：
+
+```yaml
+name: Deploy to Lightdash
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Lightdash CLI
+        run: npm install -g @lightdash/cli
+
+      - name: Deploy to Lightdash
+        env:
+          LIGHTDASH_API_KEY: ${{ secrets.LIGHTDASH_API_KEY }}
+          LIGHTDASH_URL: https://app.lightdash.cloud
+          LIGHTDASH_PROJECT: ${{ secrets.LIGHTDASH_PROJECT_UUID }}
+          CI: true
+        run: lightdash deploy
+```
+
+在此範例中：
+- `LIGHTDASH_API_KEY` 儲存在 GitHub secret 中並傳遞給 CLI。
+- `LIGHTDASH_URL` 指定要連接的 Lightdash 執行體。
+- `LIGHTDASH_PROJECT` 指定部署目標專案。
+- `CI: true` 確保 CLI 以非互動模式執行。

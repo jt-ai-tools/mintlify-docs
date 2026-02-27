@@ -1,0 +1,2078 @@
+---
+title: "維度參考指南 (Dimensions reference)"
+description: "維度是表格中的欄位。它們是數據的「屬性」。例如，使用者表中的 `user_id` 就是一個維度。"
+sidebarTitle: "維度"
+---
+
+維度通常與 dbt 模型中的欄位一一對應（例外情況請參閱 [額外維度](#額外維度) 章節）。
+
+## 向專案新增維度
+
+欲了解更多關於如何向專案新增維度的資訊，請參考我們的[入門指南](/get-started/develop-in-lightdash/how-to-create-dimensions_zh_TW)。
+
+若要讓維度出現在 Lightdash 中，您只需在 dbt 模型的 YAML 檔案中宣告它即可。
+
+```yaml
+models:
+  - name: my_model
+    columns:
+      - name: user_id # 在 Lightdash 中將顯示為 "User id"
+        description: "使用者的唯一識別碼。"
+```
+
+
+## 維度配置
+
+您可以在 dbt 模型 YAML 檔案的 `meta` 標籤下自定義維度。語法取決於您的 dbt 版本。
+
+如果您想基於同一欄位宣告多個維度，請參閱 [額外維度](#額外維度) 章節。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: sales_stats
+        meta:
+          group_details:
+            finance:
+              label: 財務
+              description: 財務相關欄位。
+          joins:
+            - join: web_sessions
+              sql_on: ${web_sessions.date} = ${sales_stats.date}
+        columns:
+          - name: revenue_gbp_total_est
+            description: '根據財務團隊預測估算的英鎊總營收。'
+            meta:
+              dimension:
+                type: number
+                label: '總營收' # 這是您在 Lightdash 中看到的標籤
+                description: '我的自定義描述' # 您可以在此覆蓋 Lightdash 中顯示的描述
+                sql: 'IF(${TABLE}.revenue_gbp_total_est = NULL, 0, ${registered_user_email})' # 用於定義維度的自定義 SQL
+                hidden: false
+                format: '[$£]#,##0.00' # 英鎊格式，捨入至小數點後兩位
+                groups: ['finance']
+          - name: forecast_date
+            description: '預測日期。'
+            meta:
+              dimension:
+                type: date
+                time_intervals: ['DAY', 'WEEK', 'MONTH', 'QUARTER'] # 選填：日期的預設間隔為 `['DAY', 'WEEK', 'MONTH', 'YEAR']`
+                urls:
+                  - label: '在預測工具中開啟'
+                    url: 'https://finance.com/forceasts/weeks/${ value.raw }'
+                  - label: '在 Google 日曆中開啟'
+                    url: 'https://calendar.google.com/calendar/u/0/r/day/${ value.formatted |split: "-" |join: "/"}'
+                required_attributes:
+                  is_admin: 'true'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: sales_stats
+        config:
+          meta:
+            group_details:
+              finance:
+                label: 財務
+                description: 財務相關欄位。
+            joins:
+              - join: web_sessions
+                sql_on: ${web_sessions.date} = ${sales_stats.date}
+        columns:
+          - name: revenue_gbp_total_est
+            description: '根據財務團隊預測估算的英鎊總營收。'
+            config:
+              meta:
+                dimension:
+                  type: number
+                  label: '總營收' # 這是您在 Lightdash 中看到的標籤
+                  description: '我的自定義描述' # 您可以在此覆蓋 Lightdash 中顯示的描述
+                  sql: 'IF(${TABLE}.revenue_gbp_total_est = NULL, 0, ${registered_user_email})' # 用於定義維度的自定義 SQL
+                  hidden: false
+                  format: '[$£]#,##0.00' # 英鎊格式，捨入至小數點後兩位
+                  groups: ['finance']
+          - name: forecast_date
+            description: '預測日期。'
+            config:
+              meta:
+                dimension:
+                  type: date
+                  time_intervals: ['DAY', 'WEEK', 'MONTH', 'QUARTER'] # 選填：日期的預設間隔為 `['DAY', 'WEEK', 'MONTH', 'YEAR']`
+                  urls:
+                    - label: '在預測工具中開啟'
+                      url: 'https://finance.com/forceasts/weeks/${ value.raw }'
+                    - label: '在 Google 日曆中開啟'
+                      url: 'https://calendar.google.com/calendar/u/0/r/day/${ value.formatted |split: "-" |join: "/"}'
+                  required_attributes:
+                    is_admin: 'true'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: sales_stats
+
+    group_details:
+      finance:
+        label: 財務
+        description: 財務相關欄位。
+
+    joins:
+      - join: web_sessions
+        sql_on: ${web_sessions.date} = ${sales_stats.date}
+
+    dimensions:
+      - name: revenue_gbp_total_est
+        description: '根據財務團隊預測估算的英鎊總營收。'
+        type: number
+        label: '總營收' # 這是您在 Lightdash 中看到的標籤
+        sql: 'IF(${TABLE}.revenue_gbp_total_est = NULL, 0, ${registered_user_email})' # 用於定義維度的自定義 SQL
+        hidden: false
+        format: '[$£]#,##0.00' # 英鎊格式，捨入至小數點後兩位
+        groups: ['finance']
+      - name: forecast_date
+        description: '預測日期。'
+        type: date
+        time_intervals: ['DAY', 'WEEK', 'MONTH', 'QUARTER'] # 選填：日期的預設間隔為 `['DAY', 'WEEK', 'MONTH', 'YEAR']`
+        urls:
+          - label: '在預測工具中開啟'
+            url: 'https://finance.com/forceasts/weeks/${ value.raw }'
+          - label: '在 Google 日曆中開啟'
+            url: 'https://calendar.google.com/calendar/u/0/r/day/${ value.formatted |split: "-" |join: "/"}'
+        required_attributes:
+          is_admin: 'true'
+    ```
+  </Tab>
+</Tabs>
+
+下表列出了您可以自定義的所有維度屬性：
+
+| 屬性 | 必填 | 數值 | 描述 |
+| :------- | :------- | :----- | :---------- |
+| label | 否 | string | 自定義標籤。設定此屬性後，這將是您在 Lightdash 中看到的名稱，而非維度名稱。 |
+| [type](#類型-type) | 否 | 維度類型 | 維度類型會自動從 Lightdash 中的表格 schema 抓取，但您可以使用此屬性進行覆蓋。 |
+| [description](#描述-description) | 否 | string | Lightdash 中維度的描述。您可以用它來覆蓋 dbt 中的描述。 |
+| sql | 否 | string | 套用於定義維度之欄位的自定義 SQL。 |
+| [time_intervals](#時間間隔-time-intervals) | 否 | 'default' 或 OFF 或包含 [日期](#日期選項-date-options)、[數值](#數值選項-numeric-options) 或 [字串](#字串選項-string-options) 選項的陣列[] | 'default'（或未設定時）對於日期類型會轉為 ['DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR']，對於時戳類型則包含 'RAW'。若不想要時間間隔，請設為 'OFF'。 |
+| hidden | 否 | boolean | 若設為 true，則在 Lightdash 中隱藏該維度。預設為 false。隱藏的維度也會從「查看底層數據」中排除。 |
+| [compact](#簡寫-compact) | 否 | string | 此選項會簡寫數值（例如：1,500 變為 1.50K）。支援：['thousands', 'millions', 'billions', 'trillions', 'kilobytes', 'megabytes', 'gigabytes', 'terabytes', 'petabytes', 'kibibytes', 'mebibytes', 'gibibytes', 'tebibytes', 'pebibytes'] |
+| [format](#格式-format) | 否 | string | 格式化結果表格與 CSV 匯出的輸出值。支援試算表風格格式（如 #,##0.00）。可參考 [customformats.com](https://customformats.com)。 |
+| [groups](#群組-groups) | 否 | string 或 string[] | 設定此屬性後，維度會在側邊欄中與具有相同群組標籤的其他維度歸類在一起。 |
+| [urls](#網址-urls) | 否 | `url`, `label` 的陣列 | 允許使用者點擊維度值並執行動作（如開啟外部連結）。支援 Liquid 範本來根據數值自定義連結。 |
+| [required_attributes](#必要屬性-required-attributes) | 否 | 包含 `user_attribute`, `value` 的物件 | 限制具備特定屬性的使用者造訪（AND 邏輯 —— 需全部符合）。 |
+| [any_attributes](#任一屬性-any-attributes) | 否 | 包含 `user_attribute`, `value` 的物件 | 限制具備特定屬性的使用者造訪（OR 邏輯 —— 至少符合一個）。 |
+| [colors](#顏色-color) | 否 | 包含 `value`, `color` 的物件 | 圖表中特定數值對應的顏色。 |
+| [image](#圖片顯示-image-display) | 否 | 包含 `url` 的物件 | **[開發中]** 使用 URL 範本在表格儲存格中顯示圖片。支援 LiquidJS 動態 URL。 |
+
+
+## 類型 (Type)
+
+維度的類型會自動從您的數據倉庫中抓取。您可以使用 .yml 檔案中的 `type` meta 標籤來覆蓋這些類型。如果您執行 `lightdash generate` 生成 YAML，Lightdash 會自動將數據倉庫中的類型加入。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    - name: user_created_date
+      meta:
+        dimension:
+          type: date
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    - name: user_created_date
+      config:
+        meta:
+          dimension:
+            type: date
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: user_created_date
+        type: date
+    ```
+  </Tab>
+</Tabs>
+
+目前支援的維度類型：
+
+| 維度類型 |
+| :-------------- |
+| string (字串) |
+| number (數字) |
+| timestamp (時戳) |
+| date (日期) |
+| boolean (布林) |
+
+## 描述 (Description)
+
+YAML 檔案中的欄位描述會自動抓取到 Lightdash 中，當您將滑鼠懸停在維度名稱上時即可看到。
+
+<Frame>
+  ![](/images/references/screenshot-column-descriptions-3498d7b3c09c38fda5b755ce21358b2c.png)
+</Frame>
+
+描述支援任何 YAML 格式，以下是三種最常用的字元：
+
+### 引號用於轉義
+
+當您使用雙引號或單引號包圍文字時，它會轉義其中的文字，使 YAML 識別的任何特殊字元仍能傳遞到 Lightdash UI。
+
+```yaml
+description: '此欄位的內容包含 this & that。'
+```
+
+### 大於符號用於摺疊文字塊
+
+使用 `>-` 允許您在 YAML 檔案中編寫多行描述，但在解析時會被合併為單行。`lightdash generate` 指令會自動添加此符號以保持 YAML 易讀。
+
+YAML 中的描述：
+
+```yaml
+- name: product_tier
+  description: >-
+    這是一個較長的描述...
+    ...需要多行編寫
+    但在 Lightdash UI 中會被合併
+```
+
+在 Lightdash UI 中顯示：
+
+```yaml
+這是一個較長的描述......需要多行編寫 但在 Lightdash UI 中會被合併
+```
+
+### 垂直線用於保留換行
+
+如果您希望換行符號在 Lightdash UI 中維持原樣，可以使用 `|` 字元：
+
+```yaml
+- name: product_tier
+  description: |
+    這是一個較長的描述...
+    ...需要多行編寫
+    它會維持多行顯示
+```
+
+在 Lightdash UI 中顯示：
+
+```yaml
+這是一個較長的描述...
+...需要多行編寫
+它會維持多行顯示
+```
+
+### 使用 dbt doc blocks
+
+您也可以在描述中使用 dbt docs blocks，[詳情請參閱此處](/guides/cli/how-to-auto-generate-schema-files_zh_TW#使用-doc-blocks-構建更好的-yml-檔案)。
+
+## 格式 (Format)
+
+您可以使用 `format` 參數讓維度在 Lightdash 中以特定格式顯示。Lightdash 為所有維度類型支援試算表風格的格式表達式。
+
+要建立格式表達式，我們建議與其使用 https://customformats.com/。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    - name: us_revenue
+      meta:
+        dimension:
+          type: number
+          description: '以美金計價的營收，保留兩位小數，簡寫為千位'
+          format: '$#,##0.00," K"' # 505,430 將顯示為 '$505.43 K'
+        additional_dimensions:
+          percent_of_global_revenue:
+            type: number
+            description: '美金營收佔全球總營收的百分比。'
+            sql: ${us_revenue} / ${global_revenue}
+            format: '0.00%' # 0.67895243 將顯示為 '67.89%'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    - name: us_revenue
+      config:
+        meta:
+          dimension:
+            type: number
+            description: '以美金計價的營收，保留兩位小數，簡寫為千位'
+            format: '$#,##0.00," K"' # 505,430 將顯示為 '$505.43 K'
+          additional_dimensions:
+            percent_of_global_revenue:
+              type: number
+              description: '美金營收佔全球總營收的百分比。'
+              sql: ${us_revenue} / ${global_revenue}
+              format: '0.00%' # 0.67895243 將顯示為 '67.89%'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: us_revenue
+        type: number
+        description: '以美金計價的營收，保留兩位小數，簡寫為千位'
+        format: '$#,##0.00," K"' # 505,430 將顯示為 '$505.43 K'
+      - name: percent_of_global_revenue
+        type: number
+        description: '美金營收佔全球總營收的百分比。'
+        sql: ${us_revenue} / ${global_revenue}
+        format: '0.00%' # 0.67895243 將顯示為 '67.89%'
+    ```
+  </Tab>
+</Tabs>
+
+### 格式表達式範例：
+
+| 描述 | 格式表達式 | 原始值 | 格式化輸出 |
+| :--------------------------------------------- | :-------------------- | :------------------- | :-------------------- |
+| **添加 "km" 後綴** | `#,##0.00" km"` | 100000.00 | 100,000.00 km |
+| | | 15000.25 | 15,000.25 km |
+| | | 500 | 500.00 km |
+| **使用 12 小時制格式化日期** | `m/d/yyyy h:mm AM/PM` | 2023-09-05T15:45:00Z | 9/5/2023 3:45 PM |
+| | | 2024-01-20T08:30:00Z | 1/20/2024 8:30 AM |
+| **顯示星期的全名** | `dddd` | 2023-09-05T15:45:00Z | Tuesday |
+| | | 2024-01-20T08:30:00Z | Saturday |
+| **格式化正數、負數與零值** | `"⬆️ "0;"⬇️ "0;0` | -500 | ⬇️ 500 |
+| | | 200 | ⬆️ 200 |
+| | | 0 | 0 |
+| **文字格式化** | `"送達時間 "@` | 2 weeks | 送達時間 2 weeks |
+| | | 18 hours | 送達時間 18 hours |
+| **百分比格式化** | `#,##0.00%` | 0.6758 | 67.58% |
+| | | 0.1 | 10.00% |
+| | | 0.002 | 0.20% |
+| **無格式化** | `0` | 12345232 | 12345232 |
+| | | 56.7856 | 57 |
+| **貨幣格式化** | `[$$]#,##0.00` | 15430.75436 | \$15,430.75 |
+| | | 15430.75436 | \$15,430.75 |
+| **以千位簡寫貨幣** | `[$$]#,##0,"K"` | 15430.75436 | \$15K |
+| | | 15430.75436 | \$15.43K |
+| **以百萬位簡寫貨幣** | `[$$]#,##0.00,,"M"` | 13334567 | \$13.33M |
+| | | 120000000 | \$120.00M |
+
+<Accordion title="(舊版 Legacy) format 與 round 選項">
+  試算表風格的格式表達式是目前 Lightdash 推薦的格式化方式。下方列出的是舊版的格式化選項，靈活性較低。
+
+  <Info>
+    如果您在單個維度中同時使用了舊版與試算表風格的格式化選項，Lightdash 會忽略舊版的 `format` 與 `round` 選項，僅套用試算表風格的表達式。
+  </Info>
+  #### Format (舊版)
+
+  <Tabs>
+    <Tab title="dbt v1.9 及更早版本">
+      ```yaml
+      models:
+        - name: sales_stats
+          columns:
+            - name: revenue
+              description: '根據財務團隊預測估算的總營收 (GBP)。'
+              meta:
+                dimension:
+                  format: 'gbp'
+      ```
+    </Tab>
+    <Tab title="dbt v1.10+ 與 Fusion">
+      ```yaml
+      models:
+        - name: sales_stats
+          columns:
+            - name: revenue
+              description: '根據財務團隊預測估算的總營收 (GBP)。'
+              config:
+                meta:
+                  dimension:
+                    format: 'gbp'
+      ```
+    </Tab>
+    <Tab title="Lightdash YAML">
+      ```yaml
+      type: model
+      name: sales_stats
+
+      dimensions:
+        - name: revenue
+          description: '根據財務團隊預測估算的總營收 (GBP)。'
+          format: 'gbp'
+      ```
+    </Tab>
+  </Tabs>
+
+  選項如下：
+
+  | 選項 | 等效格式表達式 | 描述 | 原始值 | 顯示值 |
+  | :------ | :--------------------------- | :---------------------------------------------------------------------------------- | :-------- | :-------------- |
+  | km | '#,##0.00" km"' | 添加 `km` 後綴 | 10 | 10 km |
+  | mi | '#,##0.00" mi"' | 添加 `mi` 後綴 | 10 | 10 mi |
+  | usd | '[\$\$]#,##0.00' | 添加 `$` 符號 | 10 | \$10.00 |
+  | gbp | '[\$£]#,##0.00' | 添加 `£` 符號 | 10 | £10.00 |
+  | eur | '[\$€]#,##0.00' | 添加 `€` 符號 | 10 | €10.00 |
+  | jpy | '[\$¥]#,##0.00' | 添加 `¥` 符號 | 10 | ¥10 |
+  | percent | '#,##0.00%' | 添加 `%` 符號並乘以 100 | 0.1 | %10 |
+  | id | '0' | 移除逗號與空格，使其看起來像 ID | 12389572 | 12389572 |
+
+  #### Round (舊版)
+
+  您可以將數值捨入到指定的小數位數。
+
+  <Tabs>
+    <Tab title="dbt v1.9 及更早版本">
+      ```yaml
+      models:
+        - name: sales
+          columns:
+            - name: revenue
+              meta:
+                dimension:
+                  round: 0 # 等效格式表達式: '#,##0.0'
+      ```
+    </Tab>
+    <Tab title="dbt v1.10+ 與 Fusion">
+      ```yaml
+      models:
+        - name: sales
+          columns:
+            - name: revenue
+              config:
+                meta:
+                  dimension:
+                    round: 0 # 等效格式表達式: '#,##0.0'
+      ```
+    </Tab>
+    <Tab title="Lightdash YAML">
+      ```yaml
+      type: model
+      name: sales
+
+      dimensions:
+        - name: revenue
+          round: 0 # 等效格式表達式: '#,##0.0'
+      ```
+    </Tab>
+  </Tabs>
+</Accordion>
+
+## 簡寫 (Compact)
+
+您可以在 YAML 中簡寫數值。例如，如果我想將所有營收數值以千為單位顯示（如 `1,500` 顯示為 `1.50K`），我可以在 .yml 中這樣寫：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            meta:
+              dimension:
+                compact: thousands # 您也可以使用 'K'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            config:
+              meta:
+                dimension:
+                  compact: thousands # 您也可以使用 'K'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: sales
+
+    dimensions:
+      - name: revenue
+        compact: thousands # 您也可以使用 'K'
+    ```
+  </Tab>
+</Tabs>
+
+| 數值 | 別名 | 等效格式表達式 | 輸出範例 |
+| :-------- | :------------------- | :------------------------------------ | :------------- |
+| thousands | "K" 和 "thousand" | '#,##0," K"' 或 '#,##0.00," K"' | 1K |
+| millions | "M" 和 "million" | '#,##0,," M"' 或 '#,##0.00,," M"' | 1M |
+| billions | "B" 和 "billion" | '#,##0,,," B"' 或 '#,##0.00,,," B"' | 1B |
+| trillions | "T" 和 "trillion" | '#,##0,,,," T"' 或 '#,##0.00,,,," T"' | 1T |
+| kilobytes | "KB" 和 "kilobyte" | | 1KB |
+| megabytes | "MB" 和 "megabyte" | | 1MB |
+| gigabytes | "GB" 和 "gigabyte" | | 1GB |
+| terabytes | "TB" 和 "terabyte" | | 1TB |
+| petabytes | "PB" 和 "petabyte" | | 1PB |
+| kibibytes | "KiB" 和 "kibibyte" | | 1KiB |
+| mebibytes | "MiB" 和 "mebibyte" | | 1MiB |
+| gibibytes | "GiB" 和 "gibibyte" | | 1GiB |
+| tebibytes | "TiB" 和 "tebibyte" | | 1TiB |
+| pebibytes | "PiB" 和 "pebibyte" | | 1PiB |
+
+## 時間間隔 (Time intervals)
+
+Lightdash 會自動為時戳或日期類型的維度添加時間間隔，您無需手動設定！
+
+例如，我們在 dbt 專案中定義了時戳維度 `created`：
+
+```yaml
+- name: created
+  description: '使用者帳號建立的時間。'
+```
+
+Lightdash 會自動將其拆分為預設間隔。因此，`created` 在 Lightdash 專案中的顯示如下：
+
+<Frame>
+  ![預設間隔截圖](/images/references/screenshot-default-intervals-1fb6e04e2d4f617bb22f9fea86fa52c6.png)
+</Frame>
+
+<Info>
+  [**套用於日期或時戳維度的格式化將應用於該維度的所有時間間隔。**](#格式-format)
+
+  如果您想為不同的時間間隔套用不同的格式，建議為需要自定義格式的間隔建立[額外維度](#額外維度)。
+</Info>
+
+
+### 預設時間間隔
+
+Lightdash 自動添加的預設時間間隔為...
+
+**針對 `date` (日期) 類型**：
+
+```yaml
+['DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR']
+```
+
+**針對 `timestamp` (時戳) 類型**：
+
+```yaml
+['RAW', 'DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR']
+```
+
+### 停用時間間隔
+
+如果您想關閉某個維度的時間間隔，請將 `time_intervals` 屬性設為 `OFF`。
+
+在此範例中，`created` 在 Lightdash 中將顯示為單一的時戳維度，不帶有時間間隔下拉清單：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    - name: created
+      description: '使用者帳號建立的時間。'
+      meta:
+        dimension:
+          type: timestamp
+          time_intervals: OFF
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    - name: created
+      description: '使用者帳號建立的時間。'
+      config:
+        meta:
+          dimension:
+            type: timestamp
+            time_intervals: OFF
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: created
+        description: '使用者帳號建立的時間。'
+        type: timestamp
+        time_intervals: OFF
+    ```
+  </Tab>
+</Tabs>
+
+<Frame>
+  ![時間間隔關閉截圖](/images/references/screenshot-intervals-off-e786a3290b6c8b8454fe7f223a5682d8.png)
+</Frame>
+
+
+### 自定義維度的時間間隔
+
+如果您手動指定時間間隔，將會覆蓋 Lightdash 使用的預設間隔。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    - name: created
+      description: '使用者帳號建立的時間。'
+      meta:
+        dimension:
+          time_intervals: ['DAY', 'DAY_OF_MONTH_NUM', 'MONTH', 'QUARTER_NAME', 'YEAR']
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    - name: created
+      description: '使用者帳號建立的時間。'
+      config:
+        meta:
+          dimension:
+            time_intervals: ['DAY', 'DAY_OF_MONTH_NUM', 'MONTH', 'QUARTER_NAME', 'YEAR']
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: created
+        description: '使用者帳號建立的時間。'
+        time_intervals: ['DAY', 'DAY_OF_MONTH_NUM', 'MONTH', 'QUARTER_NAME', 'YEAR']
+    ```
+  </Tab>
+</Tabs>
+
+您可以在下方表格查看日期和時戳欄位的所有標準間隔選項。您也可以透過「額外維度」添加自定義間隔，後文有相關範例。
+
+
+### 日期選項 (Date options)
+
+| 選項 | 描述 | 類型 | 顯示值範例 | 備註 |
+| :---------- | :-------------------------------------------- | :-------------- | :---------------------------------------- | :------------------------------------------------------------ |
+| RAW | 原始數值 | Date / DateTime | 2019-01-01 / 2019-01-01, 09:30:30:300 UTC | |
+| YEAR | 捨入到最接近的年份 | Date | 2019 | |
+| QUARTER | 捨入到最接近的季度 | Date | 2019-Q1 | |
+| MONTH | 捨入到最接近的月份 | Date | 2019-01-01 | |
+| WEEK | 捨入到最接近的週 | Date | 2019-01-01 | 週起始日取決於您的倉庫配置 |
+| DAY | 捨入到最接近的天 | Date | 2019-01-01 | |
+| HOUR | 捨入到最接近的小時 | DateTime | 2019-01-01, 09 UTC | |
+| MINUTE | 捨入到最接近的分鐘 | DateTime | 2019-01-01, 09:30 UTC | |
+| SECOND | 捨入到最接近的秒 | DateTime | 2019-01-01, 09:30:30 UTC | |
+| MILLISECOND | 捨入到最接近的毫秒 | DateTime | 2019-01-01, 09:30:30:300 UTC | |
+
+
+### 數值選項 (Numeric options)
+
+| 選項 | 描述 | 類型 | 顯示值範例 | 備註 |
+| :----------------- | :--------------------------- | :----- | :-------------- | :---------------------------------------------------------------------------- |
+| DAY_OF_WEEK_INDEX | 星期幾的索引 | Number | 0 | 值範圍與週起始日取決於您的倉庫配置 |
+| DAY_OF_MONTH_NUM | 當月第幾天 | Number | 21 | |
+| DAY_OF_YEAR_NUM | 當年第幾天 | Number | 127 | |
+| WEEK_NUM | 週數 | Number | 37 | |
+| MONTH_NUM | 月份數 | Number | 7 | |
+| QUARTER_NUM | 季度數 | Number | 3 | |
+| YEAR_NUM | 年份數 | Number | 2019 | |
+| MINUTE_OF_HOUR_NUM | 當小時第幾分鐘 | Number | 50 | |
+| HOUR_OF_DAY_NUM | 當日第幾小時 | Number | 22 | |
+
+
+### 字串選項 (String options)
+
+| 選項 | 描述 | 類型 | 顯示值範例 |
+| :--------------- | :-------------- | :----- | :-------------- |
+| DAY_OF_WEEK_NAME | 星期名稱 | String | Monday |
+| MONTH_NAME | 月份名稱 | String | March |
+| QUARTER_NAME | 季度名稱 | String | Q3 |
+
+
+### 自定義時間間隔
+
+您可以透過使用額外維度和群組來設定自定義版本的時間間隔。以下範例展示了如何將 `year_of_week_iso` 添加到 `delivery_date` 維度的下拉清單中。請注意，透過定義 `groups:` 選項，我們確保新的 "Year of week" 選項按預期顯示。
+
+
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    - name: delivery_date
+      meta:
+        dimension:
+          label: "送貨日期"
+          type: date
+          time_intervals: [ ... ]
+        additional_dimensions:
+          year_of_week_num:
+            type: number
+            label: "週年份"
+            sql: "yearofweekiso(${delivery_date})"
+            groups: ["送貨日期"]
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    - name: delivery_date
+      config:
+        meta:
+          dimension:
+            label: "送貨日期"
+            type: date
+            time_intervals: [ ... ]
+          additional_dimensions:
+            year_of_week_num:
+              type: number
+              label: "週年份"
+              sql: "yearofweekiso(${delivery_date})"
+              groups: ["送貨日期"]
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: delivery_date
+        label: "送貨日期"
+        type: date
+        time_intervals: [ ... ]
+      - name: year_of_week_num
+        type: number
+        label: "週年份"
+        sql: "yearofweekiso(${delivery_date})"
+        groups: ["送貨日期"]
+    ```
+  </Tab>
+</Tabs>
+
+
+### 在其他維度中引用時間間隔
+
+您可以在其他維度中引用特定維度的時間間隔。當您為一個維度（如 `session_start`）定義時間間隔時，Lightdash 會為每個間隔建立獨立的維度（如 `session_start_day`, `session_start_month`）。您可以在其他維度的自定義 SQL 中引用這些間隔。
+
+例如，如果您有一個定義了時間間隔的 `user_created_at` 維度，您可以使用 `DAY` 間隔來計算兩個日期之間的時長：
+
+```yaml
+  - name: user_created_at
+    meta:
+      dimension:
+        type: timestamp
+        time_intervals:
+        - DAY_OF_WEEK_NAME
+        - WEEK
+        - MONTH
+        - RAW
+        - DAY
+        - HOUR_OF_DAY_NUM
+        - QUARTER
+  - name: first_purchase_at
+    meta:
+      dimension:
+        type: timestamp
+        time_intervals:
+        - DAY
+        - MONTH
+        - QUARTER
+  - name: duration
+    meta:
+      dimension:
+        type: number
+        sql: EXTRACT(DAY FROM ${first_purchase_at_day} - ${user_created_at_day})
+```
+
+在此範例中，`${user_created_at_day}` 與 `${first_purchase_at_day}` 引用了對應維度的 `DAY` 時間間隔版本。
+
+## 群組 (Groups)
+
+您可以使用 `groups` 參數在側邊欄中對維度和指標進行分組。
+
+為此，您需要在模型的配置中設定 `group_details`。接著，您可以使用這些群組來組織指標與維度。您最多可以建立 3 層巢狀群組。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: baskets
+        meta:
+          group_details:
+            product_details:
+              label: 產品詳情
+              description: '關於籃子中產品資訊的欄位。'
+            item_details:
+              label: 項目詳情
+              description: '關於籃子中個別項目資訊的欄位。'
+
+        columns:
+          - name: basket_item_id
+            description: '籃子內產品項目的 ID。'
+            meta:
+              dimension:
+                groups: ['product_details', 'item_details'] # 這會將維度添加到巢狀群組：`產品詳情` --> `項目詳情`
+          - name: product_name
+            description: '產品全名。'
+            meta:
+              dimension:
+                label: '產品名稱'
+                groups: ['product_details'] # 這會將維度歸類在 `product_details` 標籤下
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: baskets
+        config:
+          meta:
+            group_details:
+              product_details:
+                label: 產品詳情
+                description: '關於籃子中產品資訊的欄位。'
+              item_details:
+                label: 項目詳情
+                description: '關於籃子中個別項目資訊的欄位。'
+
+        columns:
+          - name: basket_item_id
+            description: '籃子內產品項目的 ID。'
+            config:
+              meta:
+                dimension:
+                  groups: ['product_details', 'item_details'] # 這會將維度添加到巢狀群組：`產品詳情` --> `項目詳情`
+          - name: product_name
+            description: '產品全名。'
+            config:
+              meta:
+                dimension:
+                  label: '產品名稱'
+                  groups: ['product_details'] # 這會將維度歸類在 `product_details` 標籤下
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: baskets
+
+    group_details:
+      product_details:
+        label: 產品詳情
+        description: '關於籃子中產品資訊的欄位。'
+      item_details:
+        label: 項目詳情
+        description: '關於籃子中個別項目資訊的欄位。'
+
+    dimensions:
+      - name: basket_item_id
+        description: '籃子內產品項目的 ID。'
+        groups: ['product_details', 'item_details'] # 這會將維度添加到巢狀群組：`產品詳情` --> `項目詳情`
+      - name: product_name
+        description: '產品全名。'
+        label: '產品名稱'
+        groups: ['product_details'] # 這會將維度歸類在 `product_details` 標籤下
+    ```
+  </Tab>
+</Tabs>
+
+此範例在側邊欄中的效果如下：
+
+<Frame>
+  ![](/images/references/groups-757097385f03095824be4746f585d50b.png)
+</Frame>
+
+
+## 網址 (URLs)
+
+Lightdash 使用者可以透過點擊維度數值進行互動。如果您已在模型中儲存了 URL，可以在 Lightdash 中建立超連結，如下所示：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: candidate_profile_url
+        label: 候選人個人資料網址
+        meta:
+          dimension:
+            urls:
+              - label: 在 CRM 中開啟
+                url: ${ value.raw }
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    columns:
+      - name: candidate_profile_url
+        label: 候選人個人資料網址
+        config:
+          meta:
+            dimension:
+              urls:
+                - label: 在 CRM 中開啟
+                  url: ${ value.raw }
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: candidate_profile_url
+        label: 候選人個人資料網址
+        urls:
+          - label: 在 CRM 中開啟
+            url: ${ value.raw }
+    ```
+  </Tab>
+</Tabs>
+
+
+### 如何添加自定義 URL
+
+透過添加自定義 URL，您可以配置可供使用者執行的動作。例如連結到外部工具，或在其他工具中執行操作。
+
+<Frame>
+  ![](/images/references/clickable-dimension-link-70554874d4e468900e9d8fadf3b53cd2.jpg)
+</Frame>
+
+在下方範例中，使用者可以點擊公司名稱，開啟 CRM 中的對應記錄、在 Google 中搜尋該公司，或開啟該公司的 Slack 頻道。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: company_name
+        label: 公司註冊名稱
+        meta:
+          dimension:
+            urls:
+              - label: 在 Google 中搜尋公司
+                url: 'https://google.com/search?${ value.formatted | url_encode }'
+              - label: 在 CRM 中開啟
+                url: 'https://mycrm.com/companies/${ row.company.company_id.raw | url_encode }'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    columns:
+      - name: company_name
+        label: 公司註冊名稱
+        config:
+          meta:
+            dimension:
+              urls:
+                - label: 在 Google 中搜尋公司
+                  url: 'https://google.com/search?${ value.formatted | url_encode }'
+                - label: 在 CRM 中開啟
+                  url: 'https://mycrm.com/companies/${ row.company.company_id.raw | url_encode }'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: company_name
+        label: 公司註冊名稱
+        urls:
+          - label: 在 Google 中搜尋公司
+            url: 'https://google.com/search?${ value.formatted | url_encode }'
+          - label: 在 CRM 中開啟
+            url: 'https://mycrm.com/companies/${ row.company.company_id.raw | url_encode }'
+    ```
+  </Tab>
+</Tabs>
+
+`${ value.formatted }` 會在執行查詢時替換為 Lightdash UI 中的公司名稱。`${ row.company.company_id.raw }` 會被替換為公司 ID。如果查詢中不包含 "company" 表的 "company_id" 欄位，該動作將被禁用。
+
+
+### 您可以在 URL 中引用其他欄位的值
+
+您可以在 URL 中引用同張表中的另一個維度。為了讓這些 URL 生效，被引用的欄位必須包含在您的結果表格中。例如：我為 `company_name` 添加了一個 URL，它使用了 `customer_id` 欄位：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: company_name
+        label: 公司註冊名稱
+        meta:
+          dimension:
+            urls:
+              - label: "開啟公司頁面"
+                url: "https://example.com/company/${row.customers.customer_id.raw | url_encode }"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    columns:
+      - name: company_name
+        label: 公司註冊名稱
+        config:
+          meta:
+            dimension:
+              urls:
+                - label: "開啟公司頁面"
+                  url: "https://example.com/company/${row.customers.customer_id.raw | url_encode }"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: company_name
+        label: 公司註冊名稱
+        urls:
+          - label: "開啟公司頁面"
+            url: "https://example.com/company/${row.customers.customer_id.raw | url_encode }"
+    ```
+  </Tab>
+</Tabs>
+
+只有當我的結果表格中包含 `customer_id` 時，此 URL 才能運作。
+
+
+### Liquid 範本 (Liquid Templating)
+
+使用範本可以根據查詢結果配置 URL 數值，讓您的連結具備動態性。
+
+**可用的 Liquid 標籤**
+
+| 標籤 | 描述 |
+| :------------------------------------------ | :------------------------------------------------------------------------------------------ |
+| `${ value.formatted }` | Lightdash UI 中顯示的精確維度值。例如 `$1,427.20` |
+| `${ value.raw }` | 底層 SQL 查詢回傳的原始數值。例如 `1427.2` |
+| `${ row.table_name.column_name.formatted }` | Lightdash UI 中顯示的其他欄位的精確值。 |
+| `${ row.table_name.column_name.raw }` | 底層 SQL 查詢回傳的其他欄位的原始數值。 |
+
+**可用的 Liquid 過濾器**
+
+過濾器可用於對數值進行微調轉換：
+
+- `url_encode`：將字串編碼為 URL 安全格式，例如將空格替換為 `%20`。
+
+  ```liquid
+  ${ value.formatted | url_encode }
+  ```
+
+- `downcase`：將字串轉換為小寫。
+
+  ```liquid
+  ${ value.formatted | downcase }
+  ```
+
+- `append`：在字串後附加內容。
+
+  ```liquid
+  ${ value.formatted | append: ".html" }
+  ```
+
+更多過濾器請參考 [Liquid 官方文件](https://liquidjs.com/filters/overview.html)。
+
+
+## 必要屬性 (Required attributes)
+
+Lightdash 可以使用「使用者屬性」來限制某些維度僅供特定使用者造訪。
+
+在下方範例中，只有 `is_admin` 屬性為 `true` 的使用者才能使用 `salary` (薪資) 維度。不具備權限的使用者將無法在探索頁面看到該維度或基於該維度建立的自定義指標。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: user_name
+        description: 使用者名稱
+      - salary:
+        description: 使用者薪資
+        meta:
+          dimension:
+            required_attributes:
+              is_admin: "true"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    columns:
+      - name: user_name
+        description: 使用者名稱
+      - salary:
+        description: 使用者薪資
+        config:
+          meta:
+            dimension:
+              required_attributes:
+                is_admin: "true"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: user_name
+        description: 使用者名稱
+      - name: salary
+        description: 使用者薪資
+        required_attributes:
+          is_admin: "true"
+    ```
+  </Tab>
+</Tabs>
+
+如果沒有權限的使用者執行包含該維度的查詢，將會收到 `Forbidden` (禁止存取) 錯誤。
+
+## 任一屬性 (Any attributes)
+
+`required_attributes` 使用 AND 邏輯（所有條件都必須符合），而 `any_attributes` 則使用 OR 邏輯 —— 使用者只需符合**至少一個**條件即可造訪。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: salary
+        description: 使用者薪資
+        meta:
+          dimension:
+            any_attributes:
+              department: ["hr", "finance"]
+              role: "manager"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    columns:
+      - name: salary
+        description: 使用者薪資
+        config:
+          meta:
+            dimension:
+              any_attributes:
+                department: ["hr", "finance"]
+                role: "manager"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: salary
+        description: 使用者薪資
+        any_attributes:
+          department: ["hr", "finance"]
+          role: "manager"
+    ```
+  </Tab>
+</Tabs>
+
+在此範例中，具有 `department = "hr"` 或 `department = "finance"` 或 `role = "manager"` 的使用者都可以看到 `salary` 維度。
+
+您可以在同一個維度上結合使用 `required_attributes` 與 `any_attributes`。當兩者皆設定時，兩項檢查都必須通過。詳情請參閱 [使用者屬性](/references/workspace/user-attributes_zh_TW#合併使用-required_attributes-與-any_attributes)。
+
+
+### 目前限制
+
+Lightdash 的維度與自定義指標受此功能保護，但仍有可能透過編寫自定義 SQL 來繞過過濾器，例如：
+
+- 開發者與管理員在 SQL 執行器中執行 SQL 查詢。
+- 在「表格計算」中使用自定義 SQL 或子查詢。
+
+<Info>
+  定時交付 (Scheduled deliveries) 將以「建立該定時交付的使用者」身份執行，在與其他使用者分享包含必要屬性的內容時請務必小心。
+</Info>
+
+
+## 顏色 (Color)
+
+您可以為字串類型的維度預先定義顏色。當您使用分組長條圖或圓餅圖時，Lightdash 將優先使用您定義的顏色而非組織的預設調色盤。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+      - name: status
+        description: "{{ doc(\"orders_status\") }}"
+        meta:
+          dimension:
+            colors:
+              "placed": "#e6fa0f"
+              "completed": "#558B2F"
+              "shipped": "#29B6F6"
+              "return_pending": "#FF6F00"
+              "returned": "#E91E63"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+      - name: status
+        description: "{{ doc(\"orders_status\") }}"
+        config:
+          meta:
+            dimension:
+              colors:
+                "placed": "#e6fa0f"
+                "completed": "#558B2F"
+                "shipped": "#29B6F6"
+                "return_pending": "#FF6F00"
+                "returned": "#E91E63"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: status
+        description: "訂單狀態"
+        colors:
+          "placed": "#e6fa0f"
+          "completed": "#558B2F"
+          "shipped": "#29B6F6"
+          "return_pending": "#FF6F00"
+          "returned": "#E91E63"
+    ```
+  </Tab>
+</Tabs>
+
+<Frame>
+  ![](/images/references/pie-chart-color-b5c761ad3dc797717c6397920572b1c4.png)
+</Frame>
+
+<Info>
+  我們建議使用 #HEX 顏色代碼。雖然圖表也支援 rgba 或顏色名稱（如 orange），但圖表配置介面目前尚未完整支援這些格式。
+</Info>
+
+<Info>
+  您可以隨時進入圖表配置，手動為該序列挑選顏色以覆蓋維度預設顏色。
+
+  維度預設顏色優先於組織的調色盤。
+</Info>
+
+
+## 圖片顯示 (Image Display)
+
+<Warning>
+  **開發中功能**：此功能目前仍在開發階段，未來可能會有所變動。
+</Warning>
+
+您可以配置維度使用 URL 範本在表格儲存格中顯示圖片。圖片會以縮圖形式呈現，滑鼠懸停時會彈出工具提示顯示較大的預覽圖。這非常適合用於視覺化產品圖片、使用者頭像或其他任何基於圖片的數據。
+
+
+### 運作原理
+
+要顯示圖片，您需要在維度或額外維度配置中定義 `image` 屬性並包含一個 URL 範本。URL 可以是動態的，使用 LiquidJS 範本語法根據行數據與欄位值來構建連結。
+
+**最簡單範例 —— 欄位已包含圖片 URL：**
+
+如果您的欄位本身就儲存了完整的圖片 URL，只需將其配置為以圖片顯示即可：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: image_url
+        description: "事件的圖片網址"
+        meta:
+          dimension:
+            type: string
+            image:
+              url: "${value.raw}"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    columns:
+      - name: image_url
+        description: "事件的圖片網址"
+        config:
+          meta:
+            dimension:
+              type: string
+              image:
+                url: "${value.raw}"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: image_url
+        description: "事件的圖片網址"
+        type: string
+        image:
+          url: "${value.raw}"
+    ```
+  </Tab>
+</Tabs>
+
+**自定義維度與縮放行為 (Fit)：**
+
+您可以使用寬度、高度與 fit 選項來控制圖片的大小與顯示行為：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: product_image_url
+        description: "產品圖片網址"
+        meta:
+          dimension:
+            type: string
+            image:
+              url: "${value.raw}"
+              width: 100
+              height: 100
+              fit: "cover"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    columns:
+      - name: product_image_url
+        description: "產品圖片網址"
+        config:
+          meta:
+            dimension:
+              type: string
+              image:
+                url: "${value.raw}"
+                width: 100
+                height: 100
+                fit: "cover"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: product_image_url
+        description: "產品圖片網址"
+        type: string
+        image:
+          url: "${value.raw}"
+          width: 100
+          height: 100
+          fit: "cover"
+    ```
+  </Tab>
+</Tabs>
+
+**使用 URL 範本的基本範例：**
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: product_id
+        meta:
+          additional_dimensions:
+            product_image:
+              type: string
+              label: "產品圖片"
+              description: "產品縮圖"
+              image:
+                url: "https://example.com/images/${value.raw}.jpg"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    columns:
+      - name: product_id
+        config:
+          meta:
+            additional_dimensions:
+              product_image:
+                type: string
+                label: "產品圖片"
+                description: "產品縮圖"
+                image:
+                  url: "https://example.com/images/${value.raw}.jpg"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: product_id
+      - name: product_image
+        type: string
+        label: "產品圖片"
+        description: "產品縮圖"
+        image:
+          url: "https://example.com/images/${value.raw}.jpg"
+    ```
+  </Tab>
+</Tabs>
+
+**使用動態 URL 的進階範例：**
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: event_type
+        meta:
+          additional_dimensions:
+            event_image:
+              type: string
+              label: "事件圖片"
+              description: "事件橫幅圖片"
+              image:
+                url: "https://cdn.example.com/${value.raw}-${row.events.event_id.raw | upcase}.png"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    columns:
+      - name: event_type
+        config:
+          meta:
+            additional_dimensions:
+              event_image:
+                type: string
+                label: "事件圖片"
+                description: "事件橫幅圖片"
+                image:
+                  url: "https://cdn.example.com/${value.raw}-${row.events.event_id.raw | upcase}.png"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: event_type
+      - name: event_image
+        type: string
+        label: "事件圖片"
+        description: "事件橫幅圖片"
+        image:
+          url: "https://cdn.example.com/${value.raw}-${row.events.event_id.raw | upcase}.png"
+    ```
+  </Tab>
+</Tabs>
+
+
+### 顯示行為
+
+- **縮圖**：圖片在表格儲存格中以縮圖顯示（預設高度 32px）。
+- **懸停預覽**：滑鼠懸停於縮圖上時，會透過工具提示顯示較大尺寸的預覽圖。
+- **錯誤處理**：圖片載入失敗時會顯示照片關閉圖示，並在工具提示中提供錯誤詳情。
+- **驗證**：系統會捕捉無效的 URL 語法並顯示錯誤狀態。
+
+
+### 圖片配置屬性
+
+`image` 物件支援以下屬性：
+
+| 屬性 | 類型 | 預設值 | 描述 |
+| :------- | :----- | :------ | :---------- |
+| `url` | string | (必填) | 圖片 URL。支援 LiquidJS 範本，如 `${value.raw}`, `${row.table.column.raw}` 等。 |
+| `width` | number | auto | 圖片寬度（像素）。若指定寬度未指定高度，高度預設為 'auto' 以維持長寬比。 |
+| `height` | number | 32 | 圖片高度（像素）。 |
+| `fit` | string | "cover" | 控制圖片在維度內的填滿行為。選項：`"cover"`, `"contain"`, `"fill"`, 或 `"none"`。 |
+
+**縮放選項 (Fit options)：**
+
+- **`cover`** (預設) - 圖片填滿空間並維持長寬比。可能會裁切內容。
+- **`contain`** - 縮放圖片以適應尺寸並維持長寬比。不會裁切。
+- **`fill`** - 拉伸圖片以填滿尺寸。可能會導致圖片變形。
+- **`none`** - 以原始尺寸顯示圖片，不進行縮放。
+
+**範例：**
+
+```yaml
+# 正方形縮圖，使用 cover 填充
+image:
+  url: "${value.raw}"
+  width: 50
+  height: 50
+  fit: "cover"
+
+# 寬幅縮圖，維持長寬比
+image:
+  url: "https://example.com/images/${value.raw}.jpg"
+  width: 100
+  # height 預設為 'auto' 以維持長寬比
+
+# 原始尺寸顯示
+image:
+  url: "${value.raw}"
+  fit: "none"
+```
+
+### URL 範本
+
+`image.url` 屬性支援 LiquidJS 範本，具備與[維度 URL](#網址-urls) 相同的標籤與過濾器：
+
+**可用的 Liquid 標籤：**
+
+| 標籤 | 描述 |
+| :------------------------------------------ | :------------------------------------------------------------------------------------------ |
+| `${ value.formatted }` | Lightdash UI 中顯示的精確維度值 |
+| `${ value.raw }` | 底層 SQL 查詢回傳的原始數值 |
+| `${ row.table_name.column_name.formatted }` | Lightdash UI 中顯示的其他欄位的精確值 |
+| `${ row.table_name.column_name.raw }` | 底層 SQL 查詢回傳的其他維度的原始數值 |
+
+**可用的 Liquid 過濾器：**
+
+您可以使用 [Liquid 過濾器](https://liquidjs.com/filters/overview.html) 進行數值轉換：
+
+```yaml
+image:
+  url: "https://example.com/${value.raw | downcase}.jpg"
+```
+
+### 目前限制
+
+- **僅限維度**：圖片顯示目前僅支援維度與額外維度（不支援指標或表格計算）。
+- **引用欄位**：使用 `${ row.table_name.column_name }` 範本時，被引用的欄位必須包含在您的結果表格中，圖片才能正常顯示。
+
+
+### 範例：帶有圖片的產品目錄
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: products
+        columns:
+          - name: sku
+            description: "產品 SKU 代碼"
+            meta:
+              dimension:
+                type: string
+              additional_dimensions:
+                product_thumbnail:
+                  type: string
+                  label: "產品圖片"
+                  description: "產品目錄圖片"
+                  image:
+                    url: "https://cdn.mystore.com/products/${value.raw}/thumbnail.jpg"
+                    width: 80
+                    height: 80
+                    fit: "cover"
+          - name: category
+            description: "產品類別"
+            meta:
+              dimension:
+                type: string
+              additional_dimensions:
+                category_icon:
+                  type: string
+                  label: "類別圖示"
+                  description: "類別圖示圖片"
+                  image:
+                    url: "https://cdn.mystore.com/icons/${value.raw | downcase}.png"
+                    width: 40
+                    height: 40
+                    fit: "contain"
+          - name: hero_image_url
+            description: "產品主圖網址"
+            meta:
+              dimension:
+                type: string
+                image:
+                  url: "${value.raw}"
+                  width: 120
+                  fit: "cover"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: products
+        columns:
+          - name: sku
+            description: "產品 SKU 代碼"
+            config:
+              meta:
+                dimension:
+                  type: string
+                additional_dimensions:
+                  product_thumbnail:
+                    type: string
+                    label: "產品圖片"
+                    description: "產品目錄圖片"
+                    image:
+                      url: "https://cdn.mystore.com/products/${value.raw}/thumbnail.jpg"
+                      width: 80
+                      height: 80
+                      fit: "cover"
+          - name: category
+            description: "產品類別"
+            config:
+              meta:
+                dimension:
+                  type: string
+                additional_dimensions:
+                  category_icon:
+                    type: string
+                    label: "類別圖示"
+                    description: "類別圖示圖片"
+                    image:
+                      url: "https://cdn.mystore.com/icons/${value.raw | downcase}.png"
+                      width: 40
+                      height: 40
+                      fit: "contain"
+          - name: hero_image_url
+            description: "產品主圖網址"
+            config:
+              meta:
+                dimension:
+                  type: string
+                image:
+                  url: "${value.raw}"
+                  width: 120
+                  fit: "cover"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: products
+
+    dimensions:
+      - name: sku
+        description: "產品 SKU 代碼"
+        type: string
+      - name: product_thumbnail
+        type: string
+        label: "產品圖片"
+        description: "產品目錄圖片"
+        image:
+          url: "https://cdn.mystore.com/products/${value.raw}/thumbnail.jpg"
+          width: 80
+          height: 80
+          fit: "cover"
+      - name: category
+        description: "產品類別"
+        type: string
+      - name: category_icon
+        type: string
+        label: "類別圖示"
+        description: "類別圖示圖片"
+        image:
+          url: "https://cdn.mystore.com/icons/${value.raw | downcase}.png"
+          width: 40
+          height: 40
+          fit: "contain"
+      - name: hero_image_url
+        description: "產品主圖網址"
+        type: string
+        image:
+          url: "${value.raw}"
+          width: 120
+          fit: "cover"
+    ```
+  </Tab>
+</Tabs>
+
+
+## 在欄位名稱中使用特殊字元或大寫字母
+
+如果您在欄位名稱中使用特殊字元或大寫字母，在探索數據時可能會遇到錯誤。例如，在 Postgres 的 `orders` 表中，如果欄位名稱為 `Status`（S 大寫），系統會拋出以下錯誤：
+
+```bash
+column orders.status does not exist
+```
+
+要修正此問題，我們可以在維度的 `sql` meta 標籤中為欄位名稱添加引號：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    - name: status
+      meta:
+        dimension:
+          type: string
+          sql: '"orders"."Status"' # 您也可以使用 '${TABLE}."Status"'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    - name: status
+      config:
+        meta:
+          dimension:
+            type: string
+            sql: '"orders"."Status"' # 您也可以使用 '${TABLE}."Status"'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: status
+        type: string
+        sql: '"orders"."Status"' # 您也可以使用 '${TABLE}."Status"'
+    ```
+  </Tab>
+</Tabs>
+
+這會在生成的 SQL 查詢中正確引用 `Status` 欄位：
+
+```sql
+SELECT
+  "orders".order_id AS "orders_order_id",
+  "orders"."Status" AS "orders_status"
+FROM "postgres"."jaffle"."orders" AS "orders"
+```
+
+
+## 額外維度 (Additional dimensions)
+
+額外維度允許您基於 dbt 模型中的單個欄位定義多個維度。這在[套用不同的格式化](#添加不同的格式化)、[比較或結合欄位](#比較或結合欄位)、[解析 JSON 欄位](#解析-json-欄位)或建立基於某欄位的持久化分組/分桶時非常有用。
+
+「普通」維度是在 dbt 的 .sql 檔案中建立並寫入數據倉庫的欄位。而額外維度不包含在 dbt .sql 檔案中，因此不會寫入數據倉庫。在 Lightdash 中使用時，它只是將維度定義加入到 SQL 查詢中（即在運行時建立）。
+
+所有的[維度配置](#維度配置)都適用於額外維度。您也可以[在定義指標時使用額外維度](#在指標中使用額外維度)。
+
+<Info>
+  額外維度的名稱在模型中必須是唯一的。
+</Info>
+
+### 添加不同的格式化
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: revenue
+        meta:
+          dimension:
+            type: number
+          additional_dimensions:
+            revenue_in_thousands:
+              type: number
+              format: '#,##0," K"'
+            revenue_in_millions:
+              type: number
+              format: '#,##0,," M"'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    columns:
+      - name: revenue
+        config:
+          meta:
+            dimension:
+              type: number
+            additional_dimensions:
+              revenue_in_thousands:
+                type: number
+                format: '#,##0," K"'
+              revenue_in_millions:
+                type: number
+                format: '#,##0,," M"'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: revenue
+        type: number
+      - name: revenue_in_thousands
+        type: number
+        sql: ${TABLE}.revenue
+        format: '#,##0," K"'
+      - name: revenue_in_millions
+        type: number
+        sql: ${TABLE}.revenue
+        format: '#,##0,," M"'
+    ```
+  </Tab>
+</Tabs>
+
+
+### 比較或結合欄位
+
+在定義額外維度時，您可以引用其他維度，甚至是來自關聯表的維度（在下方範例中，`organizations` 是關聯表）。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: created_date
+        meta:
+          dimension:
+            type: date
+          additional_dimensions:
+            days_to_first_query_run:
+              type: number
+              description: '使用者建立日期與其首次執行查詢之間的天數。'
+              sql: ${first_query_date} - ${created_date}
+            days_to_organization_first_payment:
+              type: number
+              description: '使用者建立日期與其組織首次付款之間的天數。若在首次付款後加入，則數值為負。'
+              sql: ${created_date} - ${organizations.first_payment_date}
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    columns:
+      - name: created_date
+        config:
+          meta:
+            dimension:
+              type: date
+            additional_dimensions:
+              days_to_first_query_run:
+                type: number
+                description: '使用者建立日期與其首次執行查詢之間的天數。'
+                sql: ${first_query_date} - ${created_date}
+              days_to_organization_first_payment:
+                type: number
+                description: '使用者建立日期與其組織首次付款之間的天數。若在首次付款後加入，則數值為負。'
+                sql: ${created_date} - ${organizations.first_payment_date}
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: created_date
+        type: date
+      - name: days_to_first_query_run
+        type: number
+        description: '使用者建立日期與其首次執行查詢之間的天數。'
+        sql: ${first_query_date} - ${created_date}
+      - name: days_to_organization_first_payment
+        type: number
+        description: '使用者建立日期與其組織首次付款之間的天數。若在首次付款後加入，則數值為負。'
+        sql: ${created_date} - ${organizations.first_payment_date}
+    ```
+  </Tab>
+</Tabs>
+
+
+### 解析 JSON 欄位
+
+通常您會想對原始 JSON 維度設定 `hidden: true`，因為原始 JSON 在圖表中並不實用。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    columns:
+      - name: metadata # 這是儲存元數據的 jsonb 欄位
+        meta:
+          dimension:
+            hidden: true
+          additional_dimensions:
+            version:
+              type: number
+              sql: JSON_VALUE(${metadata}, '$.version') # 套用自定義 SQL 以取得 metadata 內部的 "version" 值
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    columns:
+      - name: metadata # 這是儲存元數據的 jsonb 欄位
+        config:
+          meta:
+            dimension:
+              hidden: true
+            additional_dimensions:
+              version:
+                type: number
+                sql: JSON_VALUE(${metadata}, '$.version') # 套用自定義 SQL 以取得 metadata 內部的 "version" 值
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    dimensions:
+      - name: metadata # 這是儲存元數據的 jsonb 欄位
+        hidden: true
+      - name: version
+        type: number
+        sql: JSON_VALUE(${metadata}, '$.version') # 套用自定義 SQL 以取得 metadata 內部的 "version" 值
+    ```
+  </Tab>
+</Tabs>
+
+
+### 為同一個維度添加多個時區
+
+您可以使用額外維度將時戳轉換為多個時區：
+
+
+
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+  ```yaml
+  columns:
+    - name: created_at
+      description: '建立時間'
+      meta:
+        dimension:
+          label: '建立時間 (UTC)'
+          type: timestamp
+        additional_dimensions:
+          created_at_est:
+            type: timestamp
+            label: '建立時間 (EST)'
+            description: '美東時間的建立時間'
+            sql: "convert_timezone('UTC', 'America/New_York', ${TABLE}.created_at)"
+  ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+  ```yaml
+  columns:
+    - name: created_at
+      description: '建立時間'
+      config:
+        meta:
+          dimension:
+            label: '建立時間 (UTC)'
+            type: timestamp
+          additional_dimensions:
+            created_at_est:
+              type: timestamp
+              label: '建立時間 (EST)'
+              description: '美東時間的建立時間'
+              sql: "convert_timezone('UTC', 'America/New_York', ${TABLE}.created_at)"
+  ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+  ```yaml
+  dimensions:
+    - name: created_at
+      description: '建立時間'
+      label: '建立時間 (UTC)'
+      type: timestamp
+    - name: created_at_est
+      type: timestamp
+      label: '建立時間 (EST)'
+      description: '美東時間的建立時間'
+      sql: "convert_timezone('UTC', 'America/New_York', ${TABLE}.created_at)"
+  ```
+  </Tab>
+</Tabs>
+
+
+
+
+
+### 在指標中使用額外維度
+
+若要定義基於額外維度的指標，您需要將它們添加到模型的 meta metrics 中，或者在欄位 meta 下定義指標時使用自定義 SQL。
+
+
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+  ```yaml
+  models:
+    - name: users
+      meta:
+        metrics:
+          highest_version_model_metric_example:
+            type: max
+            sql: ${version}
+      columns:
+        - name: metadata
+          meta:
+            dimension:
+              hidden: true
+            additional_dimensions:
+              version:
+                type: number
+                sql: JSON_VALUE(${metadata}, '$.version')
+            metrics:
+              highest_version:
+                type: max
+                sql: ${version}
+  ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+  ```yaml
+  models:
+    - name: users
+      config:
+        meta:
+          metrics:
+            highest_version_model_metric_example:
+              type: max
+              sql: ${version}
+        columns:
+          - name: metadata
+            meta:
+              dimension:
+                hidden: true
+              additional_dimensions:
+                version:
+                  type: number
+                  sql: JSON_VALUE(${metadata}, '$.version')
+              metrics:
+                highest_version:
+                  type: max
+                  sql: ${version}
+  ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+  ```yaml
+  type: model
+  name: users
+
+  dimensions:
+    - name: metadata
+      hidden: true
+    - name: version
+      type: number
+      sql: JSON_VALUE(${metadata}, '$.version')
+
+  metrics:
+    highest_version_model_metric_example:
+      type: max
+      sql: ${version}
+    highest_version:
+      type: max
+      sql: ${version}
+  ```
+  </Tab>
+</Tabs>
+
+### 在額外維度中引用時間間隔
+
+您可以在額外維度中引用特定維度的時間間隔。這對於建立基於特定時間粒度的自定義邏輯非常有用。
+
+例如，您可以根據特定的時間間隔是否具有數值來建立一個分層 (Tier)：
+
+
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+  ```yaml
+    - name: session_start
+      meta:
+        dimension:
+          type: timestamp
+          time_intervals:
+          - DAY_OF_WEEK_NAME
+          - WEEK
+          - MONTH
+          - RAW
+          - DAY
+          - HOUR_OF_DAY_NUM
+          - QUARTER
+        additional_dimensions:
+          extra_session_start_tier:
+            type: string
+            sql: |
+              CASE
+                WHEN ${session_start_month} IS NOT NULL THEN 'month'
+                ELSE 'else' END
+  ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+  ```yaml
+    - name: session_start
+      config:
+        meta:
+          dimension:
+            type: timestamp
+            time_intervals:
+            - DAY_OF_WEEK_NAME
+            - WEEK
+            - MONTH
+            - RAW
+            - DAY
+            - HOUR_OF_DAY_NUM
+            - QUARTER
+          additional_dimensions:
+            extra_session_start_tier:
+              type: string
+              sql: |
+                CASE
+                  WHEN ${session_start_month} IS NOT NULL THEN 'month'
+                  ELSE 'else' END
+  ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+  ```yaml
+  dimensions:
+    - name: session_start
+      type: timestamp
+      time_intervals:
+      - DAY_OF_WEEK_NAME
+      - WEEK
+      - MONTH
+      - RAW
+      - DAY
+      - HOUR_OF_DAY_NUM
+      - QUARTER
+    - name: extra_session_start_tier
+      type: string
+      sql: |
+        CASE
+          WHEN ${session_start_month} IS NOT NULL THEN 'month'
+          ELSE 'else' END
+  ```
+  </Tab>
+</Tabs>
+
+
+在此範例中，額外維度 `extra_session_start_tier` 引用了 `${session_start_month}`，即 `session_start` 維度的 `MONTH` 時間間隔版本。

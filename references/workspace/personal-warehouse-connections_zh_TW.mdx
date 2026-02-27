@@ -1,0 +1,58 @@
+---
+title: "個人倉庫連接 (Personal warehouse connections)"
+description: "了解在 Lightdash 專案中何時以及如何使用個人倉庫憑據。"
+---
+
+個人倉庫憑據允許您使用自己的個人憑據連接到數據倉庫，而非使用共享的專案憑據。這提供了更好的安全性和數據存取的審計追蹤。
+
+## 何時使用個人倉庫憑據？
+
+<Info>
+    個人倉庫憑據僅用於「需要使用者憑據」的專案。如果專案不需要使用者憑據，則會使用共享的專案連接。
+</Info>
+
+在以下情況下，將使用您的個人倉庫憑據：
+
+-   專案被配置為存取數據時需要使用者憑據。
+-   您在該專案中執行查詢、建立圖表或構建儀表板。
+-   您在有使用者憑據要求的專案中使用 SQL 執行器 (SQL runner) 或探索數據。
+
+## 設定個人倉庫憑據
+
+要配置您的個人倉庫憑據：
+
+1. 點擊右上角的個人頭像，導覽至「User Settings (使用者設置)」。
+2. 前往「My warehouse credentials (我的倉庫憑據)」章節。
+3. 輸入您的個人倉庫連接詳情。
+4. 儲存您的憑據。
+
+<Frame>
+    <img
+        src="/images/references/workspace/personal-warehouse-connections/personal_warehouse_credentials.gif"
+        alt="個人倉庫憑據設置頁面"
+    />
+</Frame>
+
+## 支援的驗證方式
+
+根據您的倉庫類型，可以使用不同的驗證方式：
+
+### Snowflake
+
+- **透過 Snowflake 登入 (OAuth)**：使用您的 Snowflake 帳號透過 OAuth 進行驗證。這需要您的組織已配置 Snowflake 安全整合。詳情請參閱 [Snowflake 連接設置](/get-started/setup-lightdash/connect-project_zh_TW#透過-snowflake-登入)。
+- **私鑰 (Private Key)**：使用私鑰檔案進行驗證。
+- **密碼 (Password)**：使用您的 Snowflake 使用者名稱與密碼。
+
+### Databricks
+
+- **透過 Databricks 登入 (OAuth)**：使用您的 Databricks 帳號透過 OAuth 進行驗證。這需要您的組織已配置 Databricks OAuth 應用程式。詳情請參閱 [Databricks 連接設置](/get-started/setup-lightdash/connect-project_zh_TW#透過-databricks-登入)。
+- **個人存取權杖 (Personal Access Token)**：使用 Databricks 個人存取權杖。
+
+### BigQuery
+
+- **透過 Google 登入 (OAuth)**：使用您的 Google 帳號透過 OAuth 進行驗證。
+- **服務帳號 (Service Account)**：使用服務帳號的 JSON 金鑰檔案。
+
+### 其他倉庫
+
+對於其他倉庫類型（Postgres, Redshift, Trino, ClickHouse），驗證通常使用使用者名稱與密碼憑據。
