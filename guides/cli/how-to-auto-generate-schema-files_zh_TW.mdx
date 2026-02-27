@@ -1,0 +1,122 @@
+---
+title: 為您的模型自動生成 Lightdash 專用的 YAML 檔案
+sidebarTitle: 自動生成 YAML
+icon: "wand-magic-sparkles"
+description: Lightdash 的優勢在於我們與您的 dbt 專案保持高度同步。因此，在 Lightdash 中，表格實際上來自您 dbt 專案 `.yml` 檔案中定義的 dbt 模型。
+---
+
+如果您的 dbt 模型已在 .yml 檔案中定義，它將作為一個表格出現在 Lightdash 中。
+
+
+<Tip>
+不太確定什麼是 .yml 檔案或表格 (Table)？請務必查看我們的教學 [向 Lightdash 新增表格](/get-started/develop-in-lightdash/adding-tables-to-lightdash_zh_TW) 以獲取更多詳細資訊。
+</Tip>
+
+## 自動生成 `schema.yml` 檔案
+
+<iframe src="https://www.loom.com/embed/82833c5ea8a841dbb0ebdbcd878f85a1" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style={{ width: '100%', height: '400px' }} ></iframe>
+
+為了更快速地編寫和維護您的 `schema.yml` 檔案，Lightdash CLI 將自動生成並同步您的 `schema.yml` 檔案。
+
+在您的 dbt 專案中打開終端機，並執行以下指令來為名為 `mymodel` 的模型生成 `schema.yml` 檔案：
+
+```bash
+git commit # 請確保先提交您現有的所有專案變更！
+lightdash generate -s mymodel
+```
+
+這將建立或更新現有的 `schema.yml` 檔案，以添加數據庫中出現的任何新欄位。
+
+## 在 `dbt run` 之後自動同步 `schema.yml` 檔案
+
+由於 `generate` 指令依賴您的數據庫 schema 來檢測哪些欄位是必需的，您通常會希望在執行 `generate` 之前先執行 `dbt run`。您可以將 `dbt run` 和 `lightdash generate` 合併為一個指令，該指令將執行模型，然後為任何發生變化的模型重新生成 `schema.yml` 檔案：
+
+```bash
+git commit
+lightdash dbt run  # 執行 dbt 並重新同步 schema.yml 檔案
+```
+
+## 為多個模型生成 `schema.yml`
+
+`lightdash generate` 支援 dbt 的模型選擇語法，以為一組模型生成檔案：
+
+```bash
+lightdash generate # 所有模型
+lightdash generate -s payments  # 僅 payments
+lightdash generate -s payments+ # payments 及其所有子項
+lightdash generate -s +payments # payments 及其所有父項
+lightdash generate -s +payments+ # payments 及其所有子項和父項
+lightdash generate -s tag:prod # 所有帶有 prod 標籤的模型
+lightdash generate -s payments customers # 兩個特定的模型
+lightdash generate -s payments+ +customers tag:prod # 混合搭配
+```
+
+## 使用 Doc Blocks 構建更好的 .yml 檔案
+
+[Doc blocks](https://docs.getdbt.com/docs/building-a-dbt-project/documentation#using-docs-blocks) 是定義在您的 dbt 專案中的 Markdown 檔案，對於在 dbt 專案中建立一致的文件非常有用。
+
+例如，如果我有個名為 `product_category` 的欄位在整個專案中多次使用，我可以為此欄位建立一個 doc block：
+
+```bash
+{% docs product_category %}
+
+這是一個字串欄位，告訴我們所銷售產品的類別。這是比 `product_type` 更高層級的分組。每個 `product_type` 都會對應到單一一個 `product_category`。
+
+有效的產品類別包括：
+
+- clothing (服飾)
+- home (家居)
+- accessories (配件)
+- beauty (美妝)
+
+{% enddocs %}
+```
+
+接著我可以在我的 .yml 檔案中引用此 doc block，如下所示：
+
+```yaml
+models:
+  - name: products
+    description: '每個產品 ID 一行'
+
+    columns:
+      - name: product_category
+        description: '{{ doc("product_category") }}'
+```
+
+`product_category` 的文件（在 Lightdash 和您的 dbt 文件中）將變為我上面編寫的 doc block 內容。
+
+### Lightdash CLI 將自動向您的 .yml 檔案添加 Doc Blocks
+
+Doc blocks 的一個優點是 Lightdash 會自動將其添加到生成的 .yml 檔案中。例如，如果我的 `product_sales` 模型有一個像這樣的 .yml 檔案：
+
+```yaml
+models:
+  - name: product_sales
+
+    columns:
+      - name: product_id
+      - name: product_value
+      - name: product_category
+```
+
+然後，我執行：
+
+```bash
+lightdash dbt run -s product_sales # 或 lightdash generate -s product_sales
+```
+
+那麼我的 `product_sales.yml` 檔案將被更新，以包含 `product_category` 的 doc block：
+
+```yaml
+models:
+  - name: product_sales
+
+    columns:
+      - name: product_id
+      - name: product_value
+      - name: product_category
+        description: '{{ doc("product_category") }}'
+```
+
+我們建議盡可能使用 doc blocks！它們有助於保持整個專案中欄位定義的一致性，並且還能讓您透過 Lightdash CLI 完全自動地獲得出色且完善的文件。

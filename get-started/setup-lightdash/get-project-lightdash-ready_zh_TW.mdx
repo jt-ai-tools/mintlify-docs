@@ -1,0 +1,181 @@
+---
+title: "建立您的第一個專案"
+---
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/get-project-lightdash-ready/overview-intro-4debf555ace1283cfc3328617f044db1.png" alt="" />
+</Frame>
+
+在 Lightdash 中，BI 所需的一切都以代碼形式編寫在您的 dbt 專案中。您使用 dbt 轉換來自數據倉庫的所有數據，然後使用 Lightdash 進行探索。
+
+但是，在將 dbt 專案與 Lightdash 連接之前，我們需要確保有可供探索的表格 (Tables)。**在本設置指南中，我們將帶領您完成安裝和使用 Lightdash CLI 的步驟，並在您的專案中建立第一個表格。**
+
+<Tip>
+  **剛接觸 dbt？** 如果您以前沒使用過 dbt，請在繼續設置 Lightdash 之前，先[遵循 dbt 的入門指南](https://docs.getdbt.com/tutorial/setting-up)。
+</Tip>
+
+## 什麼是表格 (Tables)？
+
+表格是 Lightdash 中任何數據探索的起點——它們是您在 Lightdash 中可以查詢的數據。Lightdash 的優勢在於我們與您的 dbt 專案保持高度同步。因此，在 Lightdash 中，表格實際上來自您 dbt 專案 `.yml` 檔案中定義的 dbt 模型 (Models)。
+
+如果您的 dbt 模型已在 .yml 檔案中定義，它將作為一個表格出現在 Lightdash 中。
+
+<Tip>
+  **不確定什麼是 .yml 檔案？** 請務必[查看 dbt 的文件](https://docs.getdbt.com/reference/configs-and-properties)，了解更多關於為 dbt 專案構建 .yml 檔案的資訊。
+</Tip>
+
+這是我們在 dbt 中定義的 `deals` 模型範例。在 Lightdash 中，我們可以在可探索的表格列表中看到它。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/get-project-lightdash-ready/what-are-tables.png" alt="" />
+</Frame>
+
+現在我們知道了什麼是表格，讓我們添加一些並建立第一個專案吧！
+
+***
+
+## 步驟 1：安裝 Lightdash CLI 工具
+
+Lightdash CLI 是開發 dbt + Lightdash 專案的推薦方式。它使開發更快速、更輕鬆，並為您提供構建更強大自動化功能以管理 Lightdash 執行體的選項。
+
+在安裝 Lightdash CLI 之前，您的機器上需要安裝 NodeJS/NPM。要檢查是否已安裝，請在終端機中執行以下指令：
+
+```bash
+node -v; npm -v;
+# 應該會印出類似以下的內容：
+# v20.8.0
+# 8.15.0
+```
+
+<Accordion title="系統中尚未安裝 NodeJS/NPM？">
+  我們建議使用 [NVM (Node Version Manager)](https://github.com/nvm-sh/nvm#install--update-script) 安裝 NodeJS/NPM，它適用於 POSIX 兼容的 shell（在 unix, macOS, 和 Windows WSL 平台上的 sh, dash, ksh, zsh, bash）。
+
+  打開終端機並執行以下指令，在系統中安裝 NVM：
+
+  ```bash
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | bash
+  # 或
+  wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | bash
+  ```
+
+  重啟終端機並執行以下指令安裝 NodeJS：
+
+  ```bash
+  nvm install --lts
+  ```
+
+  執行以下指令檢查 NodeJS 是否已安裝：
+
+  ```bash
+  node -v
+  ```
+
+  執行上述指令應輸出類似 `20.8.0` 的內容，這表示您已成功安裝 NodeJS/NPM <Icon icon="party-horn" iconType="solid" />
+
+  ***
+
+  或者，您可以[透過您偏好的套件管理員安裝 NodeJS/NPM](https://nodejs.org/en/download/package-manager)。
+</Accordion>
+
+在終端機中執行以下指令來安裝 Lightdash CLI。
+
+```bash
+npm install -g @lightdash/cli
+```
+
+<Info>
+  如果在安裝 Lightdash CLI 時遇到 `npm ERR! code EACCES` 錯誤，請[參考此指南](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally)來解決。
+</Info>
+
+***
+
+## 步驟 2：登入 CLI
+
+我們已自動生成了一個個人存取權杖 (Personal Access Token)，您可以用它登入 CLI，因此您只需在終端機中複製並貼上該指令即可。
+
+這通常是步驟 2，看起來應該像這樣：
+
+```bash
+lightdash login https://{{ lightdash_domain }} --token my-super-secret-token
+```
+
+其中 `{{ lightdash_domain }}` 對於 Lightdash Cloud 使用者是 `app.lightdash.cloud`；如果是自託管，則是您自己的網域。如果您想使用其他方式登入，可以[在此查看我們的驗證方式](/guides/cli/cli-authentication_zh_TW)。
+
+***
+
+## 步驟 3：新增表格
+
+<Info>
+  如果您使用的是 dbt Cloud，在完成後續步驟之前，您需要先[將儲存庫克隆到本地機器](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)。
+</Info>
+
+要讓我們的 dbt 專案具備 Lightdash 存取條件，我們需要在 dbt 模型中定義所有想要在 Lightdash 中探索的欄位。使用我們的 CLI 工具和以下指令可以非常輕鬆地完成：
+
+```bash
+lightdash dbt run
+```
+
+這將為您的整個 dbt 專案生成表格和維度。它會記錄模型中的所有欄位，這些就是我們在 Lightdash 中作為「維度 (Dimensions)」進行探索的內容。
+
+例如，如果我們有一個 `leads.yml` 檔案，我們將得到一個名為 `Leads` 的表格，其中包含維度：`Lead id`、`User id` 和 `sdr`。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/get-project-lightdash-ready/example-table.png" />
+</Frame>
+
+<Tip>
+  如果遇到錯誤：`Error: Not a dbt project (or any of the parent directories). Missing dbt\_project.yml file`
+
+  請確保您位於 dbt 專案資料夾中（即 `dbt_project.yml` 檔案所在的目錄），然後再嘗試執行 `lightdash dbt run`。
+</Tip>
+
+<Accordion title="如果您只想為 dbt 專案中的部分模型生成表格和維度，請查看此處">
+  ### 為 dbt 專案中的部分模型生成表格和維度：
+
+  您可能希望一開始僅將一組特定的模型作為表格包含在 Lightdash 中。如果是這種情況，我們建議<a href="https://docs.getdbt.com/reference/resource-configs/tags">使用 dbt 的 <code>tags</code></a> 來標記這些模型。您可以使用現有的標籤集，也可以建立一個新的 Lightdash 專用標籤。例如：
+
+  ```bash
+  {{
+    config(
+      materialized='table',
+      tags=['lightdash']
+    )
+  }}
+  ```
+
+  `lightdash dbt run` 指令支援 dbt 模型選擇語法，以為一組模型生成 .yml 檔案。這意味著您可以使用標籤或其他模型選擇語法來指定要為哪些模型生成維度。
+
+  ```bash
+  lightdash dbt run -s tag:lightdash # 所有帶有 lightdash 標籤的模型
+  lightdash dbt run -s payments  # 僅 payments
+  lightdash dbt run -s payments+ # payments 及其所有子項
+  lightdash dbt run -s +payments # payments 及其所有父項
+  lightdash dbt run -s payments+ +customers tag:lightdash # 混合搭配
+  ```
+</Accordion>
+
+***
+
+## 步驟 4：建立專案
+
+現在，您的 dbt 專案已經準備好在 Lightdash 中使用了！只需執行此指令並點擊連結即可開始探索數據：
+
+```bash
+lightdash deploy --create
+```
+
+***
+
+## 後續步驟：更新您的專案連接設置
+
+我們使用您本地的 dbt `profiles.yml` 檔案建立了您的第一個專案。因此，您可能需要更新連接設置以：
+
+1. 為 Lightdash 設置一個專用的服務帳戶（而不是使用您的個人連接詳情）。
+
+2. 將 Lightdash 連接到受版本控制的 dbt 專案，以便自動同步變更。
+
+查看[更新連接設置詳情](/get-started/setup-lightdash/connect-project_zh_TW)。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/get-project-lightdash-ready/update-your-project-connection-settings.png" alt="" />
+</Frame>

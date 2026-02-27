@@ -1,0 +1,155 @@
+---
+title: "在 Lightdash 中使用 AI"
+sidebarTitle: "概覽"
+icon: "list"
+description: "Lightdash 提供多種 AI 驅動的能力，協助您探索數據、構建語義層並與外部工具整合。"
+---
+
+Lightdash 提供多種方式讓您在分析工作流程中利用 AI。每種能力服務於不同的使用場景——從回答業務問題、構建語義層到與您自己的 AI 工具整合。
+
+## AI 能力一覽
+
+| 能力 | 使用場景 | 需求 |
+|------------|----------|--------------|
+| [Lightdash AI 代理](#lightdash-ai-代理) | 使用語義層回答問題並建立圖表 | Cloud Pro 或 Enterprise 選購附件 |
+| [Lightdash Data MCP](#lightdash-data-mcp) | 從外部 LLM 查詢您的語義層 | 所有 Lightdash Cloud 與 Enterprise 使用者 |
+| [Lightdash Docs MCP](#lightdash-docs-mcp) | 為您的 LLM 提供關於 Lightdash 功能的背景資訊 | 對所有人免費開放 |
+| [CLI 代理技能](#代理技能) | 使用外部 AI 編碼代理構建與維護語義層 | 對所有人免費開放 |
+
+## Lightdash AI 代理
+
+<Info>
+  作為 Cloud Pro 和 Enterprise 方案的選購附件提供。[查看定價](https://www.lightdash.com/pricing)
+</Info>
+
+AI 代理讓您的團隊能使用自然語言提問並獲得即時答案。它們利用您儲存的儀表板和語義層中定義的指標，讓業務使用者無需編寫代碼或學習複雜工具即可發現見解。
+
+**最適合：** 想要探索數據並建立視覺化圖表，但不具備技術背景的業務使用者。
+
+**核心功能：**
+- 自然語言查詢與自動視覺化
+- Slack 整合，便於團隊協作
+- 具備記憶與從修正中學習的能力
+- 精細的存取控制
+- 評估功能，用於驗證代理準確性
+
+<Card title="AI 代理文件" icon="robot" href="/guides/ai-agents_zh_TW">
+  了解如何設置與使用 AI 代理
+</Card>
+
+## Lightdash Data MCP
+
+<Check>
+  適用於所有 Lightdash Cloud 和 Enterprise 使用者。
+</Check>
+
+[Model Context Protocol (MCP)](https://modelcontextprotocol.io/) 讓您可以將 Claude 或 ChatGPT 等外部 AI 助手直接連接到您的 Lightdash 數據。使用您偏好的 LLM 來探索數據模型、搜尋指標並獲取數據驅動的見解——同時遵守您現有的存取控制。
+
+**最適合：** 希望在 Lightdash UI 之外，使用自己的 AI 工具（Claude、ChatGPT、自定義代理）查詢 Lightdash 數據的團隊。
+
+**核心功能：**
+- 將 Claude、ChatGPT 或自定義代理連接到您的 Lightdash 執行體
+- 瀏覽並查詢您的數據模型
+- 透過現有權限進行 OAuth 身份驗證
+- 唯讀存取，確保安全性
+
+<Card title="Lightdash Data MCP 文件" icon="plug" href="/references/integrations/lightdash-mcp_zh_TW">
+  為您的 AI 助手設置 MCP
+</Card>
+
+## Lightdash Docs MCP
+
+<Check>
+  對所有人免費——包括開源使用者及所有雲端版本。
+</Check>
+
+Docs MCP 端點讓 AI 編碼代理可以造訪完整的 Lightdash 文件。這有助於您的 LLM 理解 Lightdash 概念、生成準確的 YAML 配置，並利用官方文件排除故障。
+
+**最適合：** 在處理配置時，希望 AI 編碼工具具備 Lightdash 背景知識的開發者。
+
+**核心功能：**
+- 完整造訪 Lightdash 文件
+- 無需身份驗證
+- 支援 Cursor、Claude Code、Windsurf 及其他相容 MCP 的工具
+
+### 設置
+
+將 Docs MCP 端點添加到您的 AI 編碼工具：
+
+<Tabs>
+  <Tab title="Cursor">
+    添加到您的 `.cursor/mcp.json`：
+
+    ```json
+    {
+      "mcpServers": {
+        "lightdash-docs": {
+          "url": "https://docs.lightdash.com/mcp"
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Claude Code">
+    執行以下指令：
+
+    ```bash
+    claude mcp add lightdash-docs https://docs.lightdash.com/mcp -t http
+    ```
+  </Tab>
+  <Tab title="Windsurf">
+    添加到您的 `~/.codeium/windsurf/mcp_config.json`：
+
+    ```json
+    {
+      "mcpServers": {
+        "lightdash-docs": {
+          "serverUrl": "https://docs.lightdash.com/mcp"
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## 代理技能 (Agent Skills)
+
+<Check>
+  對所有人免費——包括開源使用者及所有雲端版本。
+</Check>
+
+代理技能教導 Cursor、Claude Code 和 Codex 等 AI 編碼代理關於 Lightdash 的 YAML 配置、指標、維度和最佳實踐。安裝技能以幫助您的 AI 助手生成正確的配置並遵循 Lightdash 慣例。
+
+**最適合：** 在構建和維護語義層時，希望 AI 協助處理 YAML 配置的開發者。
+
+**核心功能：**
+- 生成正確的指標和維度 YAML
+- 自動遵循 Lightdash 命名規範
+- 理解表關係與關聯 (Joins)
+- 緊跟 Lightdash 的最新功能
+
+### 快速開始
+
+```bash
+# 為 Claude 安裝（預設）
+lightdash install-skills
+
+# 為 Cursor 安裝
+lightdash install-skills --agent cursor
+
+# 為 Codex 安裝
+lightdash install-skills --agent codex
+```
+
+<Card title="代理技能文件" icon="wand-magic-sparkles" href="/guides/developer/agent-skills_zh_TW">
+  了解更多關於安裝與使用代理技能的資訊
+</Card>
+
+## 選擇合適的 AI 能力
+
+| 如果您想... | 使用 |
+|-------------------|-----|
+| 讓業務使用者用自然語言提問 | [Lightdash AI 代理](/guides/ai-agents_zh_TW) |
+| 從 Claude、ChatGPT 或自定義代理查詢數據 | [Lightdash Data MCP](/references/integrations/lightdash-mcp_zh_TW) |
+| 幫助您的編碼 AI 理解 Lightdash 文件 | [Lightdash Docs MCP](#lightdash-docs-mcp) |
+| 獲取 AI 協助編寫 YAML 配置 | [CLI 代理技能](/guides/developer/agent-skills_zh_TW) |

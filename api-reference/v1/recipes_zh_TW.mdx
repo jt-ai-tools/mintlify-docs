@@ -1,0 +1,240 @@
+---
+title: "實作範例 (Recipes)"
+description: "一系列實用的、可複製貼上的範例，展示如何結合 Lightdash API 端點來實現常見的工作流程。"
+---
+
+## 什麼是 API 實作範例？
+
+Lightdash API 採用模組化設計：大多數端點回傳細微且集中的資訊。雖然這讓 API 保持靈活，但某些實際任務需要結合多個端點或按特定順序組合回應。
+
+例如，Lightdash 沒有提供一個直接回傳「每個圖表的 SQL」的單一端點，但您可以透過結合「圖表列表端點」和「指標查詢端點」來達成此目的。請參考下方的實作範例。
+
+**API 實作範例** 是簡短的指南，告訴您 _具體該如何操作_。每個範例涵蓋：
+
+- **您嘗試達成的目標**（例如：獲取專案中所有圖表的 SQL）
+- **需要呼叫哪些端點以及順序**
+- **curl 範例請求**
+- **JS/Python 選用指令碼**（若適用）
+
+## 什麼時候該使用這些範例？
+
+當出現以下情況時，請使用實作範例：
+
+- 您想要自動化跨多個端點的工作流程
+- 您需要透過程式化方式查詢 Lightdash，但不確定該串接哪些呼叫
+- 您需要身分驗證、分頁或解析指標查詢的實際範例
+- 您正在構建由 Lightdash API 驅動的內部工具或儀表板
+
+<Warning>
+  此頁面包含一些最常見的 API 範例，但並非完整列表。要查看所有可用範例，請點擊[此處](https://github.com/lightdash/lightdash-api-examples)查看完整集合。
+</Warning>
+
+## 在執行任何範例之前
+
+您將需要：
+
+- 已安裝 Python 3.9+
+- 一組 [個人存取權杖 (PAT)](/references/workspace/personal-tokens_zh_TW#personal-access-tokens)
+- 您的 Lightdash 執行體 URL
+- 您想要修改的專案 UUID
+
+## 透過 API 從儲存的 Lightdash 圖表中提取 SQL
+
+此範例展示如何獲取任何儲存圖表的底層 SQL。您可以使用它來除錯查詢、直接在您的資料倉庫中執行，或在 Lightdash 之外自動拉取資料。
+
+### 步驟 1：獲取儲存的圖表
+
+（您必須先建立個人存取權杖 (PAT)）
+
+```
+curl -H "Authorization: ApiKey ldpat_{{your_personal_access_token}}" 
+  https://{{your.lightdash.instance}}/api/v1/saved/{{your_chart_uuid}}
+```
+
+### 步驟 2：提取 `metricQuery` JSON
+
+```
+curl -s 
+  -H "Authorization: ApiKey ldpat_{{your_personal_access_token}}" 
+  https://{{your.lightdash.instance}}/api/v1/saved/{{your_chart_uuid}} 
+  | jq '.results.metricQuery' > metricQuery.json
+```
+
+這會將圖表的語義查詢定義寫入 `metricQuery.json`。
+
+### 步驟 3：將 `metricQuery` 編譯為 SQL
+
+```
+curl -s -X POST 
+  -H "Authorization: ApiKey ldpat_{{your_personal_access_token}}" 
+  -H "Content-Type: application/json" 
+  -d @metricQuery.json 
+  https://{{your.lightdash.instance}}/api/v1/projects/{{your_project_uuid}}/explores/{{your_explore_name}}/compileQuery 
+  | jq '.results.query'
+```
+
+### 一步完成方案
+
+```
+curl -s -H "Authorization: ApiKey ldpat_{{your_personal_access_token}}" 
+  https://{{your.lightdash.instance}}/api/v1/savedc/{{your_chart_uuid}} 
+  | jq '.results.metricQuery' 
+  | curl -s -X POST 
+      -H "Authorization: ApiKey ldpat_{{your_personal_access_token}}" 
+      -H "Content-Type: application/json" 
+      -d @- 
+      https://{{your.lightdash.instance}}/api/v1/projects/{{your_project_uuid}}/explores/{{your_explore_name}}/compileQuery 
+  | jq '.results.query'
+```
+
+## 專案的儀表板清理與使用審計
+
+此 Python 指令碼可協助您**清理**特定 Lightdash 專案中的儀表板。它使用 v2 內容 API，並可將結果導出為 CSV、Excel 或 JSON 以進行深入分析。此指令碼提供：
+
+- 該專案所有儀表板及其元數據的完整列表
+- 查看次數和首次查看日期
+- 建立和最後修改日期
+- 按空間分類的儀表板組織
+- 根據使用模式（從未查看、低參與度、過時、無描述等）提供的清理建議
+
+### 在執行此指令碼之前
+
+您將需要：
+
+- 一份 [find_dashboards.py](https://github.com/lightdash/lightdash-api-examples/blob/main/python/find_dashboards.py) 副本
+
+### 步驟 1：安裝依賴項
+
+您可以使用 **poetry** 或純 Python 執行此指令碼：
+
+```
+poetry install
+# 或
+pip install -r requirements.txt
+```
+
+（依賴項包括 `requests` 和 `pandas`。）
+
+### 步驟 2：更新指令碼配置
+
+打開指令碼並更新以下欄位：
+
+```
+API_URL = 'https://{YOUR_INSTANCE_URL}.lightdash.cloud'  # 您的 Lightdash 執行體
+API_KEY = ''                                             # 您的個人存取權杖
+PROJECT_UUID = ''                                        # 您要分析的專案 (必填)
+EXPORT_METHOD = 'csv'                                    # 'csv', 'excel', 或 'json'
+```
+
+### 步驟 3：執行指令碼
+
+使用 poetry：
+
+```
+poetry run python find_dashboards.py
+```
+
+或直接執行：
+
+```
+python find_dashboards.py
+```
+
+## 導出組織中的所有使用者
+
+此 Python 指令碼使用 `/api/v1/org/users` 端點獲取 **Lightdash 組織中的所有使用者**。這對於**審計**、**權限審查**和**治理**非常有用。它回傳：
+
+- 全名
+- 電子郵件
+- 角色
+- 群組成員身份
+- 可選的 Excel 或 CSV 導出
+
+### 在執行此指令碼之前
+
+您將需要：
+
+- 一份 [get_all_organization_users.py](https://github.com/lightdash/lightdash-api-examples/blob/main/python/get_all_organization_users.py) 副本
+
+### 步驟 1：安裝依賴項
+
+```
+pip install requests pandas
+```
+
+（或新增至您選擇的環境中）
+
+### 步驟 2：更新指令碼配置
+
+打開指令碼並替換：
+
+```
+API_URL = 'https://<yourinstance>.lightdash.cloud/api/v1/org/users'
+API_KEY = '<yourkey>'
+EXPORT_METHOD = 'excel'  # 或 'csv'
+```
+
+### 步驟 3：執行指令碼
+
+```
+python get_all_organization_users.py
+```
+
+## 為使用者列表分配或更新專案存取權限
+
+此 Python 指令碼將 Lightdash **專案角色**分配給 CSV 檔案中的使用者列表，並在需要時升級角色。這對於**大規模入職 (Onboarding)**、**角色同步**或**管理客戶/合作夥伴存取權限**非常有用。此指令碼處理：
+
+- 批量授予專案存取權限
+- 自動角色升級（例如：viewer → editor）
+- 跳過已擁有相同或更高權限的使用者
+- 檢查使用者是否存在於組織中
+- 將組織使用者、專案權限和您的 CSV 合併為一個統一的數據集
+
+### 在執行此指令碼之前
+
+您將需要：
+
+- 包含所需角色的使用者 CSV 檔案
+- 一份 [assign_project_access_to_user_list.py](https://github.com/lightdash/lightdash-api-examples/blob/main/python/assign_project_access_to_user_list.py) 副本
+
+### 步驟 1：準備您的 CSV 檔案
+
+您的 CSV 應包含 **兩個欄位**：
+
+```
+email,role
+user1@example.com,viewer
+user2@example.com,editor
+user3@example.com,developer
+```
+
+有效的角色：
+
+```
+viewer, interactive_viewer, editor, developer, admin
+```
+
+### 步驟 2：安裝依賴項
+
+```
+pip install pandas lightdash-api-client
+```
+
+（或透過 poetry）
+
+### 步驟 3：更新指令碼配置
+
+打開指令碼並更新：
+
+```
+TARGET_URL = 'https://app.lightdash.cloud/api/v1/'
+TARGET_API_KEY = ''
+TARGET_PROJECT_ID = ''
+USER_PERMS_FILEPATH = '~/Documents/user_permission_list.csv'
+```
+
+### 步驟 4：執行指令碼
+
+```
+python assign_project_access_to_user_list.py
+```

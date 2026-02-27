@@ -1,0 +1,48 @@
+---
+title: "評估 (Evaluations)"
+description: "使用自定義評估套件測試並驗證您的 AI 代理效能"
+---
+
+建立自定義評估套件以批量測試代理的表現，並確保在不同場景下都能獲得一致且高品質的回應。
+
+<Frame>
+  ![AI 代理評估詳情介面](/images/guides/ai-agents/evaluations-start-page.png)
+</Frame>
+
+## 評估運作機制
+
+1. **定義評估問題** - 為每個代理建立一組測試問題。您可以：
+   - 手動建立代表常見使用場景的問題
+   - 在管理頁面中從現有的代理對話中選擇回應，將其添加到評估集中
+
+       <Frame>
+         ![將回應添加到評估集](/images/guides/ai-agents/evals-add-to-evals-1.png)
+       </Frame>
+
+2. **執行批量測試** - 針對代理執行評估集中的所有提示詞 (Prompts)，查看其回應
+
+       <Frame>
+         ![執行批量測試](/images/guides/ai-agents/run-batch-tests.png)
+       </Frame>
+
+3. **審查結果** - 手動審查代理的回應，確保其符合您的品質標準與預期
+
+       <Frame>
+         ![審查評估結果](/images/guides/ai-agents/review-evaluation-results.png)
+       </Frame>
+
+## 使用反饋來改進評估
+
+鼓勵您的團隊在與 AI 代理互動時積極使用「讚/倒讚」功能。此反饋能從兩個關鍵方面幫助管理員：
+
+- **識別改進領域** - 被點擊「倒讚」的回應突顯了代理需要改進的地方
+- **構建更好的評估集** - 篩選並輕鬆地將被點擊「倒讚」的回應添加到評估套件中，以測試修復效果並防止功能退化
+
+<Frame>
+  ![構建更好的評估集](/images/guides/ai-agents/build-better-evaluation-sets.png)
+</Frame>
+
+這種系統性的測試方法能幫助您：
+
+- 在部署變更前驗證代理效能
+- 確保常見查詢的一致性

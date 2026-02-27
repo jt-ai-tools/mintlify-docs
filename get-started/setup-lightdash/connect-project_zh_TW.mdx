@@ -1,0 +1,1061 @@
+---
+title: "更新您的專案連接"
+---
+
+要設置您的 Lightdash 連接，您需要執行以下操作：
+
+1. [連接到您的數據倉庫 (Data Warehouse)](/get-started/setup-lightdash/connect-project_zh_TW#1-連接到數據倉庫)
+2. [連接到您的 dbt 專案](/get-started/setup-lightdash/connect-project_zh_TW#2-匯入-dbt-專案)
+
+<Tip>
+  您可以透過造訪 [專案編譯歷史](/references/workspace/project-compilation-history_zh_TW) 頁面來查看專案每次編譯的列表。
+</Tip>
+
+## 打開您的 Lightdash 執行體以開始。
+
+**要更新現有連接**，點擊右上角導覽列中的齒輪圖示，進入 **專案設置 (Project settings)**。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/project-connection-settings.png" alt="" />
+</Frame>
+
+**要建立新專案**，前往 **組織設置 (Organization settings)**，然後選擇 **所有專案 (All projects)** 並點擊 **建立新專案 (Create new)**。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/project-create-new.png" alt="" />
+</Frame>
+
+## 1. 連接到數據倉庫
+
+我們目前支援：
+
+<CardGroup cols={3} iconType="solid" horizontal>
+
+  <Card title="Bigquery" icon="magnifying-glass-chart" href="#bigquery" />
+
+  <Card title="Postgres" icon="elephant" href="#postgres" />
+
+  <Card title="Redshift" icon="aws" href="#redshift" />
+
+  <Card title="Snowflake" icon="snowflake" href="#snowflake" />
+
+  <Card title="Databricks" icon="layer-group" href="#databricks" />
+
+  <Card title="Trino" icon="rabbit" href="#trino" />
+
+  <Card title="ClickHouse" icon="container-storage" href="#clickhouse" />
+
+  <Card title="Athena" icon="aws" href="#athena" />
+
+</CardGroup>
+
+我們始終建議授予 Lightdash 「唯讀 (Read-only)」權限，以確保數據不會被竄改。請參閱下方各章節了解各數據倉庫的詳細資訊。
+
+<Accordion title="將 Lightdash 的固定 IP 位址添加到您的白名單 (Allow-list)">
+  
+  由於我們為您代管 Lightdash，您可能需要將我們的固定 IP 位址添加到安全組或防火牆規則的白名單中，以免它們阻止 Lightdash Cloud 呼叫您連接的數據庫。
+
+
+如果您登入的網址是：
+
+- **app.lightdash.cloud**，請使用 **35.245.81.252**
+- **eu1.lightdash.cloud**，請使用 **34.79.239.130**
+
+如果您登入的是不同網域，請在專案設置頁面中查找 IP（見下圖）。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/screenshot-ip-address-20ea3b322ef6d3efc2fca2637ad5fe72.png" alt="IP 位址截圖" />
+</Frame>
+
+</Accordion>
+
+
+### Bigquery
+
+##### 專案 (Project)
+
+這是您想要連接 Lightdash 的 Google Cloud Platform 專案 ID。
+
+要尋找您的專案 ID，請前往 [BigQuery Cloud 控制台](https://console.cloud.google.com/)。
+
+進入後，點擊頂部欄位的專案名稱。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/get-to-projects-bd5a9153523381e91b00033480cb862c.png" alt=""/>
+</Frame>
+
+然後，您應該能在組織中看到所有您有權存取的專案及其專案 ID。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/project-id-list-840be6a159a39476ecf24eb7fea43a08.png" alt="" />
+</Frame>
+
+針對您要連接 Lightdash 的專案，只需複製其 `id` 並將其填入 Lightdash 數據倉庫連接表單中的 `project` 欄位即可。
+
+
+##### 驗證類型
+
+您可以選擇使用使用者帳戶（使用「透過 Google 登入」）或使用 JSON 金鑰檔案的服務帳戶來連接 BigQuery。
+
+##### 使用者帳戶 (透過 Google 登入)
+
+當您使用「透過 Google 登入」時，Lightdash 將使用您的個人 Google 使用者帳戶對 BigQuery 執行查詢。這是使用現有帳戶快速連接的最簡單方法。
+
+##### 服務帳戶 (JSON 金鑰檔案)
+
+要讓 Lightdash 透過服務帳戶連接到 BigQuery，您需要建立該帳戶和 JSON 金鑰。您可以在 [Google BigQuery 文件中閱讀更多關於建立和管理服務帳戶的資訊](https://cloud.google.com/iam/docs/creating-managing-service-accounts)。您需要具備在 Google 專案中建立服務帳戶和金鑰的權限。如果您沒有這些權限，請改用使用者帳戶。
+
+<Info>
+  如果您正在建立新的服務帳戶，請確保將 JSON 金鑰檔案儲存在安全的地方！連接 Lightdash 時會用到它。
+</Info>
+
+您在 Lightdash 中使用的服務帳戶需要在 GCP 專案中具備以下角色：
+
+* `roles/bigquery.dataViewer`（用於查看專案中的數據）
+
+* `roles/bigquery.jobUser`（用於在專案中執行查詢）
+
+如果您需要提供跨多個 BigQuery 專案的數據存取權限，則需要為每個額外的 BigQuery 專案授予服務帳戶 `roles/bigquery.dataViewer` 權限。
+
+準備好服務帳戶後，您需要在 Lightdash 數據倉庫連接頁面的 `key file` 部分添加其 JSON 金鑰檔案。
+
+##### 位置 (Location)
+
+這是 BigQuery 中寫入 dbt 模型輸出數據集的數據位置。
+
+`location` 可以是多區域位置（例如 `EU`、`US`）或區域位置（例如 `us-west2`）。請參閱 [BigQuery 文件](https://cloud.google.com/bigquery/docs/locations) 以獲取有關數據集位置的更多資訊。
+
+您可以在 [dbt profiles.yml 檔案中](https://docs.getdbt.com/reference/warehouse-profiles/bigquery-profile#dataset-locations) 或在 BigQuery 控制台中找到您 dbt 專案所使用的數據集位置。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/data-location-55e6d6d1001e53864486bf81014ff921.png" alt="" />
+</Frame>
+
+
+##### 超時秒數 (Timeout in seconds)
+
+BigQuery 支援查詢超時。預設情況下，超時設置為 300 秒。如果 Lightdash 執行的查詢超過此超時時間仍未完成，BigQuery 可能會取消查詢並發出以下錯誤：
+
+```bash
+Operation did not complete within the designated timeout.
+```
+
+要更改此超時時間，請使用 `Timeout in seconds` 配置。
+
+
+##### 優先級 (Priority)
+
+Lightdash 執行的 BigQuery 作業優先級可以在數據倉庫連接設置中的 `priority` 配置。`priority` 欄位可以設置為 `batch`（批次）或 `interactive`（交互式）之一。
+
+有關查詢優先級的更多資訊，請[參閱 BigQuery 文件。](https://cloud.google.com/bigquery/docs/running-queries)
+
+
+##### 重試次數 (Retries)
+
+`retries` 配置指定了 Lightdash 應重試因未處理的伺服器錯誤而導致失敗的查詢次數。
+
+例如，將 `retries` 設置為 5 意味著 Lightdash 將延遲重試 BigQuery 查詢 5 次。如果第五次嘗試後查詢仍未成功，Lightdash 將拋出錯誤。
+
+預設重試次數設置為 3 次。
+
+
+##### 最大計費位元組數 (Maximum bytes billed)
+
+如果設置了 `Maximum bytes billed` 的值，則由 Lightdash 執行的查詢若超過配置的最大位元組數門檻，則會失敗。此配置應以位元組數的整數形式提供。
+
+例如，將其設置為 `1000000000` 意味著如果查詢的計費數據超過 1GB（例如 2GB），BigQuery 將拒絕該查詢，您會得到如下錯誤：
+
+```bash
+  Query exceeded limit for bytes billed: 1000000000. 2000000000 or higher required.
+```
+
+
+##### 每週起始日 (Start of week)
+
+這控制了 Lightdash 中一週的起始日。`Auto` 會將其設置為數據倉庫的預設值。或者，您可以自定義並從下拉選單中選擇。這在 Lightdash 中使用「WEEK」時間間隔時會被納入考量。
+
+
+##### 執行專案 (Execution project)
+
+您可以在此指定一個執行專案來支付查詢執行費用，而不是使用實例化 dbt 資源的專案。如果您將此留空，所有成本都將應用於連接詳情頂部的專案。
+
+***
+
+
+### Postgres
+
+您可以在 [dbt 文件](https://docs.getdbt.com/reference/warehouse-profiles/postgres-profile) 中查看更多詳細資訊。
+
+##### 主機 (Host)
+
+這是資料庫運行的主機位址。
+
+##### 使用者 (User)
+
+這是資料庫使用者名稱。
+
+##### 密碼 (Password)
+
+這是資料庫使用者密碼。
+
+##### 資料庫名稱 (DB name)
+
+這是資料庫的名稱。
+
+##### Schema
+
+這是 dbt 用於編譯和執行 dbt 專案的預設 schema。您可以在 dbt cloud IDE 或本地的 `profiles.yml` 檔案中找到它。
+
+如果您是 dbt cloud 使用者，可以在 dbt cloud IDE 的個人資料下找到：
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/dbt-cloud-credentials-351bb1a9bdda693be0ed82eb17705410.png" alt="" />
+</Frame>
+
+如果您在本地使用 dbt，請檢查位於 `~/.dbt/profiles.yml` 的 `profiles.yml` 檔案，查找名為 `schema` 的欄位：
+
+```yaml
+company-name:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: [主機名稱]
+      user: [使用者名稱]
+      password: [密碼]
+      port: [連接埠]
+      dbname: [資料庫名稱]
+      schema: [dbt schema] # 找這個！
+```
+
+##### 連接埠 (Port)
+
+這是資料庫運行的連接埠。
+
+##### 保持活動空閒秒數 (Keep alive idle (seconds))
+
+這指定了作業系統在無網路活動多少秒後應向客戶端發送 TCP keepalive 訊息。您可以在 [postgresqlco 文件](https://postgresqlco.nf/doc/en/param/tcp%5Fkeepalives%5Fidle/) 中查看更多詳細資訊。
+
+##### 搜尋路徑 (Search path)
+
+這控制了 Postgres 的「搜尋路徑」。您可以在 [dbt 文件](https://docs.getdbt.com/reference/warehouse-profiles/postgres-profile#search%5Fpath) 中查看更多詳細資訊。
+
+##### SSL 模式
+
+這控制了 dbt 如何使用 SSL 連接到 Postgres 資料庫。您可以在 [dbt 文件](https://docs.getdbt.com/reference/warehouse-profiles/postgres-profile#sslmode) 中查看更多詳細資訊。
+
+##### SSL 憑證 (SSL certificate)
+
+用於驗證您與資料庫連接的客戶端憑證。僅在使用 SSL 模式 `verify-full` 時需要。
+
+##### SSL 私鑰 (SSL private key)
+
+用於驗證您與資料庫連接的私鑰。僅在使用 SSL 模式 `verify-full` 時需要。
+
+##### SSL 根憑證 (SSL root certificate)
+
+用於驗證資料庫伺服器身份的受信任憑證授權單位 (CA) 憑證。僅在使用 SSL 模式 `verify-ca` 或 `verify-full` 時需要。
+
+##### 每週起始日 (Start of week)
+
+這控制了 Lightdash 中一週的起始日。`Auto` 會將其設置為數據倉庫的預設值。或者，您可以自定義並從下拉選單中選擇。這在 Lightdash 中使用「WEEK」時間間隔時會被納入考量。
+
+##### 使用 SSH 隧道 (Use SSH tunnel)
+
+啟用後可輸入您的 **SSH 遠端主機**、**SSH 遠端連接埠**、**SSH 使用者名稱**，並生成公鑰。
+
+***
+
+
+### Redshift
+
+您可以在 [dbt 文件](https://docs.getdbt.com/reference/warehouse-profiles/redshift-profile) 中查看更多詳細資訊。
+
+##### 主機 (Host)
+
+這是資料庫運行的主機位址。
+
+##### 使用者 (User)
+
+這是資料庫使用者名稱。
+
+##### 密碼 (Password)
+
+這是資料庫使用者密碼。
+
+##### 資料庫名稱 (DB name)
+
+這是資料庫的名稱。
+
+##### Schema
+
+這是 dbt 用於編譯和執行 dbt 專案的預設 schema。您可以在 dbt cloud IDE 或本地的 `profiles.yml` 檔案中找到它。
+
+如果您是 dbt cloud 使用者，可以在 dbt cloud IDE 的個人資料下找到：
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/dbt-cloud-credentials-351bb1a9bdda693be0ed82eb17705410.png" alt="" />
+</Frame>
+
+如果您在本地使用 dbt，請檢查位於 `~/.dbt/profiles.yml` 的 `profiles.yml` 檔案，查找名為 `schema` 的欄位：
+
+```yaml
+company-name:
+  target: dev
+  outputs:
+    dev:
+      type: redshift
+      host: hostname.region.redshift.amazonaws.com
+      user: username
+      password: password1
+      port: 5439
+      dbname: analytics
+      schema: analytics # 找這個！
+```
+
+##### 連接埠 (Port)
+
+這是資料庫運行的連接埠。
+
+##### 保持活動空閒秒數 (Keep alive idle (seconds))
+
+這指定了作業系統在無網路活動多少秒後應向客戶端發送 TCP keepalive 訊息。
+
+如果資料庫在 Lightdash 等待數據時關閉了連接，您可能會看到錯誤 `SSL SYSCALL error: EOF detected`。降低 [keepalives\_idle 值](https://www.postgresql.org/docs/9.3/libpq-connect.html) 可能會防止這種情況，因為伺服器會更頻繁地發送 ping 以保持連接活動。
+
+預設情況下，此值設置為 240 秒，但可以配置得更低（例如 120 或 60），代價是網路連接會更加頻繁。
+
+##### SSL 模式
+
+這控制了 dbt 如何使用 SSL 連接到 Postgres 資料庫。
+
+##### RA3 節點
+
+允許 dbt 使用跨資料庫資源。
+
+##### 每週起始日 (Start of week)
+
+這控制了 Lightdash 中一週的起始日。`Auto` 會將其設置為數據倉庫的預設值。或者，您可以自定義並從下拉選單中選擇。這在 Lightdash 中使用「WEEK」時間間隔時會被納入考量。
+
+##### 使用 SSH 隧道 (Use SSH tunnel)
+
+啟用後可輸入您的 **SSH 遠端主機**、**SSH 遠端連接埠**、**SSH 使用者名稱**，並生成公鑰。
+
+***
+
+
+### Snowflake
+
+您可以在 [dbt 文件](https://docs.getdbt.com/reference/warehouse-profiles/snowflake-profile) 中查看更多詳細資訊。
+
+##### 帳戶 (Account)
+
+這是您的 Snowflake [帳戶識別碼](https://docs.snowflake.com/en/user-guide/admin-account-identifier.html#format-1-preferred-account-name-in-your-organization)。
+
+尋找此資訊最簡單的方法是在瀏覽器中登入 Snowflake。您的帳戶識別碼可以在 URL 中找到，格式為 `<organization_id>-<account_id>`。
+
+例如，如果您的 Snowflake URL 看起來像 `https://app.snowflake.com/ehcrzll/aaa99827/#/homepage`，您的帳戶識別碼就是 `ehcrzll-aaa99827`（使用連字號結合兩個 ID）。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/snowflake-account-url-09f2817563f91f1b6b85eec3f0f6224b.png" alt="" />
+</Frame>
+
+<Info>
+  **重要提示：** 帳戶識別碼需要組織 ID 和帳戶 ID，兩者之間用連字號分隔，而不僅僅是帳戶名稱。
+</Info>
+
+您也可以透過 `<organization_name>-<account_name>` 格式找到您的帳戶識別碼，其中 `organization_name` 和 `account_name` 可以透過 [Managing accounts in your organization](https://docs.snowflake.com/en/user-guide/organizations-manage-accounts.html#label-viewing-organization-name) 列出的任何方法找到。
+
+##### 使用者 (User)
+
+這是您 Snowflake 使用者的登入名稱。這通常與您登入 Snowflake 時使用的使用者名稱相同。
+
+或者，您可以[透過 Snowflake 控制台建立新使用者](https://docs.snowflake.com/en/user-guide/admin-user-management.html)，專門為 Lightdash 提供一個使用者名稱和密碼。
+
+如果您是 Snowflake 管理員，可以列出 Snowflake 控制台中的所有可用使用者：
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/snowflake-users-list-bbffde04712b812206714e329bdcf37d.png" alt="" />
+</Frame>
+
+##### 驗證類型
+
+選擇使用使用者帳戶（使用「透過 Snowflake 登入」）或使用 JSON 金鑰檔案或密碼的服務帳戶進行驗證。
+
+##### 透過 Snowflake 登入
+
+此方法要求您從 Snowflake 數據倉庫配置 Oauth2 流程。
+
+<Accordion title="在 Snowflake 數據倉庫上添加安全整合">
+
+要執行此操作，首先在 Snowflake 數據倉庫上打開 SQL 控制台，並像這樣建立一個 `security integration`：
+
+```
+CREATE SECURITY INTEGRATION lightdash_oauth
+  TYPE = OAUTH
+  ENABLED = TRUE
+  OAUTH_CLIENT = 'CUSTOM'
+  OAUTH_CLIENT_TYPE = 'CONFIDENTIAL'
+  OAUTH_REDIRECT_URI = 'https://<customer>.lightdash.cloud/api/v1/oauth/redirect/snowflake'
+  OAUTH_ISSUE_REFRESH_TOKENS = TRUE
+```
+
+現在您可以使用以下指令獲取整合詳情：
+
+```
+DESCRIBE SECURITY INTEGRATION lightdash_oauth;
+```
+
+複製 `OAUTH_AUTHORIZATION_ENDPOINT` 和 `OAUTH_TOKEN_ENDPOINT`。
+
+然後執行：
+
+```
+SELECT SYSTEM$SHOW_OAUTH_CLIENT_SECRETS('LIGHTDASH_OAUTH');
+```
+
+並複製 `OAUTH_CLIENT_SECRET`、`OAUTH_CLIENT_SECRET_2` 和 `OAUTH_CLIENT_ID`。
+
+最後，聯繫 Lightdash 團隊 support@lightdash.com，為您的實例設置「透過 Snowflake 登入」。
+
+</Accordion>
+
+您可以在 [Snowflake 官方文件](https://docs.snowflake.com/en/user-guide/oauth-snowflake-overview) 中閱讀更多內容。
+
+##### 私鑰 (Private Key)
+
+您可以按照 [此處的指南](https://docs.snowflake.com/en/user-guide/key-pair-auth#generate-the-private-key) 為 Snowflake 使用者生成私鑰。
+
+生成後，將生成的私鑰檔案內容複製到 Lightdash 中。如果您選擇加密私鑰，還需要提供私鑰密碼 (Passphrase)。
+
+##### 密碼 (Password)
+
+這是您 Snowflake 使用者的密碼。這通常與您登入 Snowflake 時使用的密碼相同。請注意，由於 Snowflake 驗證機制的更改，需要密碼的使用者可能還需要啟用 MFA，而 MFA 與 Lightdash 專案連接不相容。
+
+##### 角色 (Role)
+
+這是您在以指定使用者身份執行查詢時想要使用的安全角色。該角色必須具備存取您想使用的任何數據倉庫、資料庫、schema 和表格的權限。
+
+如果您是 Snowflake 管理員，可以列出 Snowflake 控制台中的所有可用角色：
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/snowflake-roles-list-e75fbf628b9fc8694fd459edeabc846e.png" alt="" />
+</Frame>
+
+您可以按照 [建立自定義唯讀角色指南](https://docs.snowflake.com/en/user-guide/security-access-control-configure.html#creating-custom-read-only-roles) 來配置您的角色，以允許對所有資源的讀取權限。
+
+##### 資料庫 (Database)
+
+這是您的資料庫名稱。指定的使用者必須被授予該資料庫的存取權限。您可以在 Snowflake 控制台中看到可用資料庫列表：
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/snowflake-database-list-1a59a45edb75cf1ff62bfa22c4609f89.png" alt="" />
+</Frame>
+
+##### 數據倉庫 (Warehouse)
+
+這是您想要用於執行查詢的數據倉庫名稱。指定的使用者必須被授予使用該數據倉庫的權限。您可以在 Snowflake 控制台中看到可用數據倉庫列表：
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/snowflake-warehouse-list-061564f3ec10b3e2d0416fc79f6d2385.png" alt="" />
+</Frame>
+
+<Info>
+  如果「始終使用此數據倉庫」設置為「是」，則此數據倉庫將用於所有查詢，即使 dbt 配置中使用 snowflake\_warehouse 指定了不同的數據倉庫。
+</Info>
+
+##### Schema
+
+這是 dbt 用於編譯和執行 dbt 專案的預設 schema。您可以在 dbt cloud IDE 或本地的 `profiles.yml` 檔案中找到它。
+
+如果您是 dbt cloud 使用者，可以在 dbt cloud IDE 的個人資料下找到：
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/dbt-cloud-credentials-351bb1a9bdda693be0ed82eb17705410.png" alt="" />
+</Frame>
+
+如果您在本地使用 dbt，請檢查位於 `~/.dbt/profiles.yml` 的 `profiles.yml` 檔案，查找名為 `schema` 的欄位：
+
+```yaml
+my-snowflake-db:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: [帳戶 ID]
+      user: [使用者名稱]
+      password: [密碼]
+      role: [使用者角色]
+      database: [資料庫名稱]
+      warehouse: [數據倉庫名稱]
+      schema: [dbt schema] # 找這個！
+```
+
+##### 保持客戶端對話活動 (Keep client session alive)
+
+旨在使 Snowflake 對話在超過典型的 4 小時超時限制後保持活動狀態。您可以在 [dbt 文件](https://docs.getdbt.com/reference/warehouse-profiles/snowflake-profile#client%5Fsession%5Fkeep%5Falive) 中查看更多詳細資訊。
+
+##### 查詢標籤 (Query tag)
+
+用於標記所有查詢的值，以便日後在 [QUERY\_HISTORY 視圖](https://docs.snowflake.com/en/sql-reference/account-usage/query%5Fhistory.html) 中進行搜尋。
+
+##### 每週起始日 (Start of week)
+
+這控制了 Lightdash 中一週的起始日。`Auto` 會將其設置為數據倉庫的預設值。或者，您可以自定義並從下拉選單中選擇。這在 Lightdash 中使用「WEEK」時間間隔時會被納入考量。
+
+***
+
+### Databricks
+
+連接到集群所需的憑據可以在 Databricks 帳戶的 ODBC 選項中找到：
+
+1. 前往側邊欄中的 `Compute` 標籤。
+
+2. 點擊您要連接到 Lightdash 的集群配置標籤。
+
+3. 展開 `Advanced options`（進階選項）標籤。
+
+4. 打開 `JDBC/ODBC` 標籤。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/databricks-connect-screenshot-6b167bd07fe88540d9ba4de5fa2bc0ca.png" alt="" />
+</Frame>
+
+##### 伺服器主機名稱 (Server hostname)
+
+按照上述說明尋找您的 ODBC 連接指令。
+
+##### HTTP 路徑 (HTTP Path)
+
+按照上述說明尋找您的 ODBC 連接指令。
+
+##### 連接埠 (Port)
+
+按照上述說明尋找您的 ODBC 連接指令。
+
+##### 驗證類型
+
+選擇使用使用者帳戶（使用「透過 Databricks 登入」）或使用個人存取權杖 (Personal Access Token) 進行驗證。
+
+##### 透過 Databricks 登入
+
+此方法要求您在 Databricks 工作區中配置 OAuth 應用程式。
+
+<Accordion title="在 Databricks 工作區上添加 OAuth 應用程式">
+
+要執行此操作，首先前往您的 Databricks 工作區設置：
+
+1. 造訪帳戶控制台
+   - 登入您的 Databricks 帳戶控制台
+   - 點擊側邊欄中的設置圖示
+2. 導覽至應用程式連接 (App Connections)
+   - 前往 App connections 標籤
+   - 點擊 Add connection
+3. 使用以下設置配置應用程式：
+   - **應用程式名稱**: `Lightdash`（或您喜歡的任何名稱）
+   - **重定向 URL**: `https://<customer>.lightdash.cloud/api/v1/oauth/redirect/databricks`
+   - **存取範圍**: all-apis 和 offline_access
+   - **客戶端密鑰 (Client Secret)**: 選填
+4. 點擊 **Create**
+5. 複製 **客戶端 ID (Client ID)** 和 **客戶端密鑰 (Client Secret)**
+
+最後，聯繫 Lightdash 團隊 support@lightdash.com，為您的實例設置「透過 Databricks 登入」。
+
+</Accordion>
+
+配置以下環境變數以啟用 Databricks OAuth：
+
+- DATABRICKS_OAUTH_CLIENT_ID: 見上文
+- DATABRICKS_OAUTH_CLIENT_SECRET (選填): 見上文
+- DATABRICKS_OAUTH_AUTHORIZATION_ENDPOINT: https://your-url.cloud.databricks.com/oidc/v1/authorize
+- DATABRICKS_OAUTH_TOKEN_ENDPOINT: https://your-url.cloud.databricks.com/oidc/v1/token
+
+您可以在 [Databricks 官方文件](https://docs.databricks.com/en/integrations/configure-oauth-m2m.html) 中閱讀更多內容。
+
+##### 個人存取權杖 (Personal Access Token)
+
+您的個人存取權杖可以在 Databricks 的使用者設置中找到：
+
+1. 點擊側邊欄的齒輪圖示 ⚙️ 打開 `Settings`，然後選擇 `User settings`。
+
+2. 點擊 `Generate token`。系統會要求您輸入名稱和到期時間。
+
+3. 複製權杖。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/databricks-access-screenshot-44dfec5587315b2ced0b1724155c1eac.png" alt="" />
+</Frame>
+
+##### 資料庫 (Database)
+
+dbt 用於此連接的預設資料庫名稱。
+
+##### 每週起始日 (Start of week)
+
+這控制了 Lightdash 中一週的起始日。`Auto` 會將其設置為數據倉庫的預設值。或者，您可以自定義並從下拉選單中選擇。這在 Lightdash 中使用「WEEK」時間間隔時會被納入考量。
+
+***
+
+### Trino
+
+我們僅支援 [Trino 的 LDAP 驗證](https://trino.io/docs/current/security/ldap.html)。您可以在 [dbt 文件](https://docs.getdbt.com/reference/warehouse-setups/trino-setup#configuration) 中查看更多詳細資訊。
+
+##### 主機 (Host)
+
+集群的主機名稱。例如：`mycluster.mydomain.com`
+
+不要包含 http:// 或 https:// 前綴。
+
+##### 使用者 (User)
+
+登入集群的帳戶使用者名稱。連接到 Starburst Galaxy 集群時，您必須在使用者名稱後添加使用者角色作為後綴。
+
+Starburst Enterprise 或 Trino 的格式：`user.name` 或 `user.name@mydomain.com`
+
+Starburst Galaxy 的格式：`user.name@mydomain.com/role`
+
+##### 密碼 (Password)
+
+用於驗證的密碼。
+
+##### 資料庫名稱 (DB name)
+
+指定構建 dbt 模型的資料庫名稱。這是集群中編目 (Catalog) 的名稱。
+
+例如：`my_postgres_catalog`
+
+##### 連接埠 (Port)
+
+連接到集群的連接埠。對於啟用 TLS 的集群，預設為 443。
+
+例如：`443`
+
+##### SSL 模式
+
+這控制了 dbt 如何使用 SSL 連接到 Trino 資料庫。
+
+##### 每週起始日 (Start of week)
+
+這控制了 Lightdash 中一週的起始日。`Auto` 會將其設置為數據倉庫的預設值。或者，您可以自定義並從下拉選單中選擇。這在 Lightdash 中使用「WEEK」時間間隔時會被納入考量。
+
+***
+
+### ClickHouse
+
+您可以在 [dbt 文件](https://docs.getdbt.com/reference/warehouse-profiles/clickhouse-profile) 中查看更多詳細資訊。
+
+##### 主機 (Host)
+
+這是您的 ClickHouse 資料庫運行的主機位址。
+
+##### 使用者 (User)
+
+這是 ClickHouse 資料庫使用者名稱。
+
+##### 密碼 (Password)
+
+這是 ClickHouse 資料庫使用者密碼。
+
+##### 資料庫名稱 (DB name)
+
+這是 ClickHouse 資料庫的名稱。
+
+##### Schema
+
+這是 dbt 用於編譯和執行 dbt 專案的預設 schema。您可以在本地的 `profiles.yml` 檔案中找到它。
+
+如果您在本地使用 dbt，請檢查位於 `~/.dbt/profiles.yml` 的 `profiles.yml` 檔案，查找名為 `schema` 的欄位：
+
+```yaml
+my-clickhouse-db:
+  target: dev
+  outputs:
+    dev:
+      type: clickhouse
+      host: [主機名稱]
+      user: [使用者名稱]
+      password: [密碼]
+      port: [連接埠]
+      schema: [dbt schema] # 找這個！
+```
+
+##### 連接埠 (Port)
+
+這是 ClickHouse 資料庫運行的連接埠。ClickHouse HTTP 介面的預設連接埠是 8123。
+
+##### 安全 (Secure)
+
+啟用此選項以使用 HTTPS/SSL 安全連接到您的 ClickHouse 資料庫。
+
+##### 重試次數 (Retries)
+
+Lightdash 應重試因未處理的伺服器錯誤而導致失敗的 ClickHouse 查詢次數。預設設置為 3 次。
+
+##### 每週起始日 (Start of week)
+
+這控制了 Lightdash 中一週的起始日。`Auto` 會將其設置為數據倉庫的預設值。或者，您可以自定義並從下拉選單中選擇。這在 Lightdash 中使用「WEEK」時間間隔時會被納入考量。
+
+***
+
+
+### Athena
+
+您可以在 [dbt 文件](https://docs.getdbt.com/docs/core/connect-data-platform/athena-setup) 中查看更多詳細資訊。
+
+##### AWS 區域 (AWS Region)
+
+您的 Athena 工作組所在的 AWS 區域（例如 `us-east-1`、`eu-west-1`）。
+
+##### 編目 (Catalog)
+
+這是 Athena 數據編目名稱。對於大多數設置，這是 `AwsDataCatalog`。
+
+##### 資料庫 (Database)
+
+這是 Athena 資料庫名稱（在其他數據倉庫中也稱為 schema）。這是您的 dbt 模型實例化的位置。
+
+##### S3 暫存目錄 (S3 Staging Directory)
+
+Athena 儲存查詢結果的 S3 位置。所有 Athena 查詢都需要此路徑。
+
+例如：`s3://your-bucket/athena-results/`
+
+##### S3 數據目錄 (S3 Data Directory，選填)
+
+在實例化模型時用於儲存表格數據的 S3 位置。這是選填的，僅在您使用 dbt 建立表格時需要。
+
+例如：`s3://your-bucket/data/`
+
+##### AWS 存取金鑰 ID (AWS Access Key ID)
+
+用於驗證的 AWS 存取金鑰 ID。這應屬於具備執行 Athena 查詢及存取上述 S3 儲存桶權限的 IAM 使用者。
+
+##### AWS 秘密存取金鑰 (AWS Secret Access Key)
+
+用於驗證的 AWS 秘密存取金鑰。
+
+<Info>
+  自託管實例可以使用 IAM 角色驗證（例如 ECS 任務角色、EC2 實例設定檔），而不是存取金鑰。請參閱 [`ATHENA_WAREHOUSE_IAM_ROLE_AUTH`](/self-host/customize-deployment/environment-variables_zh_TW#athena) 環境變數。
+</Info>
+
+<Info>
+  我們建議為 Lightdash 建立一個具有最小權限的專用 IAM 使用者或角色：
+  - `AmazonAthenaFullAccess`（或更具限制性的自定義策略）
+  - 對您的暫存和數據目錄的 S3 讀取/寫入權限
+</Info>
+
+##### 工作組 (Workgroup，選填)
+
+用於查詢的 Athena 工作組。如果未指定，則使用預設工作組 (`primary`)。
+
+##### 執行緒數 (Threads，選填)
+
+dbt 應使用的執行緒數。預設為 1。
+
+##### 重試次數 (Number of Retries，選填)
+
+失敗查詢的重試次數。預設為 5。
+
+##### 每週起始日 (Start of week)
+
+這控制了 Lightdash 中一週的起始日。`Auto` 會將其設置為數據倉庫的預設值。或者，您可以自定義並從下拉選單中選擇。這在 Lightdash 中使用「WEEK」時間間隔時會被納入考量。
+
+***
+
+## 2. 匯入 dbt 專案
+
+將 Lightdash 連接到託管的 dbt 專案意味著您將能夠使 Lightdash 執行體與 dbt 專案中的變更保持同步。
+
+連接 dbt 最常見的方法是連接到託管 dbt 專案的 git 儲存庫。您也可以直接使用 CLI 連接，或使用利用 dbt Cloud API 的 dbt Cloud 連接類型。
+
+<Accordion title="我正在使用 dbt Cloud，我應該透過 git 儲存庫還是透過 dbt Cloud 連接？">
+
+通常情況下，**我們建議大多數使用者透過 git 儲存庫進行連接**，除非您明確需要使用僅在透過 dbt Cloud 連接時才可用的功能。
+
+例如，如果您在 dbt Cloud 中使用 [跨專案引用 (cross project references)](https://docs.getdbt.com/docs/mesh/govern/project-dependencies#how-to-write-cross-project-ref)，您將 *需要* 使用該連接類型，否則 Lightdash 將無法編譯您的專案。
+
+如果您透過 git 儲存庫連接，需要確保 dbt Cloud 中的環境版本設置為 [「Compatible」(相容)](https://docs.getdbt.com/docs/dbt-versions/cloud-release-tracks)。
+
+</Accordion>
+
+要連接您的 dbt 專案，前往 Lightdash 中的專案連接設置：
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/project-connection-settings.png" alt="" />
+</Frame>
+
+然後向下捲動到您的 dbt 專案連接：
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/project-connection-dbt.png" alt="" />
+</Frame>
+
+選擇您的儲存庫類型並參考以下指南：
+
+<CardGroup cols={2} iconType="solid" horizontal>
+
+  <Card title="GitHub" href="#github" />
+
+  <Card title="Gitlab" href="#gitlab" />
+
+  <Card title="Azure DevOps" href="#azure-devops" />
+
+  <Card title="Bitbucket" href="#bitbucket" />
+
+  <Card title="dbt Cloud" href="#dbt-cloud" />
+
+  <Card title="CLI" href="#cli" />
+
+</CardGroup>
+
+<Info>
+
+**dbt Cloud 代管儲存庫**
+
+  支援將 Lightdash 連接到 [dbt Cloud 代管儲存庫](https://docs.getdbt.com/docs/dbt-cloud/cloud-configuring-dbt-cloud/cloud-using-a-managed-repository) 的功能目前處於 Beta 階段。如果您正在使用 dbt Cloud 並想使用 Lightdash，請與我們聯繫。
+
+</Info>
+
+
+### GitHub
+
+###### OAuth (推薦的授權方式)
+
+我們建議您使用 OAuth 連接到 GitHub。這為 Lightdash 提供了與儲存庫的直接連接，因此當個人離職時不會失去存取權限，並且可以建立拉取請求 (Pull Request)，這是 [dbt 寫回功能](/guides/developer/dbt-write-back_zh_TW) 所必需的。此連接存在於組織層級，因此您可以將不同的 dbt 專案儲存庫映射到每個 Lightdash 專案，而無需新的存取權杖。
+
+###### 個人存取權杖 (傳統授權方式)
+
+用於存取您的儲存庫。請參閱[此處建立個人存取權杖的說明](https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/creating-a-personal-access-token)。
+
+建立權杖時選擇 `repo` 範圍。
+
+<Frame>
+  <img src="/images/get-started/setup-lightdash/connect-project/oauth-scope-7b15ec5e0dadade4c485e24df69a878b.png" alt="" />
+</Frame>
+
+###### 精細權限存取權杖 (Fine-grained access token，Beta 授權方式)
+
+精細權限存取權杖是新的特殊權杖，只能授予對您 GitHub 帳戶中單個儲存庫的存取權限。您可以在 [GitHub 文件](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token#creating-a-fine-grained-personal-access-token) 中閱讀更多相關資訊。
+
+1. 前往 [Settings > Developer settings > Personal access tokens > Fine-grained tokens](https://github.com/settings/personal-access-tokens/new)
+2. 添加名稱、到期時間、描述和所有者。
+3. 添加您希望 Lightdash 存取的儲存庫。您可能只想授予對包含 `dbt` 專案的儲存庫的存取權限。
+
+![](/images/get-started/setup-lightdash/connect-project/fine-grained-repo-5e1f06ae0ef950bf0d798d3bb88dd9ae.png)
+
+4. 在 `Repository` 權限中，選擇 `Contents` --> `Read and Write` 以及 `Pull Requests` --> `Read and Write`。
+
+![](/images/get-started/setup-lightdash/connect-project/fine-grained-permissions.jpg)
+
+5. 點擊 `Generate token` 並複製權杖。
+
+您也可以在專案設置中用新的精細權限權杖替換舊權杖。
+
+##### 儲存庫 (Repository)
+
+格式應為 `my-org/my-repo`。例如：`lightdash/lightdash-analytics`
+
+##### 分支 (Branch)
+
+這是您 GitHub 儲存庫中 Lightdash 應同步的分支。例如：`main`、`master` 或 `dev`
+
+預設情況下，我們將其設置為 `main`，但您可以根據需要進行更改。
+
+##### 專案目錄路徑 (Project directory path)
+
+這是您在上述 GitHub 儲存庫中找到 `dbt_project.yml` 檔案的資料夾。
+
+* 如果您的 `dbt_project.yml` 檔案位於儲存庫的根目錄中，請填入 `/`（例如：lightdash/lightdash-analytics/dbt\_project.yml）
+
+* 如果您的 dbt 專案在子目錄中，請包含子目錄的路徑。例如，如果我的專案在 lightdash/lightdash-analytics/dbt/dbt\_project.yml，我會在此欄位中填入 `/dbt`。
+
+##### 主機網域 (Host domain)
+
+如果您[為 GitHub Pages 自定義了網域](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages)，可以在此處添加專案的自定義網域。
+
+預設為 `github.com`。
+
+<Check>
+  添加 GitHub 資訊後，填寫 [dbt 專案詳情](/references/integrations/dbt-projects_zh_TW#dbt-project-settings)，您就大功告成了！
+</Check>
+
+***
+
+### GitLab
+
+##### 個人存取權杖 (Personal access token)
+
+用於存取您的儲存庫。請參閱[此處建立個人存取權杖的說明](https://docs.gitlab.com/ee/user/profile/personal%5Faccess%5Ftokens.html)。
+
+建立權杖時選擇 `read_repository` 範圍。如果使用 **專案存取權杖 (project access token)**，該權杖需要具備下載代碼的權限；如果使用 **個人存取權杖**，該使用者需要具備下載代碼的權限。通常這需要具備 `Reporter` 角色。
+
+##### 儲存庫 (Repository)
+
+您可以在瀏覽儲存庫時從 GitLab URL 中找到它。格式應為 `my-org/my-repo`。例如：如果我的瀏覽器網址是 [`https://gitlab.com/lightdash/lightdash-analytics.gitlab.io`](https://gitlab.com/lightdash/lightdash-analytics.gitlab.io)，我會在 Lightdash 中填入：`lightdash/lightdash-analytics`。
+
+##### 分支 (Branch)
+
+這是您 GitLab 儲存庫中 Lightdash 應同步的分支。例如：`main`、`master` 或 `dev`
+
+預設情況下，我們將其設置為 `main`，但您可以根據需要進行更改。
+
+##### 專案目錄路徑 (Project directory path)
+
+這是您在上述 GitLab 儲存庫中找到 `dbt_project.yml` 檔案的資料夾。
+
+如果您的 `dbt_project.yml` 檔案位於儲存庫的根目錄中（例如：`lightdash/lightdash-analytics/dbt_project.yml`），則無需更改此處。
+
+如果您的 dbt 專案在子目錄中（例如：`lightdash/lightdash-analytics/dbt/dbt_project.yml`），則需要包含子目錄的路徑（例如：`/dbt`）。
+
+##### 主機網域 (Host domain)
+
+如果您[為 GitLab Pages 自定義了網域](https://docs.gitlab.com/ee/user/project/pages/getting%5Fstarted%5Fpart%5Fone.html)，可以在此處添加專案的自定義網域。
+
+預設為 `gitlab.io`。
+
+<Check>
+  添加 GitLab 資訊後，填寫 [dbt 專案詳情](/references/integrations/dbt-projects_zh_TW#dbt-project-settings)，您就大功告成了！
+</Check>
+
+
+***
+
+### Azure DevOps
+
+##### 個人存取權杖 (Personal access token)
+
+這是用於存取 Azure DevOps 的秘密權杖。請參閱[建立個人存取權杖的說明](https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops\&tabs=Windows)。您必須至少指定 `Repo:Read` 範圍。
+
+##### 組織 (Organization)
+
+擁有您儲存庫的組織名稱。
+
+##### 專案 (Project)
+
+擁有您儲存庫的專案名稱。
+
+##### 儲存庫 (Repository)
+
+儲存庫的名稱。對於許多專案，這與上述專案名稱相同。
+
+##### 分支 (Branch)
+
+這是您儲存庫中 Lightdash 應同步的分支。例如：`main`、`master` 或 `dev`
+
+預設情況下，我們將其設置為 `main`，但您可以根據需要進行更改。
+
+##### 專案目錄路徑 (Project directory path)
+
+這是您在上述儲存庫中找到 `dbt_project.yml` 檔案的資料夾。
+
+如果您的 `dbt_project.yml` 檔案位於儲存庫的根目錄中（例如：`lightdash/lightdash-analytics/dbt_project.yml`），則無需更改此處。
+
+如果您的 dbt 專案在子目錄中（例如：`lightdash/lightdash-analytics/dbt/dbt_project.yml`），則需要包含子目錄的路徑（例如：`/dbt`）。
+
+<Check>
+  添加 Azure DevOps 詳情後，填寫 [dbt 專案詳情](/references/integrations/dbt-projects_zh_TW#dbt-project-settings)，您就大功告成了！
+</Check>
+
+
+***
+
+### Bitbucket
+
+##### 使用者名稱 (Username)
+
+這是您 Bitbucket 使用者的登入名稱。這通常與您登入 Bitbucket 時使用的使用者名稱相同。您可以按以下步驟在 Bitbucket 中找到您的使用者名稱：
+
+1. 點擊左下角的頭像，然後點擊 **Personal settings**。
+
+2. 在 **Account settings** 頁面上，查看 **Username** 旁邊的值。
+
+或者，您可以[透過 Bitbucket 控制台建立新使用者](https://confluence.atlassian.com/bitbucketserver/users-and-groups-776640439.html)，專門為 Lightdash 提供一個使用者名稱和密碼。
+
+##### HTTP 存取權杖 (Http access token)
+
+獲取權杖的方式取決於您使用的是 Bitbucket Cloud 還是 Bitbucket Server：
+
+* Bitbucket Cloud 使用者應[參考建立 App Password 的說明](https://support.atlassian.com/bitbucket-cloud/docs/create-an-app-password/)
+
+* Bitbucket Server 使用者應[參考建立 HTTP Access Token 的說明](https://confluence.atlassian.com/bitbucketserver/http-access-tokens-939515499.html)
+
+建立權杖時選擇 `Project read` 和 `Repository read` 範圍。
+
+##### 儲存庫 (Repository)
+
+格式應為 `my-org/my-repo`。例如：`lightdash/lightdash-analytics`
+
+##### 分支 (Branch)
+
+這是您 Bitbucket 儲存庫中 Lightdash 應同步的分支。例如：`main`、`master` 或 `dev`
+
+預設情況下，我們將其設置為 `main`，但您可以根據需要進行更改。
+
+##### 專案目錄路徑 (Project directory path)
+
+這是您在上述 Bitbucket 儲存庫中找到 `dbt_project.yml` 檔案的資料夾。
+
+* 如果您的 `dbt_project.yml` 檔案位於儲存庫的根目錄中，請填入 `/`（例如：lightdash/lightdash-analytics/dbt\_project.yml）
+
+* 如果您的 dbt 專案在子目錄中，請包含子目錄的路徑。例如，如果我的專案在 lightdash/lightdash-analytics/dbt/dbt\_project.yml，我會在此欄位中填入 `/dbt`。
+
+##### 主機網域 (Host domain)
+
+如果您[為 Bitbucket Server 自定義了主機網域](https://confluence.atlassian.com/bitbucketserver/specify-the-bitbucket-base-url-776640392.html)，可以在此處填入。
+
+
+<Check>
+  添加 Bitbucket 資訊後，填寫 [dbt 專案詳情](/references/integrations/dbt-projects_zh_TW#dbt-project-settings)，您就大功告成了！
+</Check>
+
+***
+
+### dbt Cloud
+
+dbt Cloud 連接類型繞過了任何 git 連接，而是直接使用 dbt Cloud API 存取 dbt Cloud 專案的元數據。
+
+這意味著許多功能**不可用**，包括：
+* [dbt 寫回功能](/guides/developer/dbt-write-back_zh_TW)
+* 從 git 分支在 UI 中建立的[預覽環境 (Preview environments)](/references/preview-projects_zh_TW#lightdash-app)
+* 在 git 儲存庫有新提交時自動刷新——當您更改 dbt 專案時，您需要在 Lightdash 中手動觸發刷新。
+
+##### 服務權杖 (Service Token)
+
+要將 Lightdash 連接到您的 dbt Cloud 專案，您需要建立一個具備「Metadata Only」權限的 [dbt Cloud 服務權杖](https://docs.getdbt.com/docs/dbt-cloud-apis/service-tokens)。
+
+##### 環境 ID (Environment ID)
+
+這是您 dbt Cloud 環境的識別碼。您可以在 dbt Cloud 環境的 URL 中找到它。Lightdash 將使用此 ID 來識別應從哪個環境構建，因此通常您會指向您的生產環境。
+
+##### dbt Webhook
+
+此 Webhook 對於使用 dbt Cloud CI 步驟的使用者來說是一個選填項。如果您設置了在 dbt Cloud CI 作業完成時觸發的 Webhook，您可以貼上 Webhook 位址，Lightdash 將自動為該 CI 環境啟動預覽。
+
+##### Discovery API 端點 (Discovery API Endpoint)
+
+適用於您的 dbt Cloud 執行體的 dbt 特定端點。您可以在 [dbt Cloud API 文件](https://docs.getdbt.com/docs/dbt-cloud-apis/discovery-querying#discovery-api-endpoints) 中找到詳細資訊。
+
+***
+
+### CLI <a id="-cli" />
+
+對於使用 `lightdash deploy --create` 指令透過 CLI 建立的專案，`CLI` 是預設連接類型。
+
+通常，我們建議在初始專案建立後切換到與 git 儲存庫的直接連接。但如果您想繼續在 CLI 中管理部署，請[參閱關於如何使用 Lightdash deploy 並設置持續部署的指南](/guides/cli/how-to-use-lightdash-deploy_zh_TW)。
+
+***
+
+### 本地 dbt 專案 (Local dbt project)
+
+<Warning>
+  不適用於生產環境，且僅適用於安裝在您本地機器上的 Lightdash 實例。
+</Warning>
+
+要在啟動 Lightdash 時選擇連接到本地 dbt 專案，您必須在啟動 docker compose 時指定 dbt 專案的目錄：
+
+```yaml
+# 指定 dbt 專案的絕對路徑
+# 例如：export DBT_PROJECT_DIR=/Users/jake/mydbtproject
+export DBT_PROJECT_DIR= # 在此填入您的路徑！
+docker compose start
+```

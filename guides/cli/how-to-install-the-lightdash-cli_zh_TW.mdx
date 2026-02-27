@@ -1,0 +1,131 @@
+---
+title: "如何安裝 Lightdash CLI"
+sidebarTitle: 安裝 CLI
+icon: "download"
+description: Lightdash CLI 是開發 dbt + Lightdash 專案的推薦方式。它使開發更快速、更輕鬆，並為您提供構建更強大自動化功能以管理 Lightdash 執行體的選項。
+---
+
+## 安裝選項
+
+**Mac 使用者：** 我們建議使用 Homebrew，因為它是最簡單的安裝方法，且不需要另外安裝 Node.js。
+
+**Windows 使用者或偏好 NPM 的使用者：** 使用 NPM 安裝方法，該方法適用於所有平台，但需要先安裝 Node.js。
+
+如果您不想使用套件管理員，也可以直接從 GitHub 的 Releases 頁面下載 CLI 二進位檔。
+
+<Frame>
+  <iframe width="100%" height="420" src="https://www.loom.com/embed/4b50ff5f986f4808ad0a2527eabfdaad" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen />
+</Frame>
+
+
+## 透過 Homebrew 安裝
+
+在 Mac 上安裝 Lightdash CLI 最簡單的方法是使用 Homebrew。此方法不需要您另外安裝 Node.js：
+
+```bash
+brew tap lightdash/lightdash
+brew install lightdash
+```
+
+## 透過 NPM 安裝
+
+在透過 NPM 安裝 Lightdash CLI 之前，您的機器上需要安裝 NodeJS/NPM。要檢查是否已安裝，請在終端機中執行以下指令：
+
+```bash
+node -v; npm -v;
+# 應該會印出類似以下的內容：
+# v20.8.0
+# 8.15.0
+```
+
+<Accordion title="系統中尚未安裝 NodeJS/NPM？">
+  我們建議使用 [NVM (Node Version Manager)](https://github.com/nvm-sh/nvm#install--update-script) 安裝 NodeJS/NPM，它適用於 POSIX 兼容的 shell（在 unix, macOS, 和 Windows WSL 平台上的 sh, dash, ksh, zsh, bash）。
+
+  打開終端機並執行以下指令，在系統中安裝 NVM：
+
+  ```bash
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | bash
+  # 或
+  wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | bash
+  ```
+
+  重啟終端機並執行以下指令安裝 NodeJS：
+
+  ```bash
+  nvm install --lts
+  ```
+
+  執行以下指令檢查 NodeJS 是否已安裝：
+
+  ```bash
+  node -v
+  ```
+
+  執行上述指令應輸出類似 `20.8.0` 的內容，這表示您已成功安裝 NodeJS/NPM <Icon icon="party-horn" iconType="solid" />
+
+  ***
+
+  或者，您可以[透過您偏好的套件管理員安裝 NodeJS/NPM](https://nodejs.org/en/download/package-manager)。
+</Accordion>
+
+在終端機中執行以下指令來安裝 Lightdash CLI。
+
+```bash
+npm install -g @lightdash/cli
+```
+
+<Info>
+  如果在安裝 Lightdash CLI 時遇到 `npm ERR! code EACCES` 錯誤，請[參考此指南](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally)來解決。
+</Info>
+
+## 直接下載二進位檔
+
+您也可以直接從 [GitHub releases](https://github.com/lightdash/lightdash/releases) 下載 CLI 二進位檔。
+
+## 更新 Lightdash CLI
+
+### 更新至最新版本
+
+要將 Lightdash CLI 更新至最新版本，請根據您的安裝方式執行以下指令：
+
+<Tabs>
+  <Tab title="Homebrew">
+    ```bash
+    brew upgrade lightdash
+    ```
+  </Tab>
+  <Tab title="npm">
+    ```bash
+    npm update -g @lightdash/cli
+    ```
+  </Tab>
+</Tabs>
+
+### 更新至特定版本
+
+<Tabs>
+  <Tab title="Homebrew">
+    Homebrew 不支援直接安裝特定版本。要安裝特定版本，請改用 npm 或從 [GitHub releases](https://github.com/lightdash/lightdash/releases) 下載二進位檔。
+  </Tab>
+  <Tab title="npm">
+    要更新（或降級）到 Lightdash CLI 的特定版本，請執行：
+
+    ```bash
+    npm install -g @lightdash/cli@版本號碼
+    ```
+
+    將 `版本號碼` 替換為所需的版本。例如：
+
+    ```bash
+    npm install -g @lightdash/cli@0.1743.1
+    ```
+  </Tab>
+</Tabs>
+
+<Info>
+  您可以透過執行 `lightdash --version` 來檢查當前的 CLI 版本。
+</Info>
+
+## 安裝 CLI 工具後，[您需要對其進行驗證](/guides/cli/cli-authentication_zh_TW)
+
+[查看驗證 CLI 工具的指南](/guides/cli/cli-authentication_zh_TW)（登入並設置當前專案）。

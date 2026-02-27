@@ -1,0 +1,44 @@
+---
+title: "自定義工具提示 (Custom tooltips)"
+---
+
+預設情況下，工具提示將顯示 X 軸值、Y 軸欄位名稱和 Y 軸值，如下所示：
+
+![標準工具提示](/images/guides/custom-tooltip/standard-tooltip.png)
+
+您可以自定義工具提示，以顯示圖表中包含的其他指標或表格計算（在任一軸線上）。您甚至可以包含註釋、連結或自定義格式以提供額外的背景資訊。要使用此功能，請前往 **Configure chart (配置圖表) \> Display (顯示) \> Custom Tooltip (自定義工具提示)**。
+
+<Check>
+  自定義工具提示代碼中允許使用 HTML，但已停用 Javascript。
+</Check>
+
+您也可以從圖表中的任何軸線選擇變數，即使是在分組圖表中也是如此。開始輸入欄位名稱，我們將自動完成正確的變數名稱。
+
+![自定義工具提示變數](/images/guides/custom-tooltip/custom-tooltip-variable.gif)
+
+以下是自定義工具提示的程式碼塊範例：
+
+```html
+<strong>💰 本月利潤:</strong>
+ ${dbt_orders_sum_of_profit}
+<br>
+<strong>🛒 本月平均購物車金額:</strong>
+ ${dbt_orders_average_of_basket_total}
+<br>
+<strong>💳 本月總訂單數:</strong>
+ ${dbt_orders_count_distinct_order_id}
+
+<h3>額外資源:</h3>
+
+查看 <a href="https://analytics.lightdash.cloud/projects/21eef0b9/dashboards/e2b82df2/view">銷售儀表板</a> 以及關於 <a href="https://notion.so">訂單與營收 KPI</a> 的 Notion 文件。
+```
+
+上述代碼在工具提示中看起來像這樣：
+
+![自定義工具提示範例](/images/guides/custom-tooltip/custom-tooltip-example.png)
+
+自定義工具提示將顯示在儲存的圖表和儀表板上，且該代碼將包含在 [dashboards as code 下載](/guides/developer/dashboards-as-code_zh_TW)中。
+
+<Tip>
+  如果您需要顯示圖表中未包含的某些數據（例如：動態 URL 或 ID），您甚至可以建立一個表格計算，並將其作為額外軸線包含在圖表中，以便在工具提示中使用該變數。
+</Tip>

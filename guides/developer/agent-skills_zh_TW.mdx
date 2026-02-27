@@ -1,0 +1,115 @@
+---
+title: "代理技能 (Agent Skills)"
+description: "使用 Cursor, Claude Code, Codex, 和 Antigravity 等 AI 編碼代理來構建與維護您的 Lightdash 語義層。"
+icon: "head-side-gear"
+---
+
+AI 編碼代理可以幫助您更高效地構建和維護 Lightdash 語義層。透過安裝 Lightdash 技能 (Skills)，您可以讓這些代理理解您的語義層結構，並正確使用最新的 Lightdash 功能。
+
+## 什麼是技能 (Skills)？
+
+技能是上下文檔案，用於教導 AI 編碼代理關於 Lightdash 的 YAML 配置、指標、維度和最佳實踐。這些技能由 [agentskills.io](https://agentskills.io) 提供支援，為代理提供所需的知識，以便：
+
+- 為指標和維度生成正確的 YAML 配置
+- 遵循 Lightdash 的命名規範和最佳實踐
+- 理解表關係和關聯 (Joins)
+- 使用最新的 Lightdash 功能和語法
+
+## 支援的工具
+
+Lightdash 技能適用於熱門的 AI 編碼助手：
+
+- **Cursor** - AI 驅動的代碼編輯器
+- **Claude Code** - Anthropic 的編碼助手
+- **Codex** - OpenAI 的代碼生成模型
+- **Antigravity** - AI 開發平台
+- 其他支援技能格式的工具
+
+## 安裝技能
+
+使用 Lightdash CLI 為您偏好的 AI 編碼代理安裝技能。
+
+### 前置條件
+
+- [已安裝 Lightdash CLI](/guides/cli/how-to-install-the-lightdash-cli_zh_TW)
+
+### 為您的專案安裝
+
+在專案層級安裝技能（推薦用於團隊協作）：
+
+```bash
+# 為 Claude 安裝（預設）
+lightdash install-skills
+
+# 為 Cursor 安裝
+lightdash install-skills --agent cursor
+
+# 為 Codex 安裝
+lightdash install-skills --agent codex
+```
+
+這將在您的 git 根目錄建立一個技能目錄：
+- Claude 使用 `.claude/skills/`
+- Cursor 使用 `.cursor/skills/`
+- Codex 使用 `.codex/skills/`
+
+### 全域安裝
+
+全域安裝技能，以便在所有專案中使用：
+
+```bash
+# 為 Claude 進行全域安裝
+lightdash install-skills --global
+
+# 為 Cursor 進行全域安裝
+lightdash install-skills --agent cursor --global
+```
+
+全域技能將安裝到您的家目錄（例如：`~/.claude/skills/`）。
+
+### 安裝到自定義路徑
+
+指定自定義安裝路徑：
+
+```bash
+lightdash install-skills --path ./my-project
+```
+
+## 配合代理使用技能
+
+安裝後，您的 AI 編碼代理會自動識別 Lightdash 技能。接著您可以要求代理：
+
+- 建立新的指標和維度
+- 為 dbt 模型生成 YAML 配置
+- 修復語義層中的驗證錯誤
+- 重構現有的指標定義
+- 在表之間添加關聯
+
+### 提示詞 (Prompts) 範例
+
+```
+Create a revenue metric that sums the amount field from the orders table
+(建立一個營收指標，加總 orders 表中的 amount 欄位)
+```
+
+```
+Add a customer_segment dimension based on the lifetime_value field
+(根據 lifetime_value 欄位建立一個 customer_segment 維度)
+```
+
+```
+Generate the Lightdash YAML configuration for my users dbt model
+(為我的 users dbt 模型生成 Lightdash YAML 配置)
+```
+
+代理將使用安裝的技能來生成正確、最新的 Lightdash 配置。
+
+## 保持技能更新
+
+重新執行安裝指令以獲取最新技能：
+
+```bash
+lightdash install-skills
+```
+
+這將從 Lightdash 儲存庫下載最新的技能定義，確保您的代理了解最新功能和最佳實踐。

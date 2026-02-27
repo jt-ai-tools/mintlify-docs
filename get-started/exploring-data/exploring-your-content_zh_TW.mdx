@@ -1,0 +1,128 @@
+---
+title: "探索您的內容"
+sidebarTitle: "探索內容"
+---
+
+## 瀏覽已儲存的圖表和儀表板
+
+在 Lightdash 中入門最簡單的方法是查看團隊已經製作好的儲存圖表和儀表板。當您登入 Lightdash 時，您可以在首頁上看到這些內容的列表。
+
+<Frame>
+  <img src="/images/get-started/exploring-data/exploring-your-content/home-page.png" width="80%" />
+</Frame>
+
+您隨時可以點擊螢幕左上角的 Lightdash 圖示回到首頁。
+
+<Frame>
+  <img src="/images/get-started/exploring-data/exploring-your-content/return-to-homepage.png" width="50%" alt="" />
+</Frame>
+
+您也可以透過點擊導覽列中的 `Browse (瀏覽)`，來查看您和隊友在專案中建立的所有已儲存圖表、儀表板和空間 (Spaces) 列表。
+
+<Frame>
+  <img src="/images/get-started/exploring-data/exploring-your-content/browse.png" width="50%" alt="" />
+</Frame>
+
+## 使用搜尋列
+
+如果您已經知道要找什麼，可以使用搜尋列搜尋 Lightdash 專案中的所有內容。只需點擊螢幕頂部的搜尋列，或按下 `Cmd + K` (Mac) 或 `Ctrl + K` (Windows, Linux) 即可打開搜尋列。
+
+<Frame>
+  <img src="/images/get-started/exploring-data/exploring-your-content/search-bar-199ebd366ff2bc7d0d209a3f85327786.gif" alt="" />
+</Frame>
+
+此全域搜尋功能會匹配專案中所有位置的內容。您可以透過名稱和描述來搜尋儀表板、圖表、空間、表格和欄位。現在的功能更加強大，可以篩選結果並進行分組，以便於導覽。
+
+### 搜尋篩選器
+
+透過在搜尋列中直接應用篩選器來優化您的搜尋體驗。按內容類型指定您要尋找的內容，並按日期縮小結果範圍，可以選擇一個範圍（例如：「from: January 10, 2024, to: January 20, 2024」）或單個日期（「from: January 10, 2024」）。您還可以按內容建立者篩選結果，從而更輕鬆地找到特定團隊成員建立的項目。
+
+<Frame>
+  <img src="/images/get-started/exploring-data/exploring-your-content/search-filters-95f2b5220c54f6df58c24d0c44870426.gif" alt="" />
+</Frame>
+
+### 搜尋分組
+
+搜尋結果會按組別組織，使瀏覽結果變得更簡單。每個組別內的項目會根據與您查詢的相關性進行排序，確保最相關的結果始終易於找到。這種組織方式有助於快速識別您正在尋找的確切內容類型，無論是圖表、儀表板還是專案中的任何其他實體。
+
+<Frame>
+  <img src="/images/get-started/exploring-data/exploring-your-content/search-groups-97b3814af60e64fc7ebc19b97fdfe65c.gif" alt="" />
+</Frame>
+
+## 在圖表中探索數據
+
+### 查看底層數據 (View underlying data)
+
+您可以點擊圖表上的任何點或結果表格中的任何單元格，查看組成該數據點的記錄。
+
+例如，我可以點擊圖表中的頁面瀏覽量長條圖，或結果表格單元格中的值，我就能看到底層表格中組成這 19,120 個頁面瀏覽量計數的所有行。
+
+接著我可以將其導出為 CSV 或從這些底層數據開始探索。
+
+<Frame>
+  <img src="/images/get-started/exploring-data/underlying-data-ec265ef84085672491f477d180d173bc.jpg" alt="" />
+</Frame>
+
+
+##### 指定在「查看底層數據」中顯示的欄位
+
+預設情況下，我們會顯示該表格的所有維度。如果您在結果表格中包含了來自關聯表 (Joined Table) 的欄位，我們也會向您顯示來自關聯表的所有欄位。
+
+如果您不希望顯示表格中的所有欄位，可以指定當用戶針對某個欄位點擊 `show underlying data` 時，您希望他們看到的欄位。
+
+請參考 [指標 (Metric)](/references/metrics_zh_TW#show-underlying-values) 參考文件，了解如何在表格的 `.yml` 檔案中進行設置。
+
+預設情況下，當您從底層數據表中點擊 `Explore from here` 時，您會進入一個未選擇任何欄位的探索視圖。如果您在 `show underlying data` 中指定了欄位，這些欄位將自動添加到結果表格中，因此用戶點擊 `Explore from here` 時不會進入一個空的結果表格。
+
+### 鑽取指標 (Drill into a metric)
+
+您可以鑽取圖表或結果表格中的指標，以更好地了解圖表中的某個點。選擇 `drill by (鑽取自)` 讓您可以按維度對指標進行分組，例如：按產品類型細分（或分組）的總營收。請注意，`drill by` 僅適用於指標，不適用於維度或表格計算。
+
+#### 以下是鑽取功能的使用範例
+
+我有一張顯示每個合作夥伴隨時間變化的總營收（指標）圖表。看起來六月份有所下降，所以我想鑽取該數據點，看看利潤下降的原因...
+
+要執行此操作，我點擊圖表中的該數據點，然後在動作選單中點擊 `drill into (鑽取)`：
+
+<Frame>
+  <img src="/images/get-started/exploring-data/exploring-your-content/drill-into.jpg" width="80%" alt="" />
+</Frame>
+
+接著我選擇想要對指標進行細分（或「鑽取」）的維度。在這個範例中，我感興趣的是按 `browser (瀏覽器)` 進行分組，以便查明是否來自不同瀏覽器的流量有所減少。
+
+<Frame>
+  <img src="/images/get-started/exploring-data/exploring-your-content/drill-into-modal.png" width="80%" alt="" />
+</Frame>
+
+選擇好要分組的維度後，我點擊 `open in new tab (在新分頁開啟)`，就會看到一張按「瀏覽器」分組的指標圖表。現在我可以揭開利潤下降的原因了。
+
+<Frame>
+  <img src="/images/get-started/exploring-data/exploring-your-content/drill-into-example.png" width="80%" alt="" />
+</Frame>
+
+## 在儀表板中探索數據
+
+儀表板允許您將多個相關的圖表排列在單一視圖中。
+
+您可以透過幾種不同方式與專案中的儀表板互動。[在此了解更多相關資訊](/get-started/exploring-data/interactive-dashboards_zh_TW)。
+
+## 從現有圖表探索
+
+探索數據的最佳方式之一，是以已儲存的圖表或儀表板中的圖表作為探索的起點。您可以在 Lightdash 中使用 `Explore from here (從此處探索)` 按鈕來執行此操作。
+
+`Explore from here` 會為您提供同一張圖表的副本供您操作。您在此處所做的任何更改**不會影響**原始圖表——所以您可以放心地探索，不用擔心弄壞任何東西！
+
+如果您從未用過探索視圖，請查看關於[在 Lightdash 中使用探索視圖](/get-started/exploring-data/using-explores_zh_TW)的教學。
+
+
+## 從表格查詢
+
+如果您找不到任何可以回答您問題的相關儲存圖表或儀表板，您可以從頭開始構建查詢。
+
+要開始新的查詢，點擊 `[+] New` --> `Query from tables`，然後選擇您要查詢的表格。
+
+在[在 Lightdash 中從表格查詢](/get-started/exploring-data/using-explores_zh_TW)這份指南中閱讀更多內容。
+
+<Frame>
+  ![](/images/get-started/exploring-data/using-explores/new-query-from-tables.png)
+</Frame>

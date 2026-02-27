@@ -1,0 +1,102 @@
+---
+title: 自我優化 (Beta)
+description: 啟用 AI 代理以自動優化您的語義層
+---
+
+<Warning>
+  此功能目前處於 Beta 階段。請在您的代理設置中啟用它，開始與團隊一起測試。
+</Warning>
+
+AI 代理現在可以透過對您的數據模型提出變更建議，來優化您的語義層 (Semantic Layer)。啟用後，代理可以根據對話內容和使用者反饋，更新欄位描述、建立新指標並完善您的數據文件。所有變更都會在「變更集 (Changesets)」中被追蹤，並可以隨時進行審查或還原。
+
+## 它是如何運作的
+
+啟用自我優化後，您的 AI 代理可以：
+
+1. 在對話期間**提出語義層變更建議**
+2. 將變更**立即套用**至變更集（批量的變更）
+3. **追蹤所有修改**，包含完整的歷史紀錄和歸因
+4. **允許授權使用者審查與拒絕**變更
+
+變更會顯示在對話介面中，並可以透過「Project Settings (專案設置) > Changesets (變更集)」頁面進行管理。
+
+<Accordion title="在對話中查看自我優化變更">
+  <Frame caption="更新維度 (Dimension) 的描述">
+    <img
+      src="/images/guides/ai-agents/self-improvement-chat-1.png"
+      alt="對話中的自我優化變更：更新維度描述"
+    />
+  </Frame>
+  <Frame caption="建立自定義指標 (Custom Metric)">
+    <img
+      src="/images/guides/ai-agents/self-improvement-chat-2.png"
+      alt="對話中的自我優化變更：自定義指標"
+    />
+  </Frame>
+</Accordion>
+
+## 代理可以優化什麼
+
+**更新描述**以獲得更好的文件說明：
+
+- 探索 (Explore) 描述：釐清數據來源和使用場景
+- 指標 (Metric) 描述：解釋計算方式和業務邏輯
+- 維度 (Dimension) 描述：提供欄位的背景資訊
+
+**根據對話建立新指標**：
+
+- 源自現有維度的自定義聚合 (Custom aggregations)
+
+**建議 AI 提示 (AI Hints)** 以改進背景資訊：
+
+- 要求您的代理為維度、指標或表格推薦 AI 提示
+- AI 提示的優先權高於一般描述，且一般使用者看不到
+
+## 啟用自我優化
+
+僅管理員 (Admins) 和開發者 (Developers) 可以啟用並使用自我優化。要為代理啟用自我優化：
+
+1. 前往您的代理設置
+2. 切換「Enable Self-Improvement (啟用自我優化)」開關
+3. 儲存您的變更
+
+  <Frame>
+    <img
+      src="/images/guides/ai-agents/enable-self-improvement.png"
+      alt="啟用自我優化切換開關"
+    />
+  </Frame>
+
+## 管理變更
+
+所有提出的變更都會在變更集中被追蹤，您可以從專案設置中造訪：
+
+**查看所有變更：**
+
+- 導覽至 Project Settings > Changesets
+- 查看完整的新建議變更列表，包含修改內容的詳情
+- 查看是誰在何時提出了每項變更
+
+  <Frame>
+    <img
+      src="/images/guides/ai-agents/changeset-view.png"
+      alt="專案設置中的變更集視圖：顯示自我優化變更"
+    />
+  </Frame>
+
+**在對話中審查變更：**
+
+- 每個提出的變更都會以卡片形式出現在對話中
+- 點擊「View Changeset (查看變更集)」以查看完整詳情
+- 使用「Reject (拒絕)」按鈕來還原您不想要的變更
+
+**還原變更：**
+
+- 個別變更可以直接從對話介面拒絕
+- 使用變更集頁面中的「Revert (還原)」來撤銷特定變更
+- 使用「Revert All (全部還原)」一次撤銷多項變更
+- 如果專案重新部署 (Re-deployed)，變更集將在可能的情況下被套用
+
+<Warning>
+  一旦變更被還原，該操作無法撤銷。該欄位或指標的語義層將恢復到之前的狀態。
+</Warning>

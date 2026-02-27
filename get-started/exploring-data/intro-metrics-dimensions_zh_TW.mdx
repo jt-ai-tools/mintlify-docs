@@ -1,0 +1,23 @@
+---
+title: "指標與維度簡介"
+sidebarTitle: 指標與維度
+---
+
+## 什麼是指標與維度？
+
+指標 (Metrics) 與維度 (Dimensions) 與您的 dbt 模型屬性一起定義在 dbt 專案中。
+
+* **維度 (Dimensions)** 用於對表格中的數據進行**細分**。
+* **指標 (Metrics)** 用於對表格進行**計算**。
+
+假設我們經營一家電子商務公司，我們可能有一張包含所有訂單數據的表格。我們可能會想問：
+
+![](/images/get-started/exploring-data/intro-metrics-dimensions/data-question-fcb8af7318d2ac3fbc99c7332cbd4fc6.jpg)
+
+這個問題可以透過單個指標「不重複訂單總數」和單個維度「訂單狀態」（用於細分指標）來回答。在 Lightdash 中，您會得到如下圖表：
+
+<Frame>
+  <img src="/images/get-started/exploring-data/intro-metrics-dimensions/what-are-metrics-and-dimensions.png"/>
+</Frame>
+
+要了解更多關於為什麼我們在 Lightdash 中使用維度和指標的原因，請閱讀 [Lightdash 的 BI 方法](/best-practice/lightdash-way_zh_TW)。

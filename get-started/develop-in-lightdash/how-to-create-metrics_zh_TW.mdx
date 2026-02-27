@@ -1,0 +1,285 @@
+---
+title: "如何建立指標 (Metrics)"
+sidebarTitle: "建立指標"
+icon: "calculator"
+---
+
+## 什麼是指標？
+
+**指標 (Metrics)** 用於對表格進行**計算**。
+
+如果說維度 (Dimensions) 是將數據劃分為不同的群組，那麼指標就是計算這些群組中令人感興趣的統計數據。您可以在 dbt 專案的 .yml 檔案中，與維度和 dbt 模型屬性一起定義指標。
+
+例如，如果我們有一個維度 `status` 來按訂單「狀態」拆分訂單，我們可能想知道「訂單總數」或訂單的「銷售總額」。這些計算就是指標：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: 'orders'
+        description: '所有訂單的表格。'
+        columns:
+          - name: 'status'
+            description: '訂單狀態：已下單/處理中/已完成'
+          - name: 'order_id'
+            meta:
+              metrics:
+                total_order_count:
+                  type: count_distinct
+          - name: 'order_value'
+            meta:
+              metrics:
+                total_sales:
+                  type: sum
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: 'orders'
+        description: '所有訂單的表格。'
+        columns:
+          - name: 'status'
+            description: '訂單狀態：已下單/處理中/已完成'
+          - name: 'order_id'
+            config:
+              meta:
+                metrics:
+                  total_order_count:
+                    type: count_distinct
+          - name: 'order_value'
+            config:
+              meta:
+                metrics:
+                  total_sales:
+                    type: sum
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    description: '所有訂單的表格。'
+
+    dimensions:
+      - name: status
+        description: '訂單狀態：已下單/處理中/已完成'
+      - name: order_id
+      - name: order_value
+
+    metrics:
+      total_order_count:
+        type: count_distinct
+        sql: ${order_id}
+      total_sales:
+        type: sum
+        sql: ${order_value}
+    ```
+  </Tab>
+</Tabs>
+
+您可以點此[查看完整指標類型列表](/references/metrics_zh_TW#metric-types)，了解可以在 Lightdash 專案中使用的所有類型。
+
+添加指標後，您可以在 Lightdash 中使用它們來構建圖表和篩選結果。指標出現在「探索 (Explore)」視圖中，位於維度之上；如果被選中，它們會作為橘色欄位出現在結果表格中。
+
+![](/images/get-started/develop-in-lightdash/metrics-explore-view.png)
+
+## 讓我們嘗試向 dbt 專案添加指標
+
+<Info>
+  **本教學假設您已設置好 Lightdash CLI。**
+
+  如果您尚未安裝 Lightdash CLI，請[參考此指南進行安裝與設置](/guides/cli/how-to-install-the-lightdash-cli_zh_TW)。
+</Info>
+
+觀看此影片，了解如何添加欄位層級 (column-level) 指標。這些指標是在 dbt 模型中的特定欄位上定義的。
+
+<Frame>
+  <iframe width="100%" height="420" src="https://www.loom.com/embed/b6744cce0e0443639e85d883e2a08fe9" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen />
+</Frame>
+
+此影片展示了如何定義表格層級 (table-level) 指標，這是較為複雜的指標，可能涉及多個欄位。
+
+<Frame>
+  <iframe width="100%" height="420" src="https://www.loom.com/embed/f7e7dffa96eb4a25b13b488b66366f4a" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen />
+</Frame>
+
+
+
+### 向您的其中一個 dbt 模型添加指標
+
+前往您的 dbt 專案，切換到一個新分支（或者如果您喜歡的話，直接在 `main` 分支操作 🤠），然後向其中一個 dbt 模型添加指標。
+
+我們建議從簡單的開始，例如為表的主鍵 (Primary Key) 添加一個 `count`。
+
+範例如下：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: 'orders'
+        columns:
+          - name: 'status'
+          - name: 'order_id'
+            meta:
+              metrics:
+                total_order_count:
+                  type: count
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: 'orders'
+        columns:
+          - name: 'status'
+          - name: 'order_id'
+            config:
+              meta:
+                metrics:
+                  total_order_count:
+                    type: count
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    dimensions:
+      - name: status
+      - name: order_id
+
+    metrics:
+      total_order_count:
+        type: count
+        sql: ${order_id}
+    ```
+  </Tab>
+</Tabs>
+
+### 使用 `lightdash preview` 預覽您的變更
+
+向 dbt 模型添加指標後，您可能想檢查它是否按預期運作。這就是 `lightdash preview` 派上用場的地方。
+
+**開發者預覽 (Developer previews)** 是臨時的 Lightdash 專案，您可以在其中安全地實驗您的指標、維度與圖表，而不會影響您的生產專案。
+
+所以，讓我們啟動一個開發者預覽並檢查我們的變更。在您的終端機中執行：
+
+```bash
+lightdash preview
+```
+
+然後 `cmd` + `點擊` 終端機中的預覽連結。進入 Lightdash 後，前往 `探索 (Explore)` --> `表格 (Tables)`，點擊您剛剛更新的模型以查看您的新指標並進行操作。
+
+### 配置您的指標 (選填)
+
+您可以通過在 .yml 檔案中進行配置來優化指標。這些指標配置位於欄位的 `meta` 標籤下的 `metrics` 區塊：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: "orders"
+        description: "所有訂單的表格。"
+        columns:
+          - name: "status"
+            description: "訂單狀態：已下單/處理中/已完成"
+          - name: "order_value"
+            meta:
+              metrics:
+                total_sales:
+                  type: sum
+                  label: "總銷售額 (USD)"
+                  groups: ["銷售指標"]
+                  round: 2
+                  ...等
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: "orders"
+        description: "所有訂單的表格。"
+        columns:
+          - name: "status"
+            description: "訂單狀態：已下單/處理中/已完成"
+          - name: "order_value"
+            config:
+              meta:
+                metrics:
+                  total_sales:
+                    type: sum
+                    label: "總銷售額 (USD)"
+                    groups: ["銷售指標"]
+                    round: 2
+                    ...等
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    description: "所有訂單的表格。"
+
+    dimensions:
+      - name: status
+        description: "訂單狀態：已下單/處理中/已完成"
+      - name: order_value
+
+    metrics:
+      total_sales:
+        type: sum
+        sql: ${order_value}
+        label: "總銷售額 (USD)"
+        groups: ["銷售指標"]
+        round: 2
+        ...等
+    ```
+  </Tab>
+</Tabs>
+
+諸如格式、使用者在 Lightdash 中看到的標籤、捨入等——這些都是您可以應用於指標的配置。
+
+您可以[在我們的指標參考文件中查看所有指標配置](/references/metrics_zh_TW#metric-configuration)。
+
+
+### 如果您對新指標感到滿意，可以將其部署到生產環境。
+
+如果您使用的是受版本控制的專案，請確保將變更合併到與 Lightdash 專案連接的分支（例如 `main` 或 `master`）。
+
+合併後，或者如果您直接在 `main` 分支操作，就可以部署變更。
+
+要部署變更，只需在 dbt 專案目錄下執行：
+
+```bash
+git checkout main # 切換到 main 或 master - 或您的生產分支名稱
+git pull
+lightdash deploy # --target prod。如果您在 dbt 專案中使用開發者設定檔，可能需要此標籤。見下文。
+```
+
+這將把您 dbt 專案中的變更部署到您之前在 CLI 工具上設置的 Lightdash 專案中。
+
+<Info>
+  **Lightdash 的 deploy 指令將使用您的「預設 dbt 目標 (default dbt target)」進行部署，除非您指定使用不同的目標。**
+  
+  例如，如果您設置了一個開發者設定檔，其目標是開發數據集（如 `dbt_khindson.my_model_names`），那麼您需要在 `lightdash deploy` 指令中傳遞生產目標。例如：`lightdash deploy --target prod`。
+</Info>
+
+大功告成！您的新指標現在可以在 Lightdash 中探索了。
+
+***
+
+
+## 在探索視圖中新增自定義指標 <a id="-adding-custom-metrics-in-the-explore-view" />
+
+您在「維度」和「指標」中看到的欄位是由維護 Lightdash 專案的人員建立的。
+
+但是，如果此指標列表中缺少某些內容，您可以使用「自定義指標 (Custom Metrics)」在探索時新增一些即時計算。
+
+要了解更多關於自定義指標的資訊，請參考 [如何建立自定義欄位](/guides/custom-fields_zh_TW)。
+
+## 查看我們的 [指標參考表](/references/metrics_zh_TW) 以獲取更多詳細資訊。

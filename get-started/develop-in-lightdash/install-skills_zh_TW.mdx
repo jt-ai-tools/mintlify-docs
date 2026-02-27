@@ -1,0 +1,79 @@
+---
+title: "安裝 Lightdash 技能 (Skills)"
+description: "透過安裝 Lightdash 技能，與 Claude Code 或 Cursor 一起開啟 AI 驅動的開發體驗"
+sidebarTitle: 安裝 Lightdash 技能
+icon: robot
+---
+
+安裝 Lightdash 技能，讓 Claude Code 或 Cursor 具備 AI 驅動開發的能力。這將教會 Claude 構建 Lightdash 所需的一切知識，從編寫指標到建立儀表板。
+
+<Frame>
+  <iframe width="100%" height="420" src="https://www.youtube.com/embed/0uUmTLdmtig" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen />
+</Frame>
+
+## 快速安裝
+
+```bash
+lightdash install-skills
+```
+
+此指令預設為 Claude 安裝技能。對於其他 AI 編碼代理 (AI coding agents)，請參閱[詳細安裝指南](/guides/developer/agent-skills_zh_TW#安裝技能)。
+
+## 您可以構建什麼
+
+安裝 Lightdash 技能後，您可以透過對話方式構建完整的 BI 解決方案。Claude 可以幫助您：
+
+- **從零開始構建**。在沒有現成 dbt 檔案的情況下建立完整專案。只需描述您想要的報告，Claude 就會對您的數據倉庫進行分析，建議帶有描述和分類的指標，並構建包含版面配置、顏色、分頁和篩選器的儀表板。
+
+- **數據倉庫分析 (Warehouse profiling)**。查詢您的數據倉庫以發現可用表格，並針對您的使用場景建議相關指標。
+
+- **批量操作**。更新生產環境中 50 多個圖表，重新命名表格或指標，並批量更新所有相關內容。
+
+- **遷移**。將分析從其他工具移至 Lightdash，將現有邏輯轉化為 Lightdash 指標。
+
+- **最佳實踐**。審查儀表板和圖表以尋求改進，建議更好的指標定義，並重構代碼。
+
+- **快速開發**。透過對話方式迭代指標、維度和儀表板，無需切換上下文。
+
+<Tip>
+非常適合尚未建立語義層 (Semantic Layer) 的團隊。只需連接您的數據倉庫，描述您想要的報告，Claude 就會逆向操作來構建模型。
+</Tip>
+
+## 它是如何運作的
+
+Claude 需要驗證才能發揮出色效能，而 Lightdash CLI 提供了成功所需的一切。您描述您的需求，Claude 會：
+
+1. 分析數據倉庫以了解可用數據
+2. 建議並建立帶有適當元數據的指標
+3. 構建具有周全版面配置與配置的儀表板
+4. 在執行每一步之前進行驗證
+
+## 工作流程範例
+
+**從零開始構建儀表板：**
+```
+我想構建一個客戶留存儀表板。請分析我的 BigQuery 數據倉庫以找到相關表格，
+建議關鍵指標（如流失率和留存同類群組），並建立一個包含月度和季度視圖分頁的儀表板。
+```
+
+**建立帶有元數據的指標：**
+```
+為我們的 orders 表格建立營收指標，並為指標目錄 (Metrics Catalog) 提供描述和分類。
+包含總營收、平均訂單價值和每位客戶營收。
+```
+
+**批量重構：**
+```
+將所有指標、維度和儀表板中的「user」表重新命名為「customer」。
+更新所有引用並維持其關聯性。
+```
+
+## 後續步驟
+
+欲了解詳細的安裝選項（全域安裝、自定義路徑、不同的 AI 代理），請參閱 [AI 代理技能指南](/guides/developer/agent-skills_zh_TW)。
+
+安裝後，您可以透過對話方式使用 Claude Code 或 Cursor 構建 Lightdash 專案，而無需打開 UI。
+
+<Note>
+使用 Claude 時，請在您的提示語 (Prompts) 前加上 `/developing-in-lightdash`，以確保 Claude 有效地使用 Lightdash 技能。
+</Note>

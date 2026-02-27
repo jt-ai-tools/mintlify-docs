@@ -1,0 +1,321 @@
+---
+title: '遷移至 dbt 1.10：修復 Meta 與 Tags 配置警告'
+description: '了解如何修復 dbt 1.10 中關於 `meta` 和 `tags` 屬性的棄用警告，並使用 MetaMove 自動遷移您的專案。'
+sidebarTitle: '遷移至 dbt 1.10'
+---
+
+當您升級到 dbt 1.10 時，您可能會遇到如下所示的棄用警告：
+
+```
+Warning: while parsing model config: Ignore unexpected key "meta"
+Warning: while parsing model config: Ignore unexpected key "tags"
+```
+
+這些警告表示 dbt 正在更改 YAML 檔案中 `meta` 和 `tags` 的結構。與其手動更新可能數百個檔案，您可以使用 MetaMove——這是一個專門為自動化此遷移而設計的 CLI 工具。
+
+## dbt 1.10 有什麼變化？
+
+從 dbt 1.10 開始，對於未來將變為無效的 dbt 代碼，您將收到棄用警告，包括無法識別的資源屬性和配置等自定義輸入。某些屬性正在移至配置 (configs) 中，包括 `meta` 和 `tags`。
+
+關鍵變化影響了您在整個 dbt 專案中定義 `meta` 和 `tags` 屬性的方式：
+
+**之前 (dbt < 1.10)：**
+```yaml
+models:
+  - name: my_model
+    meta:
+      owner: "Data Team"
+      priority: "high"
+    tags: ["core", "customer"]
+    columns:
+      - name: id
+        meta:
+          is_primary_key: true
+        tags: ["identifier"]
+```
+
+**之後 (dbt 1.10+)：**
+```yaml
+models:
+  - name: my_model
+    config:
+      meta:
+        owner: "Data Team"
+        priority: "high"
+      tags: ["core", "customer"]
+    columns:
+      - name: id
+        config:
+          meta:
+            is_primary_key: true
+          tags: ["identifier"]
+```
+
+## 為什麼這個變化很重要
+
+以前，dbt 允許您在很大程度上不受限制地配置輸入。如果沒有一組嚴格定義的輸入，驗證專案配置就會變得具有挑戰性，從而產生一些意想不到的問題，例如默默忽略拼寫錯誤的屬性和配置。
+
+此更改提供了幾個好處：
+
+- **更好的驗證**：dbt 現在可以捕捉拼寫錯誤的屬性和配置
+- **一致的結構**：所有自定義屬性必須嵌套在 `meta` 配置下
+- **面向未來**：防止在 dbt 引入新的保留屬性時發生衝突
+
+## 使用 MetaMove 進行自動化遷移
+
+與其手動更新 YAML 檔案，不如使用 MetaMove——專為此遷移構建的 CLI 工具。MetaMove 會自動轉換您的檔案，同時保留註釋和格式。
+
+### 安裝
+
+使用 pipx 安裝 MetaMove（推薦）：
+
+```bash
+pip install pipx  # 如果您尚未安裝
+pipx install metamove
+```
+
+### 基本用法
+
+轉換單個 YAML 檔案：
+```bash
+metamove models/my_model.yml
+```
+
+轉換多個檔案：
+```bash
+metamove models/* seeds/* snapshots/*
+```
+
+轉換 dbt 專案中的所有 YAML 檔案：
+```bash
+metamove models/**/* seeds/**/* snapshots/**/*
+```
+
+### 安全遷移流程
+
+MetaMove 遵循預設安全的原則：
+
+1. **先測試**：預設情況下，轉換後的檔案會儲存到 `transformed` 目錄：
+   ```bash
+   metamove models/*  # 儲存到 ./transformed/
+   ```
+
+2. **審查更改**：比較原始檔案和轉換後的檔案以確保準確性。
+
+3. **就地應用**：確認無誤後，就地轉換檔案：
+   ```bash
+   metamove models/* -i
+   ```
+
+### 進階選項
+
+指定自定義輸出目錄：
+```bash
+metamove models/* -o my_transformed_models
+```
+
+該工具會自動僅處理 `.yml` 和 `.yaml` 檔案，因此通配符可以安全使用：
+```bash
+# 轉換特定的模型目錄
+metamove models/marts/* models/staging/*
+
+# 轉換所有嵌套目錄
+metamove models/**/*
+```
+
+## MetaMove 處理的內容
+
+MetaMove 智慧地處理：
+
+- **嵌套結構**：任何嵌套層級的 `meta` 和 `tags`，包括 `columns` 內部
+- **現有配置塊**：將新值合併到現有的 `config` 部分
+- **所有 YAML 類型**：字典、列表和標量值
+- **保留格式**：保持您的註釋和空格
+- **複雜案例**：處理遵循 dbt 優先級規則的邊緣案例
+
+## 手動遷移（如果需要）
+
+如果您偏好手動遷移或需要了解具體變化，以下是關鍵的轉換模式：
+
+### 模型層級 (Model-Level) 變化
+
+**之前：**
+```yaml
+models:
+  - name: customer_metrics
+    description: "客戶分析模型"
+    meta:
+      owner: "analytics_team"
+      sla: "daily"
+    tags: ["core", "customer", "metrics"]
+```
+
+**之後：**
+```yaml
+models:
+  - name: customer_metrics
+    description: "客戶分析模型"
+    config:
+      meta:
+        owner: "analytics_team"
+        sla: "daily"
+      tags: ["core", "customer", "metrics"]
+```
+
+### 欄位層級 (Column-Level) 變化
+
+**之前：**
+```yaml
+models:
+  - name: customers
+    columns:
+      - name: customer_id
+        description: "唯一客戶識別碼"
+        meta:
+          is_primary_key: true
+          data_type: "uuid"
+        tags: ["pii", "identifier"]
+```
+
+**之後：**
+```yaml
+models:
+  - name: customers
+    columns:
+      - name: customer_id
+        description: "唯一客戶識別碼"
+        config:
+          meta:
+            is_primary_key: true
+            data_type: "uuid"
+          tags: ["pii", "identifier"]
+```
+
+### 來源層級 (Source-Level) 變化
+
+**之前：**
+```yaml
+sources:
+  - name: raw_data
+    schema: staging
+    meta:
+      loader: "fivetran"
+      freshness_sla: "1 hour"
+    tags: ["external", "raw"]
+    tables:
+      - name: users
+        meta:
+          row_count: 50000
+        tags: ["pii"]
+```
+
+**之後：**
+```yaml
+sources:
+  - name: raw_data
+    schema: staging
+    config:
+      meta:
+        loader: "fivetran"
+        freshness_sla: "1 hour"
+      tags: ["external", "raw"]
+    tables:
+      - name: users
+        config:
+          meta:
+            row_count: 50000
+          tags: ["pii"]
+```
+
+## 其他需要考慮的 dbt 1.10 變化
+
+在遷移 `meta` 和 `tags` 的同時，請注意其他屬性也正在移至配置中：
+
+- `freshness` (針對 sources)
+- `docs`
+- `group`
+- `access`
+
+這些屬性現在應該遵循與 `meta` 和 `tags` 相同的模式，設置在 `config` 塊下。
+
+## 在遷移期間處理警告
+
+如果您使用 `--warn-error` 標籤將警告提升為錯誤，則可能需要在遷移期間調整配置：
+
+```yaml
+# 在 dbt_project.yml 中
+flags:
+  warn_error_options:
+    warn: ["Deprecations"]  # 將棄用警告保持為警告
+    error: ["other_warning_types"]  # 將其他類型的警告提升為錯誤
+```
+
+這允許您在逐步解決棄用警告的同時繼續工作。
+
+## 測試您的遷移
+
+遷移檔案後：
+
+1. **執行 dbt parse**：確保您的專案解析無誤：
+   ```bash
+   dbt parse
+   ```
+
+2. **檢查警告**：執行簡單指令驗證警告是否已解決：
+   ```bash
+   dbt compile --select my_model
+   ```
+
+3. **執行測試**：執行您的測試套件以確保功能保持不變：
+   ```bash
+   dbt test
+   ```
+
+## 最佳實踐
+
+- **先備份**：在執行任何遷移工具之前，務必備份您的專案
+- **在開發環境中測試**：先在開發分支中執行遷移
+- **審查更改**：使用 git diff 在提交前審查所有更改
+- **增量遷移**：對於大型專案，考慮一次遷移一個目錄
+- **更新 CI/CD**：確保您的部署流程適配新結構
+
+## 常見問題排除
+
+### 「Config block already exists」錯誤
+
+如果您已有現端的 `config` 塊，MetaMove 會合併新屬性。但是，如果您遇到衝突：
+
+1. 審查導致問題的特定檔案
+2. 手動解決現有配置屬性與新配置屬性之間的衝突
+3. 對修正後的檔案重新執行 MetaMove
+
+### 意外的 YAML 結構
+
+如果您的 YAML 檔案具有 MetaMove 無法處理的異常結構：
+
+1. 記錄工具輸出中出現問題的檔案
+2. 使用上面顯示的模式手動遷移這些檔案
+3. 對其餘標準檔案使用 MetaMove
+
+### 大型專案的效能
+
+對於包含數百個 YAML 檔案的專案：
+
+1. 對子目錄執行 MetaMove，而不是一次對整個專案執行
+2. 使用 `-o` 標籤按目錄組織轉換後的檔案
+3. 分批處理檔案，使審查過程變得可控
+
+## 結論
+
+遷移到 dbt 1.10 的新 `meta` 和 `tags` 結構，對於維護穩健且面向未來的 dbt 專案至關重要。MetaMove 通過自動化繁瑣的工作，同時保留您細心的格式和註釋，使此遷移變得簡單明瞭。
+
+其目標是讓您在未來能夠更安全、更有反饋且更有信心地工作。通過將 `meta` 和 `tags` 移至 `config` 塊下，dbt 可以提供更好的驗證，並防止因屬性拼寫錯誤或意外衝突而產生的細微問題。
+
+今天就開始您的遷移：
+
+```bash
+pipx install metamove
+metamove models/* --help
+```
+
+欲了解更多關於 dbt 1.10 變化和套件管理最佳實踐的資訊，請查看 [dbt 官方升級指南](https://docs.getdbt.com/docs/dbt-versions/core-upgrade/upgrading-to-v1.10)，並在 [GitHub 上探索 MetaMove](https://github.com/lightdash/metamove) 以了解進階用法和貢獻機會。

@@ -1,0 +1,86 @@
+---
+title: 將變更部署到生產環境
+sidebarTitle: 部署變更
+icon: "ship"
+---
+
+
+
+<Callout icon="ship" color="#30CF87">
+### `lightdash deploy` 將您的 dbt 專案推送到 Lightdash
+</Callout>
+
+一旦您更新了 dbt 專案並準備好在 Lightdash 生產專案中使用這些變更，您有多種選項可以透過 CLI 或 Lightdash UI 進行部署。
+本指南將帶領您了解其運作機制、何時使用各個選項，以及為了確保工作流程安全且具擴展性所需注意的事項。
+
+## 部署前：一則簡短的警示
+
+<Warning>
+**`lightdash deploy` 會直接推送到您的生產專案。**
+
+執行此指令會使用您本地的 dbt 設定檔（來自您的 `profiles.yml`）。如果您預設的目標 (Target) 指向開發 (Dev) 或預發佈 (Staging) 環境，`lightdash deploy` 將會用該配置覆蓋您的生產語義層，導致所有使用者的儀表板損壞。
+
+如果您正在本地端開發，**請改用 [`lightdash preview`](/guides/cli/how-to-use-lightdash-preview_zh_TW)**。它會建立一個臨時、隔離的專案，不會影響生產環境。
+</Warning>
+
+為了採用更安全、更具擴展性的方式來部署與預覽變更，請使用 CI/CD。這能讓您：
+
+* 為每個 PR 啟動 Lightdash 預覽環境。
+
+* 使用共享且安全的憑據一致地部署生產變更。
+
+* 避免因本地設定檔指向錯誤目標而產生的意外。
+
+查看我們的 [**設置 CI/CD 工作流程指南**](/guides/cli/automate-cli-workflow_zh_TW)。
+
+## 選項 1：透過 CLI 部署
+
+基本用法：
+```bash
+git checkout main # 切換到 main 或 master —— 或您合併變更後的生產分支名稱
+git pull
+lightdash deploy # --target prod。如果您在 dbt 專案中使用開發者設定檔，可能需要此標籤。見下文。
+```
+
+預設情況下，這將：
+
+* 使用您本地的 dbt 設定檔進行連接。
+
+* 將本地 dbt 專案檔案的目前狀態（包括未提交的變更或當前分支的代碼）推送到已驗證的 Lightdash 專案。
+
+* 觸發 Lightdash 專案的重新編譯與重新整理。
+
+如果您的 dbt 專案針對開發與生產環境使用不同的設定檔或目標，您可以指定要使用的設定檔：
+
+```bash
+lightdash deploy --profile prod
+```
+<Warning>
+請務必小心。如果您本地的生產設定檔未正確指向生產資料庫，
+這可能導致錯誤的連接（例如：意外部署到開發數據集）。
+</Warning>
+
+## 選項 2：使用 `lightdash refresh` 安全地重新整理元數據
+
+如果您只需要重新整理 Lightdash 專案以反映上游 dbt 的變更（例如更新模型或文件），但不想部署您本地的 dbt 設置，您可以使用：
+
+```bash
+lightdash refresh
+```
+
+與 deploy 不同，此指令：
+
+* 使用儲存在 Lightdash 中的 dbt 憑據，而非您本地的設定檔。
+
+* 僅重新執行元數據同步和模型解析。
+
+* 可以在任何地方安全地觸發，無需擔心指向錯誤的目標。
+
+您也可以直接在 Lightdash UI 中執行此操作：
+
+前往您的專案 →「Manage project (管理專案)」→「Refresh dbt (重新整理 dbt)」。
+這與執行 `lightdash refresh` 的結果相同。
+
+<Frame>
+  <img src="/images/guides/cli/refresh-dbt.png"/>
+</Frame>

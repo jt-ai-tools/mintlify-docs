@@ -1,0 +1,231 @@
+---
+title: "如何建立維度 (Dimensions)"
+sidebarTitle: "建立維度"
+icon: "shapes"
+---
+
+![](/images/get-started/develop-in-lightdash/add-new-dimension-overview.png)
+
+**維度 (Dimensions)** 是用於從表格中**細分數據**的欄位。它們**直接連結到 dbt 模型中的某一欄**。
+
+要在 Lightdash 中存在一個維度，它首先必須是 dbt 模型中的一個欄位。
+
+<Tip>
+  **剛接觸 dbt？** 如果您以前沒使用過 dbt，請在繼續設置 Lightdash 之前，先[遵循 dbt 的入門指南](https://docs.getdbt.com/tutorial/setting-up)。
+</Tip>
+
+## 什麼是維度？
+
+Lightdash 維度是在您的 dbt 專案 .yml 檔案中定義的欄位。基本上，它們就是來自 dbt 數據模型的欄位。
+
+例如，以下 dbt 專案檔案包含的屬性為 Lightdash 中的 `Pages` 表格建立了一個維度 `source`：
+
+```yaml
+models:
+  - name: Pages
+    description: "Lightdash 網頁上所有頁面瀏覽次數的表格。"
+    columns:
+      - name: source
+        description: "頁面瀏覽的來源：示範網站、文件網站或 lightdash.com"
+        ...
+```
+
+維度的名稱為 `source`，其類型將從您數據庫中的欄位自動推斷。您可以在此查看 [Lightdash 支援的完整維度類型列表](/references/dimensions_zh_TW#dimension-types)。
+
+添加維度後，您可以在 Lightdash 中使用它們來構建圖表和篩選結果。維度出現在「探索 (Explore)」視圖中，位於指標 (Metrics) 之上；如果被選中，它們會作為藍色欄位出現在結果表格中。
+
+![](/images/get-started/develop-in-lightdash/dimensions-in-the-explore-view.png)
+
+***
+
+## 使用 CLI 或手動建立維度
+
+### 選項 1：CLI
+
+<Info>
+  **本教學假設您已設置好 Lightdash CLI。**
+
+  如果您尚未安裝 Lightdash CLI，請[參考此指南進行安裝與設置](/guides/cli/how-to-install-the-lightdash-cli_zh_TW)。
+</Info>
+
+如果您向 dbt 專案添加了一個（或多個）新欄位，您可以為其生成 .yml，以便在 Lightdash 中使用。
+
+您只需在終端機中執行：
+
+```bash
+lightdash generate -s my_model # 將 my_model 替換為您的模型名稱
+```
+
+此指令將使用任何新維度更新該模型的 .yml 檔案。
+
+如果您尚未執行過該 dbt 模型，可以將執行模型與生成 .yml 合併為一個指令：
+
+```bash
+lightdash dbt run -s my_model # 將 my_model 替換為您的模型名稱
+```
+
+此指令將執行您的 dbt 模型（即更新數據倉庫中的表格），然後使用任何新維度更新該模型的 .yml 檔案。
+
+現在，您的模型 .yml 檔案應該已經添加了新的維度！
+
+***
+
+### 選項 2：手動
+
+我們建議使用 CLI，因為它更快且更可靠。但是，如果您偏好手動記錄，只需將 `columns` 添加到 dbt .yml 檔案中，它們就會作為維度出現在 Lightdash 中。
+
+例如，如果我的 dbt 模型中有一個名為 `source` 的欄位，並且我想將其作為維度添加到 Lightdash，我只需將該欄位添加到 .yml 檔案中，如下所示：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: Pages
+        description: "Lightdash 網頁上所有頁面瀏覽次數的表格。"
+        columns:
+          - name: source
+            description: "頁面瀏覽的來源：示範網站、文件網站或 lightdash.com"
+            ...
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: Pages
+        description: "Lightdash 網頁上所有頁面瀏覽次數的表格。"
+        columns:
+          - name: source
+            description: "頁面瀏覽的來源：示範網站、文件網站或 lightdash.com"
+            ...
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: Pages
+
+    description: "Lightdash 網頁上所有頁面瀏覽次數的表格。"
+
+    dimensions:
+      - name: source
+        description: "頁面瀏覽的來源：示範網站、文件網站或 lightdash.com"
+        ...
+    ```
+  </Tab>
+</Tabs>
+
+***
+
+## 使用 `lightdash preview` 預覽您的變更
+
+向 dbt 模型添加維度後，您可能想檢查它是否按預期運作。這就是 `lightdash preview` 派上用場的地方。
+
+[開發者預覽 (Developer previews)](/guides/cli/how-to-use-lightdash-preview_zh_TW) 是臨時的 Lightdash 專案，您可以在其中安全地實驗您的指標、維度與圖表，而不會影響您的生產專案。
+
+所以，讓我們啟動一個開發者預覽並檢查我們的變更。在您的終端機中執行：
+
+```bash
+lightdash preview
+```
+
+然後 `cmd` + `點擊` 終端機中的預覽連結。進入 Lightdash 後，前往 `探索 (Explore)` --> `表格 (Tables)`，點擊您剛剛更新的模型以查看您的測試欄位並進行操作。
+
+***
+
+## 配置您的維度
+
+您可以通過在 .yml 檔案中進行配置來優化維度。這些維度配置位於欄位的 `meta` 標籤下的 `dimension` 區塊：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders
+        description: "所有訂單的表格。"
+        columns:
+          - name: status
+            description: "來自狀態代碼設置的狀態。"
+            meta:
+              dimension:
+                label: "最新狀態"
+                description: "訂單狀態：已下單/處理中/已完成"
+                ...等
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: orders
+        description: "所有訂單的表格。"
+        columns:
+          - name: status
+            description: "來自狀態代碼設置的狀態。"
+            config:
+              meta:
+                dimension:
+                  label: "最新狀態"
+                  description: "訂單狀態：已下單/處理中/已完成"
+                  ...等
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    description: "所有訂單的表格。"
+
+    dimensions:
+      - name: status
+        label: "最新狀態"
+        description: "訂單狀態：已下單/處理中/已完成"
+        ...等
+    ```
+  </Tab>
+</Tabs>
+
+諸如格式、使用者在 Lightdash 中看到的標籤、捨入等——這些都是您可以應用於維度的配置。
+
+您可以[在我們的維度參考文件中查看所有維度配置](/references/dimensions_zh_TW#dimension-configuration)。
+
+***
+
+## 將變更部署到生產環境
+
+有兩種方法可以執行此操作：
+
+### 選項 1：使用 CLI 部署變更
+
+如果您使用的是受版本控制的專案，請確保將變更合併到與 Lightdash 專案連接的分支（例如 `main` 或 `master`）。您還需要確保已**執行 dbt 模型，以便新欄位存在於您的數據倉庫中**。
+
+合併後，或者如果您直接在 `main` 分支操作（*反骨仔* 😏），就可以部署變更。只需在 dbt 專案目錄下執行：
+
+```bash
+git checkout main # 切換到 main 或 master - 或您的生產分支名稱
+git pull
+lightdash deploy # --target prod。如果您在 dbt 專案中使用開發者設定檔，可能需要此標籤。見下文。
+```
+
+這將把您 dbt 專案中的變更部署到您之前在 CLI 工具上設置的 Lightdash 專案中。
+
+<Info>
+  **Lightdash 的 deploy 指令將使用您的「預設 dbt 目標 (default dbt target)」進行部署，除非您指定使用不同的目標。**
+  
+  例如，如果您設置了一個開發者設定檔，其目標是開發數據集（如 `dbt_khindson.my_model_names`），那麼您需要在 `lightdash deploy` 指令中傳遞生產目標。例如：`lightdash deploy --target prod`。
+</Info>
+
+大功告成！只需刷新頁面，您的新 dbt 維度就可以在 Lightdash 中探索了。
+
+### 選項 2：手動部署變更
+
+如果您使用的是受版本控制的專案，請確保將變更合併到與 Lightdash 專案連接的分支（例如 `main` 或 `master`）。您還需要確保已**執行 dbt 模型，以便新欄位存在於您的數據倉庫中**。
+
+合併後，或者如果您直接在 `main` 分支操作，就可以部署變更。
+
+要執行此操作，您只需在專案的「探索視圖 (Explore View)」頁面上點擊 `刷新 dbt (refresh dbt)`。然後，新的維度應自動出現在專案中。
+
+***
+
+## 查看 [維度參考文件](/references/dimensions_zh_TW) 以獲取更多關於維度設置的資訊
+
+在 [參考文件](/references/dimensions_zh_TW) 中，您將找到所有維度類型、配置及更多內容。

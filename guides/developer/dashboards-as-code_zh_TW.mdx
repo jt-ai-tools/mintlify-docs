@@ -1,0 +1,531 @@
+---
+title: "儀表板即代碼 (Dashboards as code)"
+description: "您可以將圖表和儀表板下載為代碼，進行更改後，再使用 CLI 將更改上傳回 Lightdash 專案。內容即代碼對於建立新的 Lightdash 專案也非常有用，您可以將現有專案的內容複製並添加到新專案中。"
+---
+
+## `lightdash download`
+
+透過 [Lightdash CLI](/references/lightdash-cli_zh_TW)，您可以使用 `lightdash download` 指令將 Lightdash 專案中的所有圖表和儀表板以下載為代碼。所有圖表和儀表板將以 .yml 檔案的形式寫入您執行指令處的 `lightdash` 目錄中。
+
+例如：如果您在 dbt 目錄（如：`/home/javi/dbt`）內執行此指令，它將建立一個資料夾 (`/home/javi/dbt/lightdash`)。如果您在 `/home/javi/documents` 執行此指令，它將在該處建立 `lightdash` 資料夾。
+
+<Frame>
+<img src="/images/guides/developer/download-content-924b51a78c9840990608f3ed81f80b56.jpg"/>
+</Frame>
+
+##### 執行 `lightdash download` 將覆蓋您本地的任何更改
+
+例如：
+- 我執行 `lightdash download`，下載的其中一個圖表是 `emea-revenue-per-month.yml`。
+- 我對 `emea-revenue-per-month.yml` 檔案進行了一些更改並儲存。
+- 我**沒有**上傳我的更改，它們僅儲存在本地。
+- 我再次執行 `lightdash download`。
+- 我對 `emea-revenue-per-month.yml` 所做的更改將被從 Lightdash 應用程式下載的最新版本覆蓋。
+
+### 選擇要下載的特定項目
+
+##### 使用 `lightdash download -c` 或 `lightdash download --charts` 選擇特定圖表
+
+如果您只想下載特定圖表以作為代碼管理，可以在下載指令中使用圖表選擇器。
+
+例如：如果我只想下載某個特定的儲存圖表，我會執行以下指令：
+
+```bash
+lightdash download -c https://app.lightdash.cloud/我的儲存圖表網址
+```
+
+您可以使用圖表的 SLUG、UUID 或儲存圖表的 URL 來選取圖表。
+
+##### 使用 `lightdash download -d` 或 `lightdash download --dashboards` 選擇特定儀表板
+
+這將下載儀表板及其中的所有圖表。例如：如果我只想下載某個特定的儀表板，我會執行以下指令：
+
+```bash
+lightdash download -d https://app.lightdash.cloud/我的儀表板網址
+```
+
+您可以使用儀表板的 SLUG、UUID 或儀表板的 URL 來選取儀表板。
+
+##### 要選擇多個圖表或儀表板，請在項目之間添加空格。
+
+例如：此指令將選取兩個圖表進行下載：
+
+```bash
+lightdash download -c https://app.lightdash.cloud/第一個圖表網址 https://app.lightdash.cloud/第二個圖表網址
+```
+
+您可以在單個指令中結合圖表與儀表板的選取。例如：此指令將下載一個圖表和一個儀表板：
+
+```bash
+lightdash download -c https://app.lightdash.cloud/圖表網址 -d https://app.lightdash.cloud/儀表板網址
+```
+
+### 指定下載路徑
+
+使用 `lightdash download -p` 或 `lightdash download --path` 指定要下載到的目錄。
+
+預設情況下，`lightdash download` 會在當前工作目錄中建立一個新的 `lightdash` 目錄並將內容寫入其中。您可以使用 `lightdash download -p` 自定義寫入目錄。例如：
+
+```bash
+lightdash download -p /Users/katiehindson/lightdash/lightdash-analytics/
+```
+
+這將建立：`/Users/katiehindson/lightdash/lightdash-analytics/charts/` 和 `/Users/katiehindson/lightdash/lightdash-analytics/dashboards` 並將內容儲存到這些新資料夾中。
+
+您也可以使用相對路徑，例如：
+
+```bash
+lightdash download -p ../
+```
+
+### 下載整個專案
+
+使用 `lightdash download --project <專案 UUID>` 下載特定專案的所有內容。
+
+執行 `lightdash download` 會下載當前設置專案（使用 `lightdash config set-project` 設置）的所有內容。但是，您可以使用 `lightdash download --project 我的專案uuid` 來下載另一個專案的內容。例如：
+
+```bash
+lightdash download --project 21eef0b9-5bae-40f3-851e-9554588e71a6
+```
+
+您可以從 Lightdash URL 中找到專案的 UUID。例如：`https://app.lightdash.cloud/projects/123-project-uuid/`，這裡的專案 UUID 是 `123-project-uuid`。
+
+## `lightdash upload` 
+
+`lightdash upload` 將任何作為代碼的內容更新至您的專案。
+
+透過 [Lightdash CLI](/references/lightdash-cli_zh_TW)，您可以使用 `lightdash upload` 指令上傳您對圖表或儀表板代碼所做的任何更改。要將您以代碼形式建立的新圖表上傳到 Lightdash 專案，您需要執行 `lightdash upload --force`。
+
+### 選擇要上傳的特定項目
+
+##### 使用 `lightdash upload -c` 或 `lightdash upload --charts` 選擇特定圖表
+
+例如：如果我只想上傳某個特定的儲存圖表，我會執行以下指令：
+
+```bash
+lightdash upload -c 我的圖表slug
+```
+
+您必須使用圖表的 SLUG 來指定。
+
+##### 使用 `lightdash upload -d` 或 `lightdash upload --dashboards` 選擇特定儀表板
+
+例如：如果我只想上傳某個特定的儀表板，我會執行以下指令：
+
+```bash
+lightdash upload -d 我的儀表板slug
+```
+
+您必須使用儀表板的 SLUG 來指定。
+
+##### 上傳儀表板時使用 `--include-charts` 同步上傳圖表變更
+
+使用 `-d` 上傳特定儀表板時，您可以透過添加 `--include-charts` 標籤來包含該儀表板引用的任何圖表變更：
+
+```bash
+lightdash upload -d 我的儀表板slug --include-charts
+```
+
+這會自動包含儀表板磚塊中引用的圖表，確保儀表板與圖表的變更一併上傳。
+
+##### 要選擇多個圖表或儀表板，請在項目之間添加空格。
+
+例如：此指令將選取兩個圖表進行上傳：
+
+```bash
+lightdash upload -c 圖表1-slug 圖表2-slug
+```
+
+### 指定上傳路徑
+
+使用 `lightdash upload -p` 或 `lightdash upload --path` 指定要從中上傳的目錄。
+
+預設情況下，`lightdash upload` 會上傳當前工作目錄中 `lightdash` 目錄下儲存的所有項目。您可以使用 `lightdash upload -p` 自定義路徑。例如：
+
+```bash
+lightdash upload -p /Users/katiehindson/lightdash/lightdash-analytics/
+```
+
+這將上傳來自 `/Users/katiehindson/lightdash/lightdash-analytics/charts/` 和 `/Users/katiehindson/lightdash/lightdash-analytics/dashboards` 的所有內容。
+
+您也可以使用相對路徑，例如：
+
+```bash
+lightdash download -p ../
+```
+
+### 指定要上傳到的專案
+
+使用 `lightdash upload --project <專案 UUID>` 將內容上傳到特定專案。
+
+執行 `lightdash upload` 會將所有內容上傳到當前設置的專案。但是，您可以使用 `lightdash upload --project 我的專案uuid` 上傳到另一個專案。
+
+##### 只有您修改過的代碼內容才會被上傳
+
+例如：
+- 我的 `lightdash/` 目錄中有一份下載的圖表代碼 `total-sales-worldwide.yml`。
+- 我只對該圖表的 .yml 檔案做了修改。
+- 我執行 `lightdash upload`。
+- 只有 `total-sales-worldwide.yml` 會被上傳，因為它是唯一被修改過的檔案。
+
+再例如：
+- Katie 的 `lightdash/` 目錄中有一份下載的圖表代碼 `total-sales-worldwide.yml`。
+- 她沒有對該代碼做任何修改。
+- Javi 在 Lightdash 應用程式中打開同一個圖表「Total sales worldwide」，做了一些修改並儲存。
+- 現在，Katie 本地的 `total-sales-worldwide.yml` 和應用程式中的圖表內容不同。
+- Katie 執行 `lightdash upload`。
+- Katie 的 `total-sales-worldwide.yml` **不會**被上傳，因為她沒有做任何修改。
+- Javi 在 Lightdash 應用程式中所做的修改**不會**被覆蓋（我們在應用程式中看到的仍是 Javi 建立的版本）。
+
+##### 以下載為代碼的內容仍可在 Lightdash 應用程式中更新
+
+例如：
+- 有一個名為 `Stellar Marketing` 的 Lightdash 專案。
+- Priyanka 執行 `lightdash download` 下載了所有內容，包括名為 `Total new clients` 的圖表。
+- Jake 在 Lightdash 應用程式中打開該圖表並做了一些修改。
+- Priyanka 沒有再次執行 `lightdash download`，所以她本地的 `total-new-clients.yml` 是 Jake 更新前的舊版本。
+- Priyanka 修改了 `total-new-clients.yml` 然後執行 `lightdash upload`，她的變更會上傳並**覆蓋** Jake 在應用程式中做的修改。
+- Jake 和 Priyanka 都可以更新同一個圖表，無論是透過代碼還是透過應用程式。
+
+## Lightdash 內容樣板 (Templates)
+
+您可以使用 `lightdash download` 和 `lightdash upload` 指令輕鬆建立 Lightdash 內容樣板，並重複使用這些樣板來建立新專案或更新現有專案。
+
+### 從 Lightdash 樣板建立新專案
+
+如果您要建立許多具有相似模型的 dbt 專案，並且想輕鬆啟動這些專案的新版本，但使用不同的表格、欄位或圖表名稱，則可以使用內容即代碼來建立專案樣板以供重複使用。
+
+步驟如下：
+- 取得包含您想複製內容的現有 Lightdash 專案。
+- 在 CLI 中執行 `lightdash download` 下載該專案的所有代碼內容。
+- 導覽至您想要連接 Lightdash 的新 dbt 專案。
+- 將樣板專案中的 `lightdash/` 目錄複製到新 dbt 專案中（或僅複製您想使用的部分）。
+- 調整好內容後，執行 `lightdash config set-project` 並從列表中選取您的新 Lightdash 專案。
+- 然後執行 `lightdash upload --force`，將 `lightdash/` 目錄中的所有內容上傳到您的新 Lightdash 專案。
+
+### 從樣板向現有專案添加內容
+
+有時，如果您管理多個具有相似模型的 dbt 專案，您會希望能夠同時在所有專案中輕鬆建立和管理相同的圖表與儀表板。您可以使用內容即代碼來建立樣板專案。
+
+- 建立一個僅包含您想在各專案間共享內容的 Lightdash 專案。
+- 在 CLI 執行 `lightdash download` 下載這些內容。
+- 將生成的 .yml 檔案複製到任何其他您想重用這些圖表與儀表板的 dbt 專案中。
+- 複製完成後，在 CLI 執行 `lightdash config set-project` 選取目標專案。
+- 執行 `lightdash upload` 上傳新內容。
+
+### 使用社群樣板
+
+除了使用自己的專案製作樣板外，您還可以使用 [lightdash-templates](https://github.com/lightdash/lightdash-templates) 儲存庫中的樣板，在常見數據集上快速構建儀表板。
+
+例如：如果您使用 BigQuery，可以在幾分鐘內使用社群樣板構建一個用量追蹤儀表板。
+
+儲存庫中有詳細說明，一般步驟如下：
+- 確定您要實作的內容，導覽至相關資料夾。
+- 將 `Lightdash` 資料夾中的內容複製到您的 dbt 專案。
+- 執行 `lightdash upload --force` 將新內容推送到 Lightdash。
+
+注意：這些樣板仍依賴於包含相關數據的底層 dbt 模型，您可能需要按照樣板儲存庫中的說明建立或調整模型。
+
+## 儀表板即代碼 YAML 參考
+
+儀表板即代碼的 YAML 配置非常詳盡，涵蓋了儀表板與個別圖表。通常最好的開始方式是在 Lightdash UI 中建立內容後下載它，結構通常會相當直觀。以下是兩種內容類型的結構大綱，以提供更多背景資訊。
+
+<Tip> 以下範例並非窮舉，如有其他疑問，請隨時[聯繫我們的支援團隊](/contact/contact-info_zh_TW)。 </Tip>
+
+### 儀表板 (Dashboards)
+
+這是兩種內容類型中較簡單的一種。
+
+除了名稱、描述、更新時間、slug 和空間資訊等標準資訊外，您還會找到每個磚塊及其內容的詳情，以及詳細的篩選器資訊。
+
+以下是一個包含三個磚塊和兩個篩選器的基本儀表板範例。我們添加了註釋以供參考！
+
+```yml 儀表板即代碼範例 [可展開]
+name: 我的酷儀表板
+description: 顯示我們的一些 KPI
+updatedAt: "2025-01-01T10:15:47.406Z"
+tiles: 
+    # 每個磚塊在此以座標表示，
+    # 引用它們在儀表板網格上的位置。
+  - x: 18
+    "y": 5
+    h: 6
+    w: 18
+    tabUuid: null
+    type: saved_chart
+    properties:
+      title: ""
+      hideTitle: false
+      chartSlug: company-sales 
+      # 圖表磚塊始終指向一個特定的、唯一的圖表 slug，
+      # 這將與圖表 yml 代碼中的 slug 對應。
+    tileSlug: company-sales
+  - x: 0
+    "y": 5
+    h: 6
+    w: 18
+    tabUuid: null
+    type: saved_chart
+    properties:
+      title: ""
+      hideTitle: false
+      chartSlug: customer-counts
+    tileSlug: customer-counts
+  - x: 0
+    "y": 0
+    h: 5
+    w: 36
+    tabUuid: null
+    type: markdown
+    properties:
+      title: 我的酷儀表板
+      hideTitle: false
+      content: |- # Markdown 磚塊的配置儲存在 'content' 下。
+        這是一個 Markdown 磚塊的範例
+
+        這裡可以使用表情符號 🎉
+
+        也可以使用：
+        - 項目
+        - 符號
+
+        以此類推...
+filters: 
+  # 篩選器按其作用於指標、維度還是表格計算進行區分。
+  # 這裡有兩個篩選器，皆作用於維度。
+  metrics: []
+  dimensions:
+    - target: 
+      # 單個篩選器的所有配置都在 target 下。
+      # 這裡我們可以看到用於篩選的底層欄位，
+      # 以及預設值（如果存在）。
+        fieldId: orders_date_day
+        fieldName: date_day
+        tableName: orders
+      values:
+        - 30
+      disabled: false
+      operator: inThePast
+      settings:
+        completed: false
+        unitOfTime: days
+      tileTargets: {} 
+    # 請注意，如果我們只將篩選器套用於儀表板上的特定磚塊，
+    # 我們會在這裡看到相關資訊。
+    - target:
+        fieldId: customers_is_verified
+        fieldName: is_verified
+        tableName: customers
+      values: []
+      disabled: false
+      operator: notNull
+      tileTargets: {}
+  tableCalculations: []
+tabs: []
+slug: my-cool-dashboard
+spaceSlug: my-space
+version: 1
+downloadedAt: "2025-01-02T10:15:47.406Z"
+```
+
+### 圖表 (Charts)
+
+圖表儲存了大量配置，因此比儀表板 YAML 檔案更複雜且多變。
+
+同樣地，您會找到名稱、描述、更新時間、slug 和空間等基本資訊。此外，我們還儲存了圖表中包含的所有可能配置，包括：
+
+- 維度 (Dimensions)
+- 指標 (Metrics)
+- 自定義欄位 (Custom Fields)
+- 表格計算 (Table Calculations)
+- 篩選器 (Filters)
+- 視覺化配置 (Visualization Configuration)
+- 格式化 (Formatting)
+- 排序 (Sorting)
+
+以上每一項都可以有多個子類別資訊。以下範例強調了*大部分*上述選項，但具體內容可能會根據您的圖表配置而有所不同！
+
+這是一張已生成代碼的圖表圖片，下方即為對應的代碼。
+
+![](/images/guides/developer/dashboards-as-code-chart-example.png)
+
+```yml 圖表即代碼範例 [可展開]
+name: 我的酷圖表
+description: 顯示 2023 年 12 月以來的銷售額
+tableName: orders
+updatedAt: "2024-02-12T18:12:03.345Z"
+metricQuery: 
+  # metricQuery 儲存了所有讓我們生成結果集的資訊。
+  exploreName: orders
+  dimensions:
+    - orders_ordered_at_month
+  metrics:
+    - orders_total_orders_amount
+    - orders_order_id_unique_count_of_orders
+  filters: 
+    dimensions:
+      and: 
+        # 這裡列出所有 'and' 類型的篩選器
+        # 請注意，我們也可能在 'or' 選項下有 'or' 類型的篩選器
+        - target:
+            fieldId: orders_ordered_at_month
+          values:
+            - 2023-12
+          operator: greaterThanOrEqual
+          required: false
+
+        - target:
+            fieldId: orders_status
+          values:
+            - shipped
+            - completed
+            - placed
+          operator: equals
+          required: false
+  sorts:
+    - fieldId: orders_ordered_at_month
+      descending: true
+  limit: 500
+  metricOverrides: 
+    # 指標覆蓋通常以格式更改的形式出現。
+    # 這裡我們將普通數字更改為貨幣格式。
+    orders_total_orders_amount:
+      formatOptions:
+        type: currency
+        round: 0
+        currency: GBP
+        separator: default
+  tableCalculations:
+    - name: average_order_value_1
+      displayName: 平均訂單價值
+      sql: >- # 表格計算配置直接儲存在 yml 中
+        ${orders.total_orders_amount}/${orders.order_id_unique_count_of_orders}
+      format:
+        type: currency
+        round: 2
+        currency: GBP
+        separator: default
+      type: number
+  additionalMetrics: 
+    # 這是一個使用者在 UI 中添加的自定義指標範例
+    - name: order_id_unique_count_of_orders
+      label: 不重複訂單計數
+      description: "對 Orders 表中的 Order id 進行不重複計數 (Count distinct)"
+      sql: ${TABLE}.order_id
+      table: orders
+      type: count_distinct
+      baseDimensionName: order_id
+      formatOptions:
+        type: default
+        separator: default
+  customDimensions: []
+chartConfig: 
+    # 這裡儲存了將結果集轉換為圖表的所有配置。
+    # 請注意，此部分會隨圖表類型不同而有大幅變動，但通常很直觀！
+  type: cartesian
+  config:
+    layout:
+      xField: orders_ordered_at_month
+      yField:
+        - orders_total_orders_amount
+        - average_order_value_1
+    eChartsConfig:
+      yAxis:
+        - name: 訂單金額
+        - name: 平均訂單價值
+      series: 
+        # 這裡可以看到圖表配置的所有細節，
+        # 我這裡有一個包含長條圖和折線圖的複雜雙軸圖表。
+        - type: bar
+          encode:
+            xRef:
+              field: orders_ordered_at_month
+            yRef:
+              field: orders_total_orders_amount
+          yAxisIndex: 0
+          isFilteredOut: false
+        - type: line
+          label:
+            show: true
+            position: top
+          encode:
+            xRef:
+              field: orders_ordered_at_month
+            yRef:
+              field: average_order_value_1
+          yAxisIndex: 1 
+            # 此索引表示這是右側的 Y 軸。
+          isFilteredOut: false
+      tooltip: "" # 如果我有自定義工具提示配置，會顯示在這裡！
+slug: my-cool-chart
+tableConfig:
+  columnOrder:
+    - orders_ordered_at_month
+    - orders_total_orders_amount
+    - orders_order_id_unique_count_of_orders
+    - average_order_value_1
+spaceSlug: my-space
+version: 1
+downloadedAt: "2025-04-09T10:44:01.104Z"
+
+```
+
+<Warning>
+使用 SQL 執行器 (SQL runner) 構建的圖表目前不支持儀表板即代碼。
+</Warning>
+
+## 使用 Cursor 進行 AI 輔助圖表開發
+
+您可以使用 Cursor 等 AI 編碼助手，透過自然語言而非在 UI 中點擊來建立和編輯圖表。這能加速您的分析工作流程，讓您用簡單的英語描述需求。
+
+<Frame>
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/nAN5LBUCxCM"
+  title="使用 Cursor 進行 AI 輔助圖表開發"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+></iframe>
+</Frame>
+
+設置步驟：將 Cursor 連接至：
+- [Lightdash CLI](/references/lightdash-cli_zh_TW)：用於下載與上傳內容。
+- [Lightdash MCP](/references/integrations/lightdash-mcp_zh_TW)：用於造訪語義層。
+- 您的 dbt 專案。
+
+連接後，您可以：
+- 使用 `lightdash download` 將儀表板和圖表下載為 YAML。
+- 以自然語言提示 Cursor 建立或修改圖表。
+- 使用 `lightdash upload` 將更改上傳回 Lightdash。
+
+## 在 VSCode 中進行 JSON Schema 驗證
+
+在以 YAML 格式構建內容即代碼時，您可以在 VSCode 中啟用 JSON schema 驗證，以獲取自動完成建議與驗證。這有助於您了解支援哪些屬性，並確保您的 YAML 檔案格式正確。
+
+設置步驟：
+
+1. 安裝 [VSCode 的 YAML 擴充功能](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)。
+
+2. 以 JSON 格式打開您的 VSCode 使用者設置（按下 `Cmd/Ctrl + Shift + P` 並搜尋 "Preferences: Open User Settings (JSON)"）。
+
+3. 添加以下配置：
+
+```json VSCode settings.json [可展開]
+"[yaml]": {
+  "editor.defaultFormatter": "redhat.vscode-yaml"
+}, 
+"yaml.schemas": {
+  "https://raw.githubusercontent.com/lightdash/lightdash/refs/heads/main/packages/common/src/schemas/json/chart-as-code-1.0.json": [
+    "charts/*.yml"
+  ],
+  "https://raw.githubusercontent.com/lightdash/lightdash/refs/heads/main/packages/common/src/schemas/json/dashboard-as-code-1.0.json": [
+    "dashboards/*.yml"
+  ]
+}
+```
+
+<Note>
+請務必更新 `charts/*.yml` 和 `dashboards/*.yml`，以符合您的代碼內容檔案實際存取的路徑（例如：`lightdash/charts/*.yml` 和 `lightdash/dashboards/*.yml`）。
+</Note>

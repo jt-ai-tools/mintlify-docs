@@ -1,0 +1,145 @@
+---
+title: "使用自定義欄位"
+sidebarTitle: 自定義欄位
+description: "您在「維度」和「指標」中看到的欄位是由維護 Lightdash 專案的人員建立的。但是，您可以建立新的自定義維度或指標，以便進行即時計算和分箱 (Binning)。在本頁中，我們將解釋什麼是自定義維度和指標，以及如何使用它們。"
+---
+
+## 自定義指標 (Custom Metrics)
+
+自定義指標僅儲存在使用它們的圖表中，如果您打開同一個表格來建立新圖表，它們不會出現在可用的「指標」列表中。寫入 dbt 專案（或 YAML 指標）的指標可供專案中的每個人重複使用，並且始終顯示在表格的可用指標側邊欄中。我們建議[將經常使用/建立的自定義指標寫回 (Write back)](/guides/developer/dbt-write-back_zh_TW#從自定義指標寫回指標) 到專案中，使其變得可重用、受管理且可供其他人參考構建。
+
+建立自定義指標的步驟：
+
+1. 點擊維度的三點「選項 (options)」選單。
+2. 點擊可用選項之一（例如 `Count Distinct`）。
+3. 確認您的變更。
+
+<Frame>
+  <img src="/images/guides/custom-fields/custom-metric-creating.png"/>
+</Frame>
+
+接著，您的新指標將自動添加到結果表格中，並出現在側邊欄的 `custom metrics` 區域。
+
+<Frame>
+  <img src="/images/guides/custom-fields/custom-metric-added.png"/>
+</Frame>
+
+如果您想刪除自定義指標，只需點擊三點「選項」選單並點擊 `Remove custom metric (移除自定義指標)` 即可。
+
+<Frame>
+  <img src="/images/guides/custom-fields/custom-metric-deleting-0aecaca4197b9143b012eb6663440c3c.png"/>
+</Frame>
+
+### 自定義指標類型
+
+要了解更多關於自定義指標類型的信息，請閱讀[此處的指標參考文件](/references/metrics_zh_TW)。只有聚合 (Aggregate) 指標類型可作為自定義指標使用。
+
+### 為自定義指標添加篩選器
+
+您可以添加篩選器來限制指標聚合中包含的行。您可以在以下情況添加篩選器：
+
+1. 建立自定義指標時：
+<Frame>
+  <img src="/images/guides/custom-fields/custom-metric-add-filter-while-creating.png"/>
+</Frame>
+
+2. 編輯現有的自定義指標時：
+<Frame>
+  <img src="/images/guides/custom-fields/custom-metric-add-filter-while-editing.png"/>
+</Frame>
+
+
+## 自定義維度 (Custom Dimensions)
+
+維度用於對查詢結果進行分組，或從結果中過濾值。
+
+有時您需要的分組或篩選條件尚未添加到專案中，因此您可以使用自定義維度來即時建立分組或篩選。
+
+這些維度不會永久儲存在表格中。它們僅在建立它們的已儲存圖表或查詢中可用。
+
+### 在表格計算中使用自定義維度
+
+您可以在表格計算 (Table Calculations) 中引用自定義維度，無需使用表名進行限定。只需在計算公式中直接使用自定義維度名稱即可，就像使用其他任何維度一樣。
+
+### 分箱 (Bin)
+
+分箱用於將數值維度的值拆分為自定義的範圍組。分箱只能用於數值型維度。如果維度的最小或最大值發生變化，固定分箱（固定數量和固定寬度）將自動更新。
+
+建立分箱自定義維度的步驟：
+
+1. 點擊維度的三點「選項」選單。
+2. 點擊 `bin (分箱)` 選項。
+3. 設置並建立您的維度。
+<Frame>
+  <img src="/images/guides/custom-fields/custom-dimension-creating.png"/>
+</Frame>
+
+接著，您的新維度將自動添加到結果表格中，並出現在側邊欄的 `custom dimensions` 區域。
+<Frame>
+  <img src="/images/guides/custom-fields/custom-dimension-bins.png"/>
+</Frame>
+
+您可以透過三種方式設置分箱：
+
+**1. 固定分箱數量 (Fixed number of bins)**
+
+您選擇要將維度劃分為多少個箱子，Lightdash 會自動定義分箱範圍。Lightdash 生成的分箱範圍等於維度值的範圍除以您選擇的分箱數量。
+
+**2. 固定寬度 (Fixed width)**
+
+您選擇分箱的寬度（即範圍），Lightdash 會自動定義一組具有該寬度的箱子。Lightdash 生成的分箱數量等於維度值的範圍除以您選擇的固定寬度。
+
+**3. 自定義範圍 (Custom range)**
+
+您手動定義每個分箱的最小值和最大值。自定義範圍是唯一一個在維度最小或最大值發生變化時**不會**自動更新的分箱選項（您需要手動調整自定義分箱，否則某些值可能無法包含在分箱中）。
+
+### 自定義 SQL (Custom SQL)
+
+自定義 SQL 維度允許您直接從資料庫中抓取新數據，這意味著它們有時可以用於繞過存取限制。**只有擁有管理員 (Admin) 或開發者 (Developer) 權限的使用者可以建立自定義 SQL 維度**。一般使用者看不到此選項。
+
+
+<Info>
+
+**安全性說明：**  
+自定義 SQL 維度可以查詢您數據倉庫中的任何數據，因此應僅由受信任的使用者（管理員和開發者）建立。在大多數情況下，在 dbt 檔案中定義維度更安全且具備更好的重用性。如果您想讓自定義 SQL 維度可重用，請使用 [dbt 寫回 (dbt write-back)](/references/dbt-write-back_zh_TW#dbt-write-back) 功能將其移至您的 dbt 專案中。
+
+</Info>
+
+#### 何時使用自定義 SQL 維度
+
+- **快速建立新分組或計算**，而這些內容尚未出現在您的專案中。
+- **引用探索中的主表和關聯表**的其他維度。
+- 在將邏輯移至 dbt 專案前**進行原型測試**。
+
+#### 何時「不」使用自定義 SQL 維度
+
+- 如果您需要該維度被整個團隊**重複使用**或**受管理**。
+- 如果您想確保**一致的存取控制**與安全性。
+
+#### 範例：對訂單總額進行分類
+
+在這個範例中，讓我們探索 `orders` 表，並建立一個自定義維度，將訂單總額分為三類：`low` (低)、`medium` (中) 和 `high` (高)。
+
+您可以點擊側邊欄上的按鈕來添加自定義維度：
+<Frame>
+  <img src="/images/guides/custom-fields/custom-dimension-sql-add-ca5327baa563f3215c06a0ef9f3f1097.png"/>
+</Frame>
+
+然後您可以編寫 SQL 查詢來建立您的自定義維度：
+
+```sql
+CASE
+  WHEN ${orders.subtotal} < 100 THEN 'low'
+  WHEN ${orders.subtotal}  < 500 THEN 'medium'
+  ELSE 'high'
+END
+```
+
+<Frame>
+  <img src="/images/guides/custom-fields/custom-dimension-sql-form.png"/>
+</Frame>
+
+執行查詢後，您將看到新的自定義維度對訂單總額進行了分類：
+<Frame>
+  <img src="/images/guides/custom-fields/custom-dimension-sql-result.png"/>
+</Frame>

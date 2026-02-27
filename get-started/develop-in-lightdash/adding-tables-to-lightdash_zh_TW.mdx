@@ -1,0 +1,243 @@
+---
+title: "新增與管理表格 (Tables)"
+sidebarTitle: "新增表格"
+icon: table
+---
+
+
+<Frame>
+  <img src="/images/get-started/develop-in-lightdash/adding-tables-to-lightdash/overview-tables.png" />
+</Frame>
+
+在 Lightdash 中，BI 所需的一切都以代碼形式編寫在您的 dbt 專案中。您使用 dbt 轉換來自數據倉庫的所有數據，然後使用 Lightdash 進行探索。
+
+因此，在 Lightdash 中新增和管理表格，我們使用的是 dbt。
+
+我們將帶領您完成安裝和使用 Lightdash CLI 的步驟，並生成在 dbt 專案中新增表格所需的 YAML 檔案。
+
+
+## 什麼是表格 (Tables)？
+
+表格是 Lightdash 中任何數據探索的起點——它們是您在 Lightdash 中可以查詢的數據。Lightdash 的優勢在於我們與您的 dbt 專案保持高度同步。因此，在 Lightdash 中，表格實際上來自您 dbt 專案 YAML 檔案中定義的 dbt 模型 (Models)。
+
+如果您的 dbt 模型已在 YAML 檔案中定義，它將作為一個表格出現在 Lightdash 中。
+
+<Tip>
+  不確定什麼是 YAML 檔案？[查看 dbt 關於模型屬性的文件](https://docs.getdbt.com/reference/model-properties) 以了解更多關於為 dbt 模型新增 YAML 檔案的資訊。
+</Tip>
+
+***
+
+
+## 使用 CLI 向您的 Lightdash 專案新增表格
+
+觀看此影片，或繼續閱讀關於如何使用 Lightdash CLI 向 Lightdash 專案新增表格的分步指南。
+
+<Frame>
+  <iframe width="100%" height="420" src="https://www.loom.com/embed/3ddfe60c7b6c4b95b8ce7a4206f6359c" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen />
+</Frame>
+
+
+要使 dbt 中的模型具備 Lightdash 存取條件，我們需要定義所有想要在 Lightdash 中探索的欄位。使用我們的 CLI 工具和以下指令可以非常輕鬆地完成此操作：
+
+```bash
+lightdash dbt run -s my_model
+```
+
+這將為您使用 `dbt run` 選擇的模型生成表格和維度。它還會在 `schema.yml` 檔案中記錄新模型中的所有欄位。
+
+例如，如果您剛建立了一個新的 `orders.sql` 模型並執行 `lightdash dbt run -s orders`，則您的 dbt 專案中將生成一個 `orders.yml` 檔案，其中記錄了所有欄位，如下所示：
+
+```yml
+models: 
+  - name: orders
+    columns:
+      - name: basket_total
+      - name: browser
+```
+
+
+### 接下來，預覽您的變更
+
+這一步您將使用 `lightdash preview` 指令。
+
+一旦在 dbt 中生成了表格和 YAML 檔案，您就可以在 Lightdash 預覽環境中進行測試。
+
+**開發者預覽 (Developer previews)** 是臨時的 Lightdash 專案，您可以在其中安全地實驗您的指標、維度與圖表，而不會影響您的正式生產專案。
+
+所以，讓我們啟動一個開發者預覽並檢查我們的變更。在您的終端機中執行以下指令：
+
+```bash
+lightdash preview
+```
+
+延續步驟 2 的範例，在 Lightdash 中，您將看到一個名為 `Orders` 的表格，每個欄位都將作為一個維度出現：
+
+<Frame>
+  <img src="/images/get-started/develop-in-lightdash/adding-tables-to-lightdash/adding-tables-orders.png" alt="Lightdash 中顯示 orders 表格的範例圖片" width="400"/>
+</Frame>
+
+您可以[在此閱讀更多關於 Lightdash 預覽環境的資訊](/guides/cli/how-to-use-lightdash-preview_zh_TW)。
+
+
+### 最後，將變更部署到生產環境
+
+如果您使用的是受版本控制的專案，請務必將您的變更**合併到生產分支**。
+
+如果您使用的是不受版本控制的本地專案，則無需擔心同步變更的問題。
+
+合併變更後，您會希望將其部署到生產環境。要執行此操作，請在您的 dbt 專案目錄中執行以下指令：
+
+```bash
+lightdash deploy
+```
+
+這將把您 dbt 專案中的變更部署到您之前在 CLI 工具上設置的 Lightdash 專案中。
+
+<Info>
+  Lightdash 的 deploy 指令將使用您的 **預設 dbt 目標 (target)** 進行部署，除非您指定使用不同的目標。
+  
+  例如，如果您設置了一個開發者設定檔，目標是開發數據集（如 `dbt_khindson.my_model_names`），那麼您需要在 `lightdash deploy` 指令中傳遞生產目標。例如：`lightdash deploy --target prod`。
+</Info>
+
+現在您的表格已經準備好在 Lightdash 中使用了！
+
+<Warning>
+
+我們不建議在初始專案設置後從 CLI 使用 `lightdash deploy`。最好使用 [自動化流程（如 Github Actions）](/guides/cli/how-to-use-lightdash-deploy_zh_TW#使用-github-action-自動將變更部署到-lightdash)，將 dbt 專案中的代碼變更推送到 Lightdash。
+
+</Warning>
+
+***
+
+
+## 配置哪些表格顯示在您的 Lightdash 專案中
+
+有時，我們的 dbt 專案中可能有一些包含 YAML 檔案但不希望出現在 Lightdash 中的模型（例如 `staging` 表格 👁️）。因此，我們讓您可以配置哪些表格顯示在 Lightdash 中。
+
+要進入表格設置：
+
+1. 點擊右上角導覽列中的 ⚙️ 齒輪圖示
+2. 選擇 **專案設置 (Project settings)**
+3. 點擊左側欄中的 **表格配置 (Tables configuration)**（如果您沒看到，可能是因為您沒有存取權限）
+
+![](/images/get-started/develop-in-lightdash/adding-tables-to-lightdash/tables-config-settings.png)
+
+您有三個選項來配置顯示在 Lightdash 中的表格：
+
+1. **顯示整個專案 (Show entire project)**：希望這個選項不會讓您太驚訝。如果選擇此選項，它將顯示您 dbt 專案中 *所有* 帶有 YAML 檔案的模型。
+
+2. **顯示具有任何這些標籤的模型 (Show models with any of these tags)**：此選項取決於 dbt 標籤 (Tags)。您可以[在此了解更多關於使用標籤管理專案的資訊](#使用-dbt-標籤限制-lightdash-中的表格)。如果您已經有一個（或多個）想要限制 Lightdash 使用的特定模型標籤，可以在這裡添加它們。例如，我們所有的生產模型都有 `prod` 標籤，因此我們使用該標籤配置了我們的表格。
+
+3. **顯示此列表中的模型 (Show models in this list)**：如果您不喜歡使用標籤，可以使用此選項手動選擇要包含在 Lightdash 專案中的模型。
+
+***
+
+## 更改表格標籤、添加關聯等
+
+一旦您對顯示在 Lightdash 中的表格感到滿意，就可以[為表格添加配置](/references/tables_zh_TW)，例如：
+
+* 更改表格名稱在 Lightdash 中的顯示方式（使用 `labels` 配置）
+
+* 通過[將表格與其他表格關聯 (Joining)](/references/tables_zh_TW)，在探索中存取來自多個表格的維度和指標（使用 `joins` 配置）
+
+***
+
+
+## 管理表格的進階技巧
+
+
+### 每個 YAML 檔案一個模型
+
+我們建議您的 dbt 專案結構為每個模型（或 .sql 檔案）對應一個 .yml 檔案。
+
+我們發現這使得導覽 .yml 檔案更容易，也更容易管理您的 dbt 模型，尤其是在專案變得越來越大時。
+
+這是我們在 Lightdash 的 dbt 專案範例，看看實踐中是什麼樣子的：
+
+- 每個模型有一個 `.sql` 檔案（這些是存放所有模型業務邏輯的檔案）
+- 每個模型有一個 `.yml` 檔案（這些是存放所有表格配置的檔案）
+
+<Frame>
+  <img src="/images/get-started/develop-in-lightdash/adding-tables-to-lightdash/dbt-repo-example.png" alt="" />
+</Frame>
+
+**但是，在我的 dbt 專案中，我只有一個 schema.yml 檔案，而不是每個模型一個。這還能運作嗎？**
+
+是的！我們意識到 schema 檔案有各種形式和大小。
+
+有些人偏好在目錄層級將所有模型的 `schema.yml` 詳細資訊寫在單個 YAML 檔案中，這完全沒問題——它在 Lightdash 中仍然可以運作。
+
+但是，正如我們上面所說，如果您正在決定如何設置您的 dbt 專案，**我們建議每個模型使用一個 YAML 檔案。**
+
+
+### 使用 dbt 標籤限制 Lightdash 中的表格
+
+您可能希望將一組特定的模型作為表格包含在 Lightdash 中。如果是這種情況，我們建議[使用 dbt 標籤 (tags)](https://docs.getdbt.com/reference/resource-configs/tags) 來標記模型。您可以使用現有的標籤集，也可以建立一個專門針對 Lightdash 的新標籤。
+
+您可以像這樣在 YAML 檔案中添加標籤：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: model_name
+        tags: ['lightdash']
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: model_name
+        config:
+          tags: ['lightdash']
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: model_name
+
+    tags: ['lightdash']
+    ```
+  </Tab>
+</Tabs>
+
+或者，在模型的 SQL 檔案配置塊中：
+
+```yaml
+{{ config(
+    tags=["lightdash"]
+) }}
+
+select ...
+```
+
+然後，您將設置您的 [表格配置](#配置哪些表格顯示在您的-lightdash-專案中)：
+
+<Frame>
+  <img src="/images/get-started/develop-in-lightdash/table-selection-prod.png"/>
+</Frame>
+
+
+### 使用 dbt 選擇語法選擇您想要執行的模型
+
+`lightdash dbt run` 指令支援 dbt 模型選擇語法，以為一組模型生成 YAML 檔案。這意味著您可以使用標籤或其他模型選擇語法來指定您想要在 dbt 專案中為哪些模型生成維度。
+
+```bash
+lightdash dbt run -s tag:lightdash # 所有帶有 lightdash 標籤的模型
+lightdash dbt run -s payments  # 僅 payments
+lightdash dbt run -s payments+ # payments 及其所有子項
+lightdash dbt run -s +payments # payments 及其所有父項
+```
+
+
+### 一次指令為整個 dbt 專案生成表格和維度
+
+要執行此操作，您只需在命令行中執行以下指令：
+
+```bash
+lightdash dbt run
+```
+
+此指令將為所有帶有 YAML 檔案的模型執行並生成表格。它還會為您 dbt 專案中的所有欄位生成維度。

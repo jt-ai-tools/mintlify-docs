@@ -1,0 +1,90 @@
+---
+title: "使用儀表板"
+---
+
+## 查看圖表上某個數據點的底層數據
+
+您可以點擊圖表上的任何數據點，查看組成該數據點的記錄。
+
+例如，我想找出 `每位合作夥伴每月的銷售統計是什麼？` 圖表中 $4,334.0 的底層數據，我可以點擊該月份的長條圖，然後在動作選單中點擊 `View underlying data (查看底層數據)`。接著我就能看到組成該總額的底層表格中所有的行。
+
+<Frame>
+  <img src="/images/get-started/exploring-data/interactive-dashboards/underlying-chart-data-a0e12f23869f743416d5171473196d4d.png"/>
+</Frame>
+
+
+查看底層數據後，我還可以：
+
+* 將此數據導出為 CSV
+* 從這些底層數據開始探索，這將帶領我進入一個以底層數據為起點的新圖表。
+
+## 使用圖表過濾您的儀表板（又稱交叉過濾）
+
+當您點擊圖表中的某個值（例如長條圖中的一個長條）時，您可以選擇對該值進行過濾，並更新儀表板中所有其他相關的圖表。這種圖表對儀表板的過濾方式有時被稱為 `交叉過濾 (cross-filtering)`。
+
+<Frame>
+  <img src="/images/get-started/exploring-data/interactive-dashboards/cross-filtering-63382ed7d03de05338666c7b353b8c59.png"/>
+</Frame>
+
+
+### 您可以透過將滑鼠懸停在圖表磚塊上的「儀表板過濾已套用」文字上，查看哪些磚塊套用了該過濾器。
+
+點擊過濾器後，儀表板中所有包含該過濾欄位的磚塊都將按您選擇的值進行過濾。
+
+您可以透過將滑鼠懸停在磚塊上，然後點擊漏斗圖示，來查看已套用的過濾器，從而得知哪些磚塊受到了影響。
+
+<Frame>
+  <img src="/images/get-started/exploring-data/interactive-dashboards/cross-filtering-applied.png"/>
+</Frame>
+
+## 日期縮放 (Date Zoom)
+
+在查看儀表板時，您可以透過點擊 `Date Zoom` 按鈕，更改**具有日期維度的圖表**的日期粒度（例如更改為週、年等）。
+
+如果您想放大以更仔細地觀察某事，或縮小以識別趨勢，這會非常有用。您可以在不編輯圖表的情況下，快速查看不同時間粒度的結果。
+
+當圖表的日期粒度被更改時，您可以將滑鼠懸停在指示器上，查看受影響的日期維度：
+
+<Frame>
+  <img src="/images/get-started/exploring-data/interactive-dashboards/date-zoom-indicator.png"/>
+</Frame>
+
+
+任何結果中包含至少一個日期維度的圖表都將受到日期縮放的影響（即使日期維度沒有明確顯示在圖表上）。
+
+<Info>
+
+如果您的結果中有多個日期維度，日期縮放將應用於它掃描到的第一個日期維度——這通常是結果表格中最左側的欄位。
+</Info>
+
+您只是暫時更改儀表板磚塊中的日期。如果重新整理儀表板，受影響的磚塊將恢復到其預設儲存狀態。
+
+如果您想限制此功能的使用，可以進入編輯模式並點擊日期縮放下拉選單上的「x」，從儀表板中移除日期縮放功能。
+
+## 使用 `Drill into` 鑽取圖表或結果表格中的指標
+
+您可以鑽取圖表或結果表格中的指標，以更好地了解圖表中的某個點。選擇 `Drill into (鑽取)` 讓您可以按維度對指標進行分組，例如：按產品類型細分（或分組）的營收。請注意，`Drill into` 僅適用於指標 (Metrics)，不適用於維度 (Dimensions) 或表格計算 (Table Calculations)。
+
+##### 以下是鑽取功能的使用範例
+
+我有一張顯示每位合作夥伴每月的**訂單總額總和 (Sum of basket total)**（指標）圖表。如您所見，其中一位合作夥伴在五月份的銷售額出現了高峰。我想了解為什麼會出現這個高峰。
+
+要執行此操作，我點擊圖表中的數據點，然後在動作選單中點擊 `Drill into`：
+
+<Frame>
+  <img src="/images/get-started/exploring-data/interactive-dashboards/drill-into-dashboard-chart-004fed51a421665d0117c29ae4c6fe21.png"/>
+</Frame>
+
+
+然後我選擇想要對指標進行細分（或「鑽取」）的維度。在這個範例中，我想看看這些訂單來自哪些貨運國家，所以我選擇 **Shipping country (貨運國家)**：
+
+<Frame>
+  <img src="/images/get-started/exploring-data/interactive-dashboards/drill-into-modal-007439f50eddd908ece58e2fb553a737.png"/>
+</Frame>
+
+
+選擇好要分組的維度後，我點擊 `Open in new tab (在新分頁開啟)`，就會看到一張按「貨運國家」分組的指標圖表。現在我可以揭示銷售高峰的來源了 <Icon icon="eyes" iconType="solid"/>
+
+<Frame>
+  <img src="/images/get-started/exploring-data/interactive-dashboards/drill-into-result-day-eeb57dc6490792f406ae2d218e172706.png"/>
+</Frame>

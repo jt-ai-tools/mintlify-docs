@@ -1,0 +1,28 @@
+---
+title: '遷移至 dbt Fusion'
+description: '了解如何從 dbt Core 或 dbt Cloud 遷移至新的 dbt Fusion 引擎，包括準備步驟、需求與最佳實踐。'
+sidebarTitle: '遷移至 dbt Fusion'
+---
+## 什麼是 dbt Fusion?
+dbt Fusion 是使用 Rust 語言完全重寫的 dbt 引擎，提供大幅提升的效能、原生 SQL 理解能力以及即時驗證功能。雖然您熟悉的 SQL 和 YAML 語法保持不變，但底層引擎從根本上變得更加強大且高效。dbt Fusion 取代了 dbt Core，並將作為 dbt Cloud 的核心底層。更多詳情請參閱官方的 [dbt Fusion 概覽](https://docs.getdbt.com/docs/fusion/about-fusion)。
+
+與增量更新的 dbt 1.10 不同，Fusion 代表了根本性的架構變革。雖然它保持了與 dbt 語言和語法的兼容性，但現有專案在遷移前必須先解決所有棄用警告，因為 Fusion 執行比 dbt Core 更嚴格的驗證。因此，在升級到 dbt Fusion 之前，必須先升級到 dbt 1.10 並解決所有的驗證警告。
+
+<Warning>
+    重要提示：dbt Fusion 目前仍處於 Beta 階段，這意味著目前尚不支持某些 dbt 功能。在進行此遷移之前，請查閱 [dbt Fusion 支援的功能和當前限制文件](https://docs.getdbt.com/docs/fusion/supported-features)。
+</Warning>
+
+## 建議的遷移流程
+### 步驟 1：升級至 dbt 1.10 並修復警告
+
+1. 將您的 dbt 環境升級到 1.10 或更高版本（請參閱 [dbt 升級說明](https://docs.getdbt.com/docs/dbt-versions/core-upgrade/upgrading-to-v1.10)）。
+2. 使用 Lightdash 的 [MetaMove CLI](/dbt-guides/dbt-1.10-migration_zh_TW#使用-metamove-進行自動化遷移) 自動將 `meta` 和 `tags` 從頂層屬性遷移到 `config` 塊中。
+3. 執行您的 dbt 專案，並在繼續之前解決任何其他棄用警告。請注意，您還可以使用 [dbt-autofix](https://github.com/dbt-labs/dbt-autofix) 自動解決許多棄用警告。
+
+### 步驟 2：遷移至 Fusion（僅針對 dbt Core 使用者）
+一旦解決了所有棄用警告，dbt Core 使用者將需要按照以下步驟遷移到 dbt Fusion 引擎。而 dbt Cloud 使用者則可以等待自動推出——dbt Labs 將自動處理 dbt Fusion 的遷移。
+
+#### 對於 dbt Core 使用者：
+1. 檢查您是否符合 [dbt Fusion 遷移前置條件](https://docs.getdbt.com/docs/fusion/install-fusion#prerequisites)
+2. 按照 [安裝指南](https://docs.getdbt.com/docs/fusion/install-fusion#install-fusion) 安裝 dbt Fusion 引擎
+3. 使用 dbt Fusion 執行您的專案，以識別任何兼容性問題。

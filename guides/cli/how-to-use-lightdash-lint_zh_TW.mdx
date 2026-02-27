@@ -1,0 +1,182 @@
+---
+title: "如何使用 lightdash lint"
+sidebarTitle: "程式碼檢查 (Linting)"
+description: "在部署前根據 JSON schema 驗證您的 Lightdash Code 檔案，及早發現錯誤。"
+---
+
+`lightdash lint` 指令會根據 JSON schema 驗證您的 Lightdash Code 檔案（包括模型、圖表、儀表板）。這有助於您在部署變更前捕捉配置錯誤。
+
+## 為什麼要使用程式碼檢查 (Linting)？
+
+Linting 在以下情況特別有價值：
+
+- **使用 AI 工具開發** - AI 助手（如 Cursor, Claude Code, 或 Kilo Code）可以生成 Lightdash YAML 檔案，但可能會產生無效的配置。每次變更後執行 `lightdash lint` 可驗證其輸出。
+- **使用 Dashboards as Code** - 當您手動編輯圖表或儀表板的 YAML 檔案時，linting 能捕捉拼寫錯誤和結構錯誤。
+- **CI/CD 流程** - 將 linting 添加到您的部署工作流程中，防止無效配置進入生產環境。
+
+## 基本用法
+
+驗證當前目錄中所有的 Lightdash Code 檔案：
+
+```bash
+lightdash lint
+```
+
+驗證特定檔案：
+
+```bash
+lightdash lint --path ./lightdash/charts/revenue-by-month.yml
+```
+
+驗證特定目錄：
+
+```bash
+lightdash lint --path ./lightdash
+```
+
+## 輸出格式
+
+### CLI 輸出 (預設)
+
+預設輸出會以人類可讀的格式顯示錯誤，包含檔案路徑和行號：
+
+```bash
+lightdash lint
+```
+
+範例輸出：
+
+```
+✗ ./lightdash/charts/my-chart.yml
+  Line 15: metricQuery.dimensions must be array (必須為陣列)
+
+Found 1 error in 1 file
+```
+
+### 詳細輸出 (Verbose)
+
+使用 `--verbose` 標籤查看所有經過驗證的檔案，包括通過驗證的檔案：
+
+```bash
+lightdash lint --verbose
+```
+
+### SARIF JSON 輸出
+
+若要進行 CI/CD 整合，請使用 SARIF (Static Analysis Results Interchange Format) 輸出格式：
+
+```bash
+lightdash lint --format json
+```
+
+這會以 [SARIF 格式](https://sarifweb.azurewebsites.net/)輸出結果，該格式受 GitHub Actions、VS Code 以及其他工具支援。
+
+## 哪些內容會被驗證
+
+lint 指令會根據對應的 JSON schema 驗證三種類型的檔案：
+
+| 檔案類型 | 識別方式 | Schema |
+|-----------|---------------|--------|
+| 模型 (Models) | YAML 中的 `type: model` | [model-as-code-1.0.json](https://github.com/lightdash/lightdash/blob/main/packages/common/src/schemas/json/model-as-code-1.0.json) |
+| 圖表 (Charts) | `metricQuery` 屬性 | [chart-as-code-1.0.json](https://github.com/lightdash/lightdash/blob/main/packages/common/src/schemas/json/chart-as-code-1.0.json) |
+| 儀表板 (Dashboards) | `tiles` 屬性 | [dashboard-as-code-1.0.json](https://github.com/lightdash/lightdash/blob/main/packages/common/src/schemas/json/dashboard-as-code-1.0.json) |
+
+指令會根據內容自動檢測檔案類型，並套用適當的 schema。
+
+## 配合 AI 編碼工具使用 lint
+
+<Note>
+**建議：先安裝 Lightdash Skills。** 在手動配置您的 AI 工具之前，先執行 `lightdash install-skills` 來安裝 [Lightdash 技能 (Skills)](/get-started/develop-in-lightdash/install-skills_zh_TW)。這些技能已經內建了使用 `lightdash lint` 進行驗證的邏輯，因此您無需手動配置。
+</Note>
+
+如果您正在使用 Lightdash Skills，您的 AI 助手會自動在工作流程中執行 `lightdash lint` 來驗證 YAML 檔案。這些技能內建了 schema 驗證的最佳實踐。
+
+### 手動配置 (無 Skills 時)
+
+如果您沒有使用 Lightdash Skills，可以手動配置您的 AI 助手使用 linting：
+
+1. **提示 AI 在變更後執行 lint** - 添加指令，例如：「在做出任何變更後，務必執行 `lightdash lint` 以驗證 YAML。」
+
+2. **提供 Schema 參考** - 給予 AI 工具 schema 的 URL，使其了解預期格式：
+   - 模型: `https://raw.githubusercontent.com/lightdash/lightdash/main/packages/common/src/schemas/json/model-as-code-1.0.json`
+   - 圖表: `https://raw.githubusercontent.com/lightdash/lightdash/main/packages/common/src/schemas/json/chart-as-code-1.0.json`
+   - 儀表板: `https://raw.githubusercontent.com/lightdash/lightdash/main/packages/common/src/schemas/json/dashboard-as-code-1.0.json`
+
+3. **針對錯誤進行迭代** - 當 lint 回報錯誤時，讓 AI 在繼續下一步之前先修正錯誤。
+
+<Tip>
+AI 工具可以執行 `lightdash lint` 來驗證其自身的輸出。這建立了一個自動捕捉錯誤的反饋迴圈。
+</Tip>
+
+## CI/CD 整合
+
+將 linting 添加到您的 CI/CD 管道中，防止無效的配置被部署。
+
+### GitHub Actions 範例
+
+```yaml
+name: Validate Lightdash Code
+
+on:
+  pull_request:
+    paths:
+      - 'lightdash/**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Lightdash CLI
+        run: npm install -g @lightdash/cli
+
+      - name: Lint Lightdash Code files
+        run: lightdash lint --path ./lightdash
+```
+
+### 使用 SARIF 與 GitHub 程式碼掃描 (Code Scanning) 整合
+
+若要將 lint 結果與 GitHub 的程式碼掃描整合：
+
+```yaml
+- name: Lint with SARIF output
+  run: lightdash lint --format json > lint-results.sarif
+
+- name: Upload SARIF results
+  uses: github/codeql-action/upload-sarif@v2
+  with:
+    sarif_file: lint-results.sarif
+```
+
+## 常見錯誤與修復
+
+### 缺少必要的屬性
+
+```
+metricQuery.exploreName is required
+```
+
+**修復方法：** 向您的 YAML 檔案添加缺少的屬性。
+
+### 無效的屬性類型
+
+```
+metricQuery.dimensions must be array
+```
+
+**修復方法：** 確保屬性值符合預期類型。
+
+### 未知屬性
+
+```
+should NOT have additional property 'unknownField'
+```
+
+**修復方法：** 移除無法識別的屬性或檢查是否有拼寫錯誤。
+
+## 相關連結
+
+- [Lightdash YAML](/guides/lightdash-yaml_zh_TW) - 無需 dbt 即可在 YAML 中定義您的語義層
+- [Dashboards as Code](/guides/developer/dashboards-as-code_zh_TW) - 將圖表和儀表板作為 YAML 檔案進行管理
+- [Lightdash CLI 參考](/references/lightdash-cli_zh_TW#lightdash-lint) - 完整的指令參考

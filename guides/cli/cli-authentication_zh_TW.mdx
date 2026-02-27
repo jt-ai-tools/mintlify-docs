@@ -1,0 +1,135 @@
+---
+title: "驗證您的 CLI"
+sidebarTitle: 驗證 CLI
+icon: "key"
+---
+
+
+## 登入
+
+CLI 預設使用基於瀏覽器的 OAuth 登入，讓身份驗證變得快速且簡單。
+
+### 基本登入
+
+
+
+```bash
+lightdash login {{ lightdash_domain }}
+```
+
+其中 `{{ lightdash_domain }}` 是您的 Lightdash 執行體的子網域。例如，如果您在 `https://petey.lightdash.cloud` 登入，則輸入 `lightdash login petey` 會彈出登入視窗。
+
+
+```bash
+lightdash login petey
+```
+
+這將打開您的瀏覽器進行身份驗證。授權後，您就已登入並準備好使用 CLI 了。
+
+<Frame>
+  <img src="/images/guides/cli/cli-authentication/oauth-authorize.png" />
+</Frame>
+
+
+### 靈活的 URL 格式
+
+CLI 接受多種格式的執行體 URL，以下皆可行：
+
+```bash
+# 僅輸入您的子網域（推薦 Lightdash Cloud 使用者使用）
+lightdash login your_subdomain_here
+
+# 不含通訊協定的完整網域
+lightdash login your_subdomain_here.lightdash.cloud
+
+# 含通訊協定的完整 URL
+lightdash login https://your_subdomain_here.lightdash.cloud
+
+# 來自 Lightdash 執行體的任何 URL（方便從瀏覽器複製）
+lightdash login https://your_subdomain_here.lightdash.cloud/projects/abc123/dashboards
+```
+
+對於 Lightdash Cloud 使用者，您只需使用子網域即可（例如：如果您的執行體在 `petey.lightdash.cloud`，則輸入 `petey`）。
+
+對於自託管執行體，您可以使用不含 `https://` 前綴的完整網域——系統會自動補上。
+
+
+### 重新驗證至先前的執行體
+
+登入一次後，您可以在不指定 URL 的情況下重新進行驗證：
+
+```bash
+lightdash login
+```
+
+這將使用您先前儲存的執行體 URL。
+
+<AccordionGroup>
+  <Accordion title="使用個人存取權杖登入 (適用於 SSO 使用者)">
+    如果您在瀏覽器中使用單一登入 (SSO)，請使用個人存取權杖 (Personal Access Token) 進行登入。
+
+    首先，在 UI 中前往 Settings > Personal Access Tokens 建立一個新的權杖。
+
+    <Frame>
+      <img src="/images/guides/cli/personal-access-token-9ed8a8c2b16edc5ee745c4909d4093d3.png" />
+    </Frame>
+
+    然後，執行以下指令：
+
+    ```bash
+    lightdash login your_subdomain_here --token
+    ```
+  </Accordion>
+
+  <Accordion title="使用環境變數登入 (適用於 CI/CD)">
+    您可以使用以下環境變數在每個指令中進行身份驗證：
+
+    * **LIGHTDASH\_API\_KEY**：您可以在應用程式的使用者設置中生成的個人存取權杖。
+
+    * **LIGHTDASH\_URL**：正在運行的 Lightdash 執行體位址。
+
+    * **LIGHTDASH\_PROXY\_AUTHORIZATION**：如果您的 Lightdash 執行體位於 [Cloud IAP](https://cloud.google.com/iap) 等代理伺服器後方，您可以在此設置 `Proxy-Authentication` 標頭值。
+
+    範例：
+
+    ```bash
+    LIGHTDASH_API_KEY=946fedb74003405646867dcacf1ad345 LIGHTDASH_URL="https://your_subdomain_here.lightdash.cloud" LIGHTDASH_PROXY_AUTHORIZATION="Bearer <JWT_TOKEN>" lightdash preview
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## 設置當前專案
+
+登入時，系統會要求您設置「當前專案 (Active project)」。
+
+您的當前專案就是您目前正在處理/開發的專案。您的組織可能只有一個專案，這樣做決定就很簡單了！
+
+您可以透過執行以下指令更改當前專案：
+
+```bash
+lightdash config set-project
+```
+
+或者，您可以使用 `LIGHTDASH_PROJECT` 環境變數來指定指令應使用的專案 UUID。
+
+範例：
+
+```bash
+LIGHTDASH_PROJECT="3675b69e-8324-4110-bdca-059031aa8da3" lightdash deploy
+```
+
+## 登入後，您就可以開始使用 CLI 了
+
+您可以透過在終端機輸入以下指令來查看 CLI 中所有可用的動作：
+
+```bash
+lightdash
+```
+
+一些我們最推薦的功能包括：
+
+* [使用 lightdash generate 為您的 dbt 模型自動生成 .yml 檔案](/guides/cli/how-to-auto-generate-schema-files_zh_TW)
+
+* [使用 lightdash preview 透過開發者預覽測試您的變更](/guides/cli/how-to-use-lightdash-preview_zh_TW)
+
+* [使用 lightdash deploy 將您的變更部署到生產環境](/guides/cli/how-to-use-lightdash-deploy_zh_TW)

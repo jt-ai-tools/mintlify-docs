@@ -1,0 +1,67 @@
+---
+title: "Lightdash Validate (驗證)"
+description: 您可以使用 `lightdash validate` 檢查您的變更是否破壞了專案中的任何內容。此指令將執行驗證器，回傳專案中損壞內容的列表以及錯誤詳情。
+---
+
+您可以使用 Lightdash CLI 觸發專案驗證，以便在本地檢查您的變更是否會破壞任何內容。您還可以將 `lightdash validate` 添加到您的 [GitHub Actions](#配置-github-actions) 中，這樣除非通過驗證，否則無法合併變更。
+
+## 用法
+
+<Frame>
+  <img src="/images/guides/cli/cli-validate-a18f39c4e5dc0eab842d963fe17188a0.png" alt="CLI 驗證" />
+</Frame>
+
+### 執行 lightdash validate 驗證您的變更
+
+您可以執行 `lightdash validate` 來檢查您的變更是否破壞了生產環境中的任何內容。預設情況下，`lightdash validate` 會根據您在 CLI 中選擇的專案檢查變更。您可以使用 `lightdash config set-project` 更改專案。
+
+```bash
+lightdash validate
+```
+
+選填項：您可以使用 `--preview` 參數來驗證您最後一次從 CLI 建立的預覽環境。
+
+如果您的本地檔案會破壞專案中的某些內容，您將會得到一個錯誤列表。這些錯誤不會反映在 Lightdash 設置中的驗證表 (Validation Table) 上。
+
+### 使用專案 UUID 驗證任何專案
+
+您可以透過在 `lightdash validate` 指令中指定專案 UUID 來對任何專案執行驗證。
+
+```bash
+lightdash validate --project <專案 uuid>
+```
+
+**注意：** 您可以從 Lightdash 的網址中，選取 `projects/` 之後的 ID 來取得專案 UUID。
+
+<Frame>
+  <img src="/images/references/cli-lightdash-help-86d9d11f57ca516a722c0dfcf8f2919a.png" alt="" />
+</Frame>
+
+### 僅驗證專案的特定元素
+
+您可以使用 `--only` 參數選擇要驗證的專案部分。
+
+```bash
+lightdash validate --only tables charts dashboards
+```
+
+可用選項：
+
+* `tables` (表格)
+
+* `charts` (圖表)
+
+* `dashboards` (儀表板)
+
+## 配置 Github Actions
+
+此指令將建立一個預覽環境，然後透過在驗證指令中指定 `--preview` 來驗證此預覽。如果專案中存在至少 1 個驗證錯誤，`lightdash validate` 將回傳錯誤（回傳代碼 1）。您可以使用此輸出來阻止 Github Actions 的部署，如下所示：
+
+```yaml
+- name: Start preview
+  run: lightdash start-preview
+- name: Validate preview
+  run: lightdash validate --preview
+```
+
+欲了解更多關於為 Lightdash 設置 GitHub Actions 的資訊，請參閱[此處的文件](/references/integrations/dbt-projects_zh_TW#1-自動部署：使用-github-action-將變更部署到-lightdash)。

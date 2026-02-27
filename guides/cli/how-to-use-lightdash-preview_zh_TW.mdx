@@ -1,0 +1,35 @@
+---
+title: 預覽本地變更
+description: 預覽專案 (Preview projects) 是臨時的 Lightdash 專案，您可以在其中安全地實驗您的指標、維度與圖表，而不會影響您的正式生產專案。
+icon: "vial"
+---
+
+預覽專案會將所有空間、圖表與儀表板複製到新的預覽專案中，以便您測試內容並執行 [驗證 (Validation)](/guides/cli/how-to-use-lightdash-validate_zh_TW)。這些內容僅在預覽專案建立時進行複製，之後無法同步。
+
+### 在您的專案內執行 `lightdash preview`
+
+```bash
+# 這將建立一個預覽環境，並等待您按鍵後刪除該預覽專案
+lightdash preview
+```
+
+或
+
+```bash
+# 這將建立一個預覽環境後退出，您必須執行 lightdash stop-preview 來手動刪除它
+lightdash start-preview
+```
+
+接著 `cmd` + `點擊` 終端機中的預覽連結。進入 Lightdash 後，前往 `Explore (探索)` --> `Tables (表格)`，點擊您剛剛更新的模型，即可查看變更並進行操作。
+
+<Tip>
+**在預覽運行期間更新它**
+
+當預覽環境運行時，您可以在另一個終端機視窗執行 `dbt compile` 來更新您的 dbt 模型。編譯完成後，重新整理瀏覽器即可在 Lightdash 中看到變更。請注意，這不是熱重載 (Hot reload)——您需要手動重新整理頁面。
+</Tip>
+
+<Info>
+**憑據 (Credentials) 遇到問題？**
+
+當您建立預覽專案時，Lightdash 會使用您當前 dbt 專案 `profiles.yml` 檔案中的倉庫連接設置。如果您使用的是筆記型電腦可以造訪但 Lightdash 執行體無法連接的本地資料庫，這可能會產生問題。
+</Info>

@@ -1,0 +1,110 @@
+---
+title: "配置您的圖表"
+description: "了解 Lightdash 中大多數圖表類型可用的配置選項。"
+---
+
+大多數圖表類型的配置選項都非常相似，因此我們在下方將其整合在一起說明。
+
+## 版面配置 (Layout)
+
+您可以在此處選擇結果表格中的欄位，將其繪製在 X 軸和 Y 軸上，或選擇要作為分組 (Group by) 的欄位。
+
+您在圖表中最多可以使用 3 個欄位進行分組。
+
+對於長條圖，您也可以在此處選擇要堆疊長條，還是保持不堆疊（分組顯示）。
+
+<Frame>
+  ![](/images/guides/configure-charts/chart-config-layout.png)
+</Frame>
+
+## 數據序列 (Series)
+
+數據序列標籤讓您可以調整圖表顯示每個數據序列的方式。**數據序列 (Data series)** 是指繪製在圖表上的一組相關數據點。例如，一段時間內每天建立的新使用者數量就是一個序列。在長條圖中，序列由相同顏色的長條表示；在折線圖中，序列由單條線表示。您可以在 **Series** 選單和圖表圖例 (Legend) 中查看圖表的序列列表。
+
+<Frame>
+  ![](/images/guides/configure-charts/chart-config-series.png)
+</Frame>
+
+此處可用的選項取決於圖表中的數據。您可以在此執行以下操作：
+
+- 為每個序列設置圖表類型
+- 更改序列的標籤或顏色
+- 將序列放在左側或右側的 Y 軸上
+- 在數據點上顯示數值標籤或組別總額
+- 從圖表中隱藏某個序列
+
+## 軸線 (Axes)
+
+在此章節中，您可以：
+
+- 覆蓋預設的軸線標籤文字
+- 調整 X 軸的排序順序
+- 旋轉 X 軸標籤
+- 為 Y 軸設置最小和最大值（或保持預設的自動 Y 軸範圍）
+- 顯示 X 軸和 Y 軸的網格線
+- 完全隱藏 X 軸
+- 完全隱藏 Y 軸
+
+<Frame>
+  ![](/images/guides/configure-charts/chart-config-axes.png)
+</Frame>
+
+## 顯示 (Display)
+
+此標籤可讓您控制圖表中的圖例、參考線以及[自定義工具提示 (Custom Tooltips)](/guides/custom-tooltip_zh_TW)。
+
+### 參考線 (Reference lines)
+
+您可以向圖表添加參考線，以便輕鬆視覺化目標或門檻。
+
+<Frame>
+  ![](/images/guides/configure-charts/add-reference-line.png)
+</Frame>
+
+要添加參考線，請點擊 Display -> Reference lines 下的 `+ Add`。
+
+您在設置中有以下選項：
+
+- 選擇要連結到參考線的欄位（如上圖中的頁面瀏覽量）
+- 設置靜態值（如上圖中的 50,000）
+- 添加標籤（如上圖中的 `Halfway to our goal! (離目標過半了！)`）
+- 更改線條顏色（如上圖中的綠色）
+
+<Tip>
+  大多數參考線是靜態值，但您也可以使用以下關鍵字來繪製動態值：`min` (最小)、`max` (最大)、`median` (中位數)、`average` (平均值)。
+
+  這樣一來，參考線將自動更新為所選欄位的全域最小值、最大值、中位數或平均值。請參見下圖範例。
+</Tip>
+
+![動態參考線範例](/images/guides/configure-charts/chart-config-dynamic-reference.png)
+
+如果您選擇繪製在 X 軸上的欄位，則參考線將為垂直線。如果您選擇繪製在 Y 軸上的欄位，則參考線將為水平線。
+
+<Tip>
+  如果您的參考線標籤超出了圖表範圍，請嘗試調整您的[右側邊距 (Right margin)](#邊距-margins)。
+</Tip>
+
+### 圖例 (Legend)
+
+您可以添加並調整圖表中的圖例，以幫助人們理解所繪製的數據。
+
+- 顯示或隱藏圖例
+- 調整圖例在圖表上的位置
+  - `position (位置)` 中的值是圖例在圖表上的座標。它們可以是數字或百分比。我們建議使用 %。
+  - 如果您希望位置在右下角，您可以設置：Right = 0%, Bottom = 0%。若要讓圖例位於圖表正中間，您可以設置：Top = 50%, Left = 50%。
+- 將圖例設置為可滾動（如果您有太多分組導致它們覆蓋了圖表）
+- 將圖例中的值排列為垂直列表或水平列表
+
+<Frame>
+  ![](/images/guides/configure-charts/chart-config-legend.png)
+</Frame>
+
+## 邊距 (Margins)
+
+「邊距 (Margin)」標籤讓您可以添加或移除網格周圍的空間。移除邊距意味著您的圖表將填滿更多標籤頁空間。添加邊距則會將圖表縮小到更小的空間內。
+
+您可以在邊距設置中添加數字（例如 50）或百分比值（例如 50%）。預設邊距設置為：`top` = 70, `bottom` = 30, `left` = 5%, `right` = 5%。
+
+<Frame>
+  ![](/images/guides/configure-charts/chart-config-margins.png)
+</Frame>

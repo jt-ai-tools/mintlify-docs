@@ -1,0 +1,136 @@
+---
+title: "從表格查詢與探索數據"
+sidebarTitle: "從表格查詢"
+---
+
+既然您已經將 dbt 專案連接到 Lightdash，現在是時候開始探索您的數據了。
+
+**表格 (Table)** 是在 Lightdash 中探索數據的主要起點。它包含了一組相關的 dbt 模型、維度與指標。您可以在「探索 (Explore)」視圖中**探索表格**。
+
+## 表格與探索頁面簡介
+
+要開始新的查詢，點擊 `[+] New` --\> `Query from tables`，然後選擇您要探索的表格。
+
+<Frame>
+  ![](/images/get-started/exploring-data/using-explores/new-query-from-tables.png)
+</Frame>
+
+探索頁面由五個主要區域組成：
+
+1. [**指標與維度 (Metrics and Dimensions)**](/get-started/exploring-data/intro-metrics-dimensions_zh_TW)：您選擇的表格中可用的欄位。
+2. **篩選器 (Filters)**：讓您限制查詢中的數據。
+3. **圖表 (Chart)**：您將在此視覺化查詢結果。
+4. **結果 (Results)**：從數據庫回傳的原始數據。
+5. **SQL**：顯示生成結果的 SQL 代碼。
+
+<Frame>
+  ![](/images/get-started/exploring-data/using-explores/explore-areas.png)
+</Frame>
+
+### 選擇您的欄位
+
+執行查詢的步驟：
+
+1. 選擇一個要計算的指標 (Metric)。
+2. 選擇一個或多個維度 (Dimensions)，將指標按組別拆分。
+3. 點擊右上角的 **Run query (執行查詢)**。
+
+例如，如果我想知道「按合作夥伴拆分的每月訂單數」，我會選擇 `Order count (訂單計數)` 指標、`Order month (訂單月份)` 維度，以及 `Partner name (合作夥伴名稱)` 維度來進行拆分。
+
+<Frame>
+  ![](/images/get-started/exploring-data/using-explores/select-fields.png)
+</Frame>
+
+### 篩選結果
+
+您可以透過幾種不同方式添加篩選器：
+
+1. 在 **Filters** 區域點擊 `+ Add filter`。
+2. 在 **Results** 表格中打開欄位標題選單，然後選擇 `Filter by [欄位名稱]`。
+3. 點擊將滑鼠懸停在 **Dimensions** 和 **Metrics** 上時出現的濾鏡圖示。
+
+<Frame>
+  ![](/images/get-started/exploring-data/using-explores/add-filter.png)
+</Frame>
+
+### 排序結果
+
+點擊您想要排序的欄位標題中的箭頭。
+
+<Frame>
+  ![](/images/get-started/exploring-data/using-explores/sort-results.png)
+</Frame>
+
+如果您想按多個欄位排序，請點擊顯示當前排序的藍色標籤，然後選擇 `+ Add sort`。
+
+<Frame>
+  ![](/images/get-started/exploring-data/using-explores/sort-multiple.png)
+</Frame>
+
+排序選單的預期行為如下：
+
+1. 當您透過點擊欄位標題添加排序時，該排序會覆蓋之前的任何規則。
+2. 使用排序選單按多個欄位排序後，您可以透過拖拽欄位來重新排列順序。
+3. 點擊右側的 `X` 即可移除排序。
+4. 使用排序選單中欄位名稱旁邊的切換開關更改欄位的排序順序。
+
+#### 排序空值 (NULL values)
+
+您可以指定 NULL 值應排在最前、最後，或使用數據庫的預設排序行為。
+
+![排序空值範例](/images/get-started/exploring-data/using-explores/sort-null-values.png)
+
+要配置 NULL 排序：
+
+1. 點擊顯示當前排序的藍色標籤以打開排序選單。
+2. 對於每個排序欄位，使用 NULL 排序控制項選擇您的偏好：
+   - **Nulls first (空值優先)** - NULL 值出現在結果頂部。
+   - **Nulls last (空值最後)** - NULL 值出現在結果底部。
+   - **Default (預設)** - 使用您數據庫的預設 NULL 排序行為。
+
+NULL 排序行為會透過在 ORDER BY 語句中使用 `NULLS FIRST` 或 `NULLS LAST` 子句應用於生成的 SQL 查詢中。
+
+### 構建圖表
+
+查詢執行後，您的數據將出現在結果表格中。接著您可以打開 **Chart** 區域並選擇圖表類型。
+
+您可以在此處閱讀更多關於[所有圖表類型與配置的資訊](/references/chart-types/overview_zh_TW)。
+
+<Frame>
+  ![](/images/get-started/exploring-data/using-explores/build-chart.png)
+</Frame>
+
+### 儲存您的圖表
+
+「儲存圖表 (Saved Charts)」允許您儲存特定的圖表或表格，以便分享、添加到儀表板或日後再次查閱。
+
+當您打開已儲存的圖表時，它總是會更新以顯示數據庫中的最新數據，因為每次打開時它都會重新執行查詢。
+
+<Frame>
+  ![](/images/get-started/exploring-data/using-explores/save-your-chart.png)
+</Frame>
+
+要儲存圖表，點擊頁面頂部的 `Save chart` 按鈕，然後為您的圖表提供一個有意義的名稱和描述。您可以選擇將圖表儲存到「儀表板 (Dashboard)」或「空間 (Space)」。
+
+儲存圖表後，將解鎖以下實用功能：
+
+- [版本歷史](/guides/version-history_zh_TW)
+- [定時交付 (Scheduled deliveries)](/guides/how-to-create-scheduled-deliveries_zh_TW)
+- [Google 試算表同步](/references/integrations/google-sheets_zh_TW)
+- [告警 (Alerts)](/guides/how-to-create-alerts_zh_TW)
+
+#### 儲存到儀表板
+
+Lightdash 中的大多數圖表是直接儲存到儀表板中的。如果您的圖表只打算在一個儀表板中使用，此選項會更好。將圖表儲存到儀表板時，它不會讓您的空間中充斥著大量僅在特定儀表板背景下才有意義的圖表。
+
+將圖表儲存到儀表板意味著它僅存在於該單一儀表板中。如果您想重複使用它，則需要將其移動到空間中，或點擊 `Explore from here` 並建立圖表的新版本。
+
+#### 儲存到空間
+
+將圖表儲存到空間意味著它可以被單獨分享，並在多個儀表板中重複使用。此選項也是[將單個圖表固定到專案首頁](/references/workspace/pinning_zh_TW)的唯一方法。
+
+您將獲得一個美觀的「已儲存圖表視圖」，可用於與他人分享。
+
+<Frame>
+  ![](/images/get-started/exploring-data/using-explores/saved-chart.png)
+</Frame>

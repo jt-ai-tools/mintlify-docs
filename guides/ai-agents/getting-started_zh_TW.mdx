@@ -1,0 +1,195 @@
+---
+title: AI 代理入門指南
+sidebarTitle: 入門指南
+description: 了解如何在 Lightdash 中建立並配置您的第一個 AI 代理
+---
+
+<Frame>
+  <iframe
+    width="100%"
+    height="420"
+    src="https://www.loom.com/embed/50bcb0d6f26b428bae336139d9d64e22"
+    frameborder="0"
+    webkitallowfullscreen
+    mozallowfullscreen
+    allowfullscreen
+  />
+</Frame>
+
+使用 AI 代理非常簡單——您可以立即在 Lightdash 實例中的任何專案開始使用它們。
+
+<Steps>
+  <Step title="建立您的第一個代理">
+    在您的 Lightdash 專案中設置一個新的 AI 代理，[請參考指南](#建立新代理)
+  </Step>
+  <Step title="配置您的代理">
+    使用標籤控制代理可以存取的數據，[請參考指南](#配置您的代理)
+  </Step>
+  <Step title="連接至 Slack">
+    透過 Slack 開啟團隊協作，[請參考指南](#slack-整合)
+  </Step>
+</Steps>
+
+
+## 建立您的第一個 AI 代理
+
+<Frame>
+  <img src="/images/guides/ai-agents/ai-agent-overview-page.png" />
+</Frame>
+
+## 前往 Ask AI
+這將是您與 AI 代理協作的入口點
+
+<Frame>
+  <img src="/images/guides/ai-agents/go-to-ask-ai.png" />
+</Frame>
+
+## 建立新代理
+前往代理下拉選單，點擊底部的 ***Create new agent (建立新代理)***
+
+<Frame>
+  <img src="/images/guides/ai-agents/create-new-agent.png" />
+</Frame>
+
+## 配置您的代理
+
+### 名稱與圖片
+為您的代理取一個好記的名字並設定視覺形象。
+### 指令 (Instructions)
+提供背景資訊以引導代理的推理，並確保其回應符合您的預期。您的指令可以包含以下任一組件。每個組件都能幫助代理理解您的數據、業務以及您希望呈現見解的方式：
+
+- **領域知識 (Domain knowledge)** - 
+描述 AI 思考時應具備的產業背景或專業領域。包括相關的術語、方法論、框架和技術概念。
+
+- **公司背景 (Company context)** - 
+解釋分析背後的業務背景。添加關於您的目標、產品、目標受眾、策略或任何影響見解生成方式的限制條件。
+
+- **分析偏好 (Analysis preferences)** -
+明確說明您希望 AI 如何進行分析。指定偏好的指標、維度、圖表類型、視覺化風格和報告格式，以便結果符合您的預期。
+
+- **角色與專業知識 (Role & expertise)** - 
+告訴 AI 它應該扮演什麼角色（例如：「資深行銷分析師」）。包括您期望的溝通風格、解釋深度以及決策授權級別。
+
+您提供的背景資訊越多，代理的回應就會越準確、相關且可預測。
+
+### 啟用數據存取 (選填)
+啟用數據存取後，代理可以分析實際的查詢結果並基於數據提供見解。停用時，代理僅能處理元數據。了解[如何啟用數據存取](/guides/ai-agents/data-access_zh_TW#如何啟用數據存取)
+### 使用者與群組存取權限 (選填)
+透過代理設置控制哪些使用者和群組可以存取您的代理。欲了解如何配置數據存取控制的詳細指南，請參閱[此處](/guides/ai-agents/data-access_zh_TW#使用者屬性與權限)
+### 標籤 (Tags) (選填)
+在 Lightdash 元數據中使用標籤來控制代理可以存取的指標和維度。標籤可以幫助您將代理限制在語義層的特定部分。
+
+1. 為您的 dbt 模型維度和指標添加標籤——您的代理將只能存取具有匹配標籤的維度或指標。
+
+<Accordion title="查看代碼範例">
+<CodeGroup>
+
+```yaml dbt 1.10+
+models:
+  - name: orders
+    columns:
+      - name: status
+        config:
+          meta:
+            dimension:
+              tags: ["ai", "sales"] # <--------- 標記維度
+      - name: location
+        config:
+          meta:
+            dimension:
+              tags: ["ai", "operations"] # <--------- 標記維度
+      - name: amount
+        description: 訂單總額
+        config:
+          meta:
+            metrics:
+              total_order_amount:
+                type: sum
+                format: usd
+                round: 2
+                tags: ["ai", "finance"] # <--------- 標記指標
+```
+
+```yaml dbt <=1.9
+- name: orders
+  columns:
+    - name: status
+      meta:
+        dimension:
+          tags: ['ai', 'sales'] #    <--------- 標記維度
+     - name: location
+      meta:
+        dimension:
+          tags: ['ai', 'operations'] #    <--------- 標記維度
+    - name: amount
+      description: 訂單總額
+      meta:
+        metrics:
+          total_order_amount:
+            type: sum
+            format: usd
+            round: 2
+            tags: ['ai', 'finance'] #    <--------- 標記指標
+```
+
+</CodeGroup>
+</Accordion>
+
+2. 在代理設置的「Tags (標籤)」欄位下添加對應的標籤。這會告訴代理它應該存取哪些帶標籤的維度和指標。
+
+<Frame>
+  <img src="/images/guides/ai-agents/ai-tags.png" />
+</Frame>
+
+3. 對於想要更詳細配置標記規則（包括標籤如何與權限和 schema 可見性互動）的技術用戶，請參閱[數據存取控制章節](/guides/ai-agents/data-access_zh_TW#限制對特定探索與欄位的存取)。
+
+### 啟用自我優化 (選填，Beta)
+允許您的代理對您的語義層提出變更建議，包括更新描述和建立新指標。變更會在「變更集 (Changesets)」中追蹤以供審查。閱讀更多關於[自我優化 (Beta)](/guides/ai-agents/self-improvement_zh_TW) 功能的資訊。
+
+## Slack 整合
+將您的代理連接到 Slack 頻道，以便使用者直接從 Slack 互動。查看所有將代理整合到 Slack 的酷方法：[點擊此處](/guides/using-slack-integration_zh_TW#使用-slack-整合)
+1. 在組織設置中將 Slack 添加到您的組織。管理員需要完成此步驟。請參閱[操作指南](/references/workspace/adding-slack-integration_zh_TW)。
+2. 在代理整合設置中添加所需的 Slack 頻道。
+
+<Frame>
+  <img src="/images/guides/ai-agents/ai-integrations.png" />
+</Frame>
+
+3. 透過前往 ***#頻道名稱*** --> ***Edit settings (編輯設置)*** --> ***Integrations (整合)***，將 `Lightdash for analytics` 應用程式添加到您想要的 Slack 頻道：
+
+<Frame>
+  <img src="/images/guides/ai-agents/add-lightdash-app-to-slack.png" />
+</Frame>
+
+4. 現在，您可以像在 Lightdash UI 中一樣在 Slack 中與您的 AI 代理互動。開始提問，例如「您可以存取哪些數據？」或「顯示一段時間內的訂單總額」。
+
+<Frame>
+  <img src="/images/guides/ai-agents/use-agent-in-slack.png" />
+</Frame>
+
+5. 您也可以在討論串中召喚機器人以繼續對話。為了讓機器人能夠回應，您需要在 Lightdash 整合設置中啟用此上下文共享。
+
+<Frame>
+  <img src="/images/guides/ai-agents/ai-agent-slack-thread-consent.png" />
+</Frame>
+
+<br />
+設置完成後——無論是在 UI 還是 Slack 中——您都可以立即開始提問！嘗試問「您可以存取哪些數據？」來開始吧：
+
+<Frame>
+  <img src="/images/guides/ai-agents/what-kind-of-data-can-you-access.png" />
+</Frame>
+
+### Slack 頻道限制
+
+預設情況下，每個 AI 代理只能連接到一個 Slack 頻道。如果您嘗試在同一個 Slack 頻道配置兩個代理，將會收到錯誤訊息。
+
+<Note>
+**多代理 Slack 頻道 (Beta)：** 要在同一個 Slack 頻道中啟用多個代理，請聯繫 Lightdash 為您的組織開啟多代理 Slack 功能標誌 (Feature Flag)。
+</Note>
+
+啟用多代理 Slack 後，同一個 Slack 頻道可以使用多個 AI 代理。當您在 Slack 中提及 Lightdash 應用程式時，不需要指定要與哪個代理對話——只有一個 Lightdash Slack 應用程式名稱。Lightdash 會根據您的問題自動路由到最合適的代理。如果不明確應由哪個代理回應，系統會提示您選擇希望由哪個代理回答。
+
+## 設置多個代理
+
+您可以建立多個 AI 代理，每個代理針對不同的任務、語氣、語言或團隊進行配置。每個代理可以存取不同的數據集，以使結果更集中並提供更準確的答案。

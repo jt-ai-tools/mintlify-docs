@@ -1,0 +1,419 @@
+---
+title: 數據存取控制
+description: 了解 AI 代理如何存取及使用您的數據
+---
+
+AI 代理提供靈活的數據存取控制，以平衡見解獲取與隱私安全。預設情況下，代理僅處理元數據 (Metadata)，但您可以選擇開啟數據存取功能以進行更深入的分析。
+
+## 數據存取模式
+
+**僅限元數據模式 (預設)：**
+
+- 代理可以看到您的數據結構、欄位名稱和模型定義
+- 它們可以生成適當的查詢和視覺化圖表
+- 除了單行查詢結果外，不會與代理分享實際的數據值
+- 非常適合探索數據結構和建立初步分析
+
+**已啟用數據存取：**
+
+- 除了元數據外，代理還會收到實際的查詢結果
+- 能夠提供具體的見解、識別趨勢並分析數據中的模式
+- 提供詳細的摘要和數據驅動的建議
+- 可以搜尋實際的欄位值，以確保在構建視覺化時使用準確的過濾條件
+- 僅在針對每個代理明確啟用時才分享數據
+
+<Info>
+  數據存取是選填的，且針對每個代理分別控制。停用時，代理僅能處理您的數據模型結構，無法看到實際的數據值。這確保了只有在您明確選擇啟用此功能時，敏感資訊才會被分享。
+</Info>
+
+要啟用數據存取，請前往代理設置並切換「Data Access (數據存取)」選項。
+
+  <Frame>
+    <img
+      src="/images/guides/ai-agents/enable-data-access.png"
+      alt="如何為 AI 代理啟用數據存取"
+    />
+  </Frame>
+
+## 限制對特定探索 (Explores) 與欄位的存取
+
+您可以使用標籤 (Tags) 來控制您的 AI 代理可以存取哪些探索和欄位。當您在代理設置中配置標籤時，代理將只能看到具有匹配標籤的探索和欄位。
+
+**兩種標籤選項：**
+- **Lightdash 元數據標籤**：定義在 Lightdash `meta` 部分的標籤，可以應用於表格層級（模型）和欄位層級（個別指標和維度）。
+- **dbt 標籤**：應用於表格層級的原生 dbt 標籤。
+
+**標籤匹配運作方式：**
+- 在代理設置中添加一個或多個標籤
+- 具有**任一**匹配標籤的欄位或探索將可被代理存取
+- 如果未配置標籤，代理可以存取所有內容
+- 當您添加標籤時，可以在代理設置介面中即時查看哪些探索和欄位將變為可用
+
+<Frame caption="添加標籤時預覽可用的探索與欄位">
+  <img
+    src="/images/guides/ai-agents/agent-tags-preview.gif"
+    alt="在代理設置中按標籤過濾探索和欄位的互動式預覽"
+  />
+</Frame>
+
+**兩個層級的標籤：**
+1. **探索層級標籤**：標記模型以控制對整個探索的存取。
+2. **欄位層級標籤**：標記個別指標和維度以進行精細控制。
+
+觀看此示範，了解基於標籤的存取控制如何運作：
+
+<Frame>
+  <iframe
+    width="100%"
+    height="420"
+    src="https://www.loom.com/embed/f38e27fee7784e7f95538613b3b77bb5?sid=a13feb5b-fef3-4f68-9fbf-e54f928c28e5"
+    frameborder="0"
+    webkitallowfullscreen
+    mozallowfullscreen
+    allowfullscreen
+  />
+</Frame>
+
+### 過濾機制說明
+
+過濾行為取決於您如何標記模型：
+
+**探索的可見性：**
+- 只有當探索的**基礎表 (Base Table)** 在以下任一層級具有匹配標籤時，該探索才可見：
+  - 探索層級（模型標籤匹配代理標籤），或者
+  - 欄位層級（至少有一個基礎表欄位具有匹配標籤）
+- 如果只有關聯表 (Joined Tables) 具有匹配標籤而基礎表沒有，則該探索將被隱藏。
+
+**每張表的欄位可見性：**
+
+探索中的每張表會使用以下兩種模式之一獨立過濾：
+
+1. **欄位層級模式**（當表中「任一」欄位定義了標籤時）：
+   - 僅具有匹配標籤的欄位可見
+   - 其他欄位將被隱藏，即使探索本身已被標記
+   - 注意：空的標籤陣列 (`tags: []`) 會啟動欄位層級模式，但不會匹配任何內容。
+
+2. **探索層級模式**（當表中「沒有」欄位定義標籤時）：
+   - 如果探索標籤匹配：表中的「所有」欄位皆可見
+   - 如果探索標籤不匹配：沒有欄位可見
+
+### 在模型層級添加標籤
+
+標記整個模型，讓您的 AI 代理可以存取該探索中的所有指標和維度：
+
+<Accordion title="查看代碼範例">
+<CodeGroup>
+
+```yaml dbt 1.10+
+models:
+  - name: marketing_campaigns
+    config:
+      meta:
+        tags: ["marketing", "ai"] #    <--------- 標記整個模型
+    columns:
+      - name: campaign_name
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: impressions
+        config:
+          meta:
+            metrics:
+              total_impressions:
+                type: sum
+```
+
+```yaml dbt <=1.9
+models:
+  - name: marketing_campaigns
+    meta:
+      tags: ["marketing", "ai"] #    <--------- 標記整個模型
+    columns:
+      - name: campaign_name
+        meta:
+          dimension:
+            type: string
+      - name: impressions
+        meta:
+          metrics:
+            total_impressions:
+              type: sum
+```
+
+</CodeGroup>
+</Accordion>
+
+### 為個別指標與維度添加標籤
+
+為了進行更精細的控制，可以標記特定的指標和維度：
+
+<Accordion title="查看代碼範例">
+<CodeGroup>
+
+```yaml dbt 1.10+
+models:
+  - name: orders
+    columns:
+      - name: status
+        config:
+          meta:
+            dimension:
+              tags: ["ai", "sales"] # <--------- 標記維度
+      - name: location
+        config:
+          meta:
+            dimension:
+              tags: ["ai", "operations"] # <--------- 標記維度
+      - name: amount
+        description: 訂單總額
+        config:
+          meta:
+            metrics:
+              total_order_amount:
+                type: sum
+                format: usd
+                round: 2
+                tags: ["ai", "finance"] # <--------- 標記指標
+```
+
+```yaml dbt <=1.9
+- name: orders
+  columns:
+    - name: status
+      meta:
+        dimension:
+          tags: ['ai', 'sales'] #    <--------- 標記維度
+     - name: location
+      meta:
+        dimension:
+          tags: ['ai', 'operations'] #    <--------- 標記維度
+    - name: amount
+      description: 訂單總額
+      meta:
+        metrics:
+          total_order_amount:
+            type: sum
+            format: usd
+            round: 2
+            tags: ['ai', 'finance'] #    <--------- 標記指標
+```
+
+</CodeGroup>
+</Accordion>
+
+### 常見場景
+
+以下是一些常見的標記場景及其結果：
+
+**場景 1：僅限探索層級（無欄位標籤）**
+```yaml
+models:
+  - name: customers
+    config:
+      meta:
+        tags: ["ai-enabled"]
+    columns:
+      - name: customer_name
+      - name: email
+```
+結果：如果代理具有 `["ai-enabled"]` 標籤，則 customers 探索中的「所有」欄位皆可見。
+
+**場景 2：僅限欄位層級（無探索標籤）**
+```yaml
+models:
+  - name: customers
+    columns:
+      - name: customer_name
+        config:
+          meta:
+            dimension:
+              tags: ["ai-enabled"]
+      - name: email
+        config:
+          meta:
+            dimension:
+              tags: ["pii"]
+```
+結果：如果代理具有 `["ai-enabled"]` 標籤，則僅 `customer_name` 可見。`email` 欄位會被隱藏。
+
+**場景 3：混合模式 - 探索標籤與具有不同標籤的欄位並存**
+```yaml
+models:
+  - name: orders
+    config:
+      meta:
+        tags: ["ai-enabled"]
+    columns:
+      - name: order_id
+        config:
+          meta:
+            dimension:
+              tags: ["pii"]
+      - name: status
+        config:
+          meta:
+            dimension:
+              tags: ["internal"]
+```
+結果：如果代理具有 `["ai-enabled"]` 標籤，則「沒有」欄位可見。因為欄位帶有標籤，啟動了欄位層級模式，但沒有一個欄位標籤符合 "ai-enabled"。
+
+**場景 4：混合模式 - 基礎模型帶有探索標籤，關聯模型帶有欄位標籤**
+
+<Tabs>
+  <Tab title="orders.yml (基礎模型)">
+```yaml
+models:
+  - name: orders
+    config:
+      meta:
+        tags: ["ai-enabled"]
+        joins:
+          - join: customers
+            sql_on: ${customers.customer_id} = ${orders.customer_id}
+    columns:
+      - name: order_id
+      - name: status
+      - name: customer_id
+```
+  </Tab>
+  <Tab title="customers.yml (關聯模型)">
+```yaml
+models:
+  - name: customers
+    columns:
+      - name: customer_id
+      - name: email
+        config:
+          meta:
+            dimension:
+              tags: ["ai-enabled"]
+      - name: phone
+        config:
+          meta:
+            dimension:
+              tags: ["pii"]
+```
+  </Tab>
+</Tabs>
+
+結果：如果代理具有 `["ai-enabled"]` 標籤：
+- `orders` 表：所有欄位皆可見（探索層級模式 - 未定義欄位標籤）
+- `customers` 表：僅 `email` 可見（欄位層級模式 - 定義了欄位標籤，僅 `email` 匹配）
+
+**場景 5：僅關聯表具有匹配標籤**
+
+<Tabs>
+  <Tab title="orders.yml (基礎模型)">
+```yaml
+models:
+  - name: orders
+    config:
+      meta:
+        joins:
+          - join: customers
+            sql_on: ${customers.customer_id} = ${orders.customer_id}
+    columns:
+      - name: order_id # 無標籤
+      - name: status # 無標籤
+```
+  </Tab>
+  <Tab title="customers.yml (關聯模型)">
+```yaml
+models:
+  - name: customers
+    columns:
+      - name: email
+        config:
+          meta:
+            dimension:
+              tags: ["ai-enabled"]
+```
+  </Tab>
+</Tabs>
+
+結果：整個探索會被隱藏，因為基礎表 (`orders`) 沒有匹配的標籤。
+
+<Warning>
+  只有當「基礎表 (Base Table)」具有匹配標籤（不論是在探索層級還是欄位層級）時，該探索才可見。僅在關聯表中帶有匹配標籤是不夠的。
+</Warning>
+
+## 使用者屬性與權限
+
+AI 代理會自動遵守透過 [使用者屬性 (User Attributes)](/references/workspace/user-attributes_zh_TW) 配置的所有數據存取控制。這確保代理僅存取使用者獲授權查看的數據，維持您現有的安全政策。
+
+### 使用者屬性如何流向 AI 查詢
+
+當 AI 代理代表使用者生成並執行查詢時，它會繼承該使用者的屬性值並將其應用於所有數據存取：
+
+**行級安全 (Row-level security)：**
+- 代理會自動套用您模型中定義的 `sql_filter` 規則
+- 查詢結果中僅包含符合使用者屬性值的行
+- 範例：如果使用者具有 `sales_region: 'EMEA'`，代理將僅查詢該區域的數據
+
+**欄級安全 (Column-level security)：**
+- 代理會遵守維度上的 `required_attributes`
+- 使用者無法存取的欄位對代理而言是不可見的
+- 源自受限欄位的指標也將無法使用
+- 範例：如果 `salary` 需要 `is_admin: 'true'`，非管理員使用者的代理將無法查詢薪資數據
+
+**表級安全 (Table-level security)：**
+- 代理會遵守模型上的 `required_attributes`
+- 使用者無法存取的表格會對代理完全隱藏
+- 代理無法引用或關聯受限的表格
+- 範例：如果 `payments` 需要 `is_admin: 'true'`，非管理員使用者的代理將無法查詢支付表
+
+### 預設行為
+
+<Info>
+**在 Lightdash 應用程式中：** AI 代理會自動為所有查詢使用登入使用者的屬性。
+
+**在 Slack 中：** 預設情況下，AI 代理會使用建立代理的使用者的屬性。要讓每個 Slack 使用者的個別權限受到尊重，請在 [Lightdash Slack 設置](/references/integrations/slack-integration_zh_TW#ai-代理配置) 中啟用 **AI Agents OAuth requirement (AI 代理 OAuth 要求)** 切換開關。啟用後，每個 Slack 使用者在使用代理前必須先透過 OAuth 登入 Lightdash，其個別權限將應用於所有查詢。
+</Info>
+
+### 背後的運作機制
+
+當代理生成查詢時：
+
+1. 代理收到使用者的完整屬性設定檔（包括直接的使用者屬性和群組屬性）
+2. 所有 `sql_filter` 規則會自動套用到生成的 SQL 中
+3. 具有 `required_attributes` 的維度和表格會從可用 schema 中過濾掉
+4. 代理僅能看到並查詢使用者權限範圍內的數據
+
+這一切都是透明發生的——代理不需要特殊的配置。您現有的使用者屬性規則會自動保護 AI 生成的查詢，就像保護手動查詢一樣。
+
+### 範例：區域銷售存取
+
+考慮以下模型配置：
+
+```yaml
+models:
+  - name: sales
+    meta:
+      sql_filter: ${TABLE}.region IN (${lightdash.attributes.sales_region})
+    columns:
+      - name: revenue
+      - name: customer_name
+        meta:
+          dimension:
+            required_attributes:
+              can_view_pii: "true"
+```
+
+對於一個具有 `sales_region: 'EMEA'` 且沒有 `can_view_pii` 屬性的使用者：
+
+- 代理可以查詢 `revenue` 數據，但僅限於 EMEA 區域
+- 代理無法看到或查詢 `customer_name`（PII 限制）
+- 如果代理嘗試分析客戶姓名，將因權限錯誤而失敗
+- 所有生成的查詢會自動包含 `WHERE region IN ('EMEA')`
+
+### 安全考量
+
+- **元數據模式：** 即使在僅限元數據模式下，代理在顯示可用欄位時也會遵守使用者屬性。
+- **數據存取模式：** 啟用數據存取時，查詢結果會按使用者屬性過濾。
+- **查詢生成：** 代理無法生成繞過使用者屬性限制的查詢。
+- **錯誤處理：** 如果代理嘗試存取受限數據，查詢將因權限錯誤而失敗。
+
+<Warning>
+表格計算 (Table Calculations) 或 SQL 執行器 (SQL Runner) 中的自定義 SQL 可能會繞過使用者屬性過濾器。AI 代理使用標準查詢介面，無法繞過這些限制。
+</Warning>
