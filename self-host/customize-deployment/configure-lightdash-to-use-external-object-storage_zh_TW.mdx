@@ -1,0 +1,92 @@
+---
+title: "配置 Lightdash 使用外部儲存"
+sidebarTitle: "外部儲存"
+---
+
+在 Lightdash 中，我們會生成一些檔案，例如：
+
+- 用於 Slack 連結展開與定時交付的圖片
+- JSONL/CSV/Excel 格式的結果數據
+
+這些檔案需要儲存在相容於 S3 的雲端儲存空間中。可選方案包括 GCP Buckets, S3 Storage 以及 MinIO。
+
+## 在 Google Cloud Platform 上配置雲端儲存
+
+前往 GCP：Cloud Storage
+
+建立一個具備以下詳情的儲存桶 (Bucket)：
+
+- 給予一個唯一的 `Bucket name`（例如：`lightdash-cloud-file-storage-eu`）。
+- 選擇區域（例如：多區域 US 或多區域 EU，或單一區域 EU-west-1）。
+- 選擇儲存空間類別：預設為 standard。
+- 停用 `enforce public access` (強制執行公開存取) 並選擇 `fine-grained` (精細控制)。
+- 防護：`none` (無)。
+
+前往 Settings \> Interoperability 並建立一個 `Access key for service account` (服務帳號存取金鑰)。
+
+- 複製 `access key` (存取金鑰) 與 `secret` (秘密金鑰)。
+
+Google 的 `S3_ENDPOINT` 為 `https://storage.googleapis.com`，`S3_REGION` 則設為 `auto`。
+
+## 在 AWS 上配置雲端儲存
+
+- 導覽至 AWS 管理控制台的 S3 章節，點擊 Create Bucket 按鈕。
+- 為您的儲存桶命名並選擇存放數據的區域。
+- 接著，設定儲存桶權限。將其設為私有 (Private)。
+
+要匯出您的 S3 憑據，請遵循以下步驟：
+
+- 導覽至 IAM 章節並點擊 Users 標籤。
+- 點擊您想匯出其憑據的使用者。
+- 點擊 Security Credentials 標籤並找到 Access Keys 章節。
+- 點擊 Create Access Key 按鈕。
+- 下載包含您的 Access Key ID 與 Secret Access Key 的 CSV 檔案。
+
+參考[此指南](https://docs.aws.amazon.com/general/latest/gr/s3.html)以確認適合您儲存桶的正確 `S3_ENDPOINT`。
+
+## 使用 MinIO 配置雲端儲存
+
+在 MinIO 中建立儲存桶：
+
+- 登入 MinIO 控制台，點擊側邊欄的 "Buckets"。
+- 點擊 "Create Bucket"。
+- 為儲存桶命名並點擊 "Create Bucket"。
+
+在 MinIO 中建立存取憑據：
+
+- 點擊側邊欄的 "Access Keys"。
+- 點擊 "Create access key"。
+- 為您的新存取金鑰命名並點擊 "Create"。
+- 下載包含 Access Key ID 與 Secret Access Key 的 JSON 檔案。
+
+MinIO 需要路徑風格 (path style) 的儲存桶 URL，因此您需要在環境變數中設定 `S3_FORCE_PATH_STYLE: true`。
+
+## Azure Storage
+
+Azure Blob Storage 原生並不相容於 S3 API。雖然 Lightdash 透過支援與 S3 相容之 API 的整合來實現外部物件儲存，但 Azure 的儲存服務並未直接提供此相容性。這表示您**無法直接在 Lightdash 部署中使用 Azure Blob Storage 來替代 S3**。
+
+相反地，您可以在 Azure 環境中使用以下其中一種相容於 S3 的解決方案：
+
+- [**MinIO**](https://min.io)：相容於 S3 的物件儲存。
+- [**s3proxy**](https://github.com/gaul/s3proxy)：一個輕量級代理，可在 Azure Blob Storage 之上添加一層相容於 S3 的 API 層。
+
+## 配置 Lightdash 使用 S3 憑據
+
+要啟用 Lightdash 使用您的 S3 儲存桶進行雲端儲存，您需要設定以下環境變數：
+
+```bash
+S3_ENDPOINT        # 必填
+S3_REGION          # 必填
+S3_BUCKET          # 必填
+S3_ACCESS_KEY      # 若使用 IAM 角色則選填
+S3_SECRET_KEY      # 若使用 IAM 角色則選填
+S3_EXPIRATION_TIME # 選填，預設為 259200 秒（3 天）
+```
+
+欲了解所有可能的 S3 相關環境變數與其他配置的完整清單，請參考 [環境變數文件](/self-host/customize-deployment/environment-variables_zh_TW#s3)。
+
+### 使用 IAM 角色
+
+Lightdash 也支援透過 IAM 角色進行驗證。若您省略了 `S3_ACCESS_KEY` 與 `S3_SECRET_KEY` 變數，S3 函式庫將自動嘗試使用 IAM 角色。欲了解其運作機制，請參考 [AWS SDK for JavaScript 文件中關於在 Node.js 設定憑據的說明](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html)。
+
+若您使用 IAM 角色生成簽署 URL (Signed URLs)，請注意基於 AWS 限制，不論 `S3_EXPIRATION_TIME` 如何配置，這些 URL 的最大有效期均為 7 天。

@@ -1,0 +1,26 @@
+---
+title: 為自託管 Lightdash 配置 Google 試算表整合
+description: "本指南將向您展示如何在自託管的 Lightdash 伺服器上，透過 [定時交付上傳至 Google 試算表](/references/integrations/google-sheets_zh_TW) 並將 `圖表` 的結果上傳至 Google 試算表。"
+sidebarTitle: Google 試算表
+---
+
+### 啟用 Google SSO
+
+要驗證 Google 使用者，您首先需要在伺服器上啟用 [Google SSO](https://docs.lightdash.com/self-host/customize-deployment/use-sso-login-for-self-hosted-lightdash_zh_TW#google)。
+
+如果您仍希望使用者透過電子郵件/密碼或其他 SSO 提供商登入，請設定 `AUTH_GOOGLE_ENABLED=false`。這會隱藏 Google 作為登入選項，但仍允許 Google 試算表整合正常運作。
+
+<Note>
+  當使用者連接到 Google 試算表時，Lightdash 會請求必要的 OAuth 範圍：`drive.file` 和 `spreadsheets (選填)`。
+</Note>
+
+### 為 Google 檔案選取器 (File Picker) 建立 API 金鑰
+
+我們使用 Google Drive Picker API 來讓您在 `同步 (Syncs)` 時選取您的試算表檔案。
+
+要建立 Google Drive Picker API，您需要在 [Google Cloud 的 API 與服務](https://console.cloud.google.com/apis/credentials) 中新增一組 API 金鑰。您的 Google 專案必須啟用以下 API：
+
+- Google Picker API
+- Google Sheets API
+
+將該 API 金鑰儲存在新的環境變數 `GOOGLE_DRIVE_API_KEY` 中。

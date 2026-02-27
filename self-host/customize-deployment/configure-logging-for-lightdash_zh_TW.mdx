@@ -1,0 +1,17 @@
+---
+title: "為 Lightdash 配置日誌記錄 (Logging)"
+sidebarTitle: 日誌記錄
+---
+
+預設情況下，Lightdash 以人類可讀的格式將日誌輸出至主控台 (Console)。您可以透過以下環境變數配置日誌行為，例如將日誌寫入檔案或使用 JSON 格式：
+
+| 變數 | 描述 | 必填？ | 預設值 |
+|:-------------------------------|:------------------------------------------------------------|:---------:|:----------------------:|
+| `LIGHTDASH_LOG_LEVEL` | 要顯示的最低日誌層級 | | `INFO` |
+| `LIGHTDASH_LOG_FORMAT` | 日誌訊息的格式 | | `pretty` |
+| `LIGHTDASH_LOG_OUTPUTS` | 日誌發送的目標輸出端 | | `console` |
+| `LIGHTDASH_LOG_CONSOLE_LEVEL` | 在主控台顯示的最低日誌層級 | | `LIGHTDASH_LOG_LEVEL` |
+| `LIGHTDASH_LOG_CONSOLE_FORMAT` | 主控台上日誌訊息的格式 | | `LIGHTDASH_LOG_FORMAT` |
+| `LIGHTDASH_LOG_FILE_LEVEL` | 寫入日誌檔案的最低日誌層級 | | `LIGHTDASH_LOG_LEVEL` |
+| `LIGHTDASH_LOG_FILE_FORMAT` | 日誌檔案中日誌訊息的格式 | | `LIGHTDASH_LOG_FORMAT` |
+| `LIGHTDASH_LOG_FILE_PATH` | 日誌檔案的路徑 | | `./logs/all.log` |

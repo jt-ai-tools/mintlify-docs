@@ -1,0 +1,85 @@
+---
+title: "企業版授權金鑰 (Enterprise License Keys)"
+description: "在自託管 Lightdash 執行體上啟用企業版功能"
+---
+
+企業版授權金鑰讓您能在自託管執行體上造訪 Lightdash 企業版 (Enterprise Edition) 的進階功能。這些功能包含專為大型組織設計的強化安全性、效能優化以及進階協作工具。
+
+## 獲取企業版授權金鑰
+
+若要獲取自託管 Lightdash 執行體的企業版授權金鑰：
+
+1. **聯繫我們的團隊** —— [預約與企業團隊通話](https://calendly.com/lightdash-cloud/enterprise)，討論您的需求並獲取金鑰。
+
+2. **接收您的授權金鑰** —— 我們的團隊將為您提供一組專為您組織需求量身打造的唯一金鑰。
+
+## 配置您的授權金鑰
+
+收到企業版授權金鑰後，您需要在 Lightdash 部署中進行配置。
+
+### 使用環境變數
+
+將以下環境變數加入您的 Lightdash 配置：
+
+```bash
+LIGHTDASH_LICENSE_KEY=在此填入您的企業版授權金鑰
+```
+
+### 使用 Helm (Kubernetes)
+
+如果您使用 Helm 在 Kubernetes 上部署 Lightdash，請將金鑰加入您的 `values.yaml` 檔案：
+
+```yaml
+secrets:
+  LIGHTDASH_LICENSE_KEY: 在此填入您的企業版授權金鑰
+```
+
+然後更新您的 Helm 部署：
+
+```bash
+helm upgrade lightdash lightdash/lightdash -n lightdash -f values.yaml
+```
+
+### 使用 Docker Compose
+
+對於使用 Docker Compose 的部署，請將金鑰加入您的 `docker-compose.yml` 檔案：
+
+```yaml
+services:
+  lightdash:
+    environment:
+      - LIGHTDASH_LICENSE_KEY=在此填入您的企業版授權金鑰
+```
+
+## 驗證您的授權
+
+配置完金鑰並重啟 Lightdash 後，您可以透過以下方式驗證企業版功能是否已啟用：
+
+1. 以管理員身分登入。
+2. 導覽至 Settings → Organization。
+3. 檢查是否出現 "Enterprise Edition" (企業版) 的徽章。
+
+## 企業版功能
+
+具備有效的企業版授權金鑰後，您將可以造訪：
+
+- **進階身份驗證** —— 增強的 SSO 選項與安全控制。
+- **擴展使用量分析** —— 額外的使用量分析與監控能力。
+- **優先支援** —— 直接聯繫我們的企業支援團隊。
+- **進階自定義** —— 針對大型部署的額外配置選項。
+- **效能優化** —— 專為大規模部署設計的功能。
+
+## 故障排除
+
+如果配置金鑰後企業版功能仍不可用：
+
+1. 驗證環境變數中的授權金鑰是否填寫正確。
+2. 確保在加入金鑰後已重新啟動 Lightdash。
+3. 檢查 Lightdash 日誌中是否有任何與授權相關的錯誤訊息。
+4. 聯繫我們的 [企業支援團隊](https://calendly.com/lightdash-cloud/enterprise) 尋求協助。
+
+## 相關文件
+
+- [環境變數參考指南](/self-host/customize-deployment/environment-variables_zh_TW)
+- [自託管 Lightdash](/self-host/self-host-lightdash_zh_TW)
+- [Lightdash Cloud vs 自託管](/self-host/lightdash-cloud-vs-self-hosted_zh_TW)

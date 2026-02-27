@@ -1,0 +1,117 @@
+---
+title: "地圖 (Map) (Beta)"
+description: "使用地圖在互動式地圖上顯示地理數據。"
+icon: "earth-europe"
+---
+
+![地圖](/images/references/chart-types/map/map-chart.png)
+
+<Info>
+此功能目前處於 Beta 階段。如果您想獲取造訪權限，請與 Lightdash 團隊聯繫。
+</Info>
+
+地圖可以在互動式地圖上顯示地理數據。支援三種視覺化模式：
+
+- **散佈圖 (Scatter)** —— 使用經緯度座標繪製個別數據點。
+- **區域圖 (Area / Choropleth)** —— 根據數值為區域著色。
+- **熱圖 (Heatmap)** —— 以熱力疊加層顯示數據點的密度。
+
+地圖在以下情況非常有用：
+
+- 視覺化數據的地理分佈。
+- 顯示各區域的績效或指標。
+- 展現基於地點的模式。
+
+## 散佈地圖 (Scatter maps)
+
+散佈地圖使用經度和緯度座標在地圖上繪製個別數據點。您可以選擇根據欄位值來調整數據點的大小與顏色。
+
+### 數據需求
+
+您的數據必須包含經度與緯度座標。如果您的數據僅包含地址而非座標，您需要先使用第三方地理編碼服務將其轉換為經緯度值，然後才能在地圖中使用。
+
+### 版面配置 (Layout) 選項
+
+| 選項 | 描述 |
+|--------|-------------|
+| Latitude field (緯度欄位) | 包含緯度座標的欄位。 |
+| Longitude field (經度欄位) | 包含經度座標的欄位。 |
+
+### 顯示 (Display) 選項
+
+| 選項 | 描述 |
+|--------|-------------|
+| Color based on (著色依據) | 決定數據點顏色的欄位。設定為數值欄位時，會顯示漸層色。 |
+| Color / Color range (顏色/色階) | 未選擇顏色欄位時為單色，數值欄位則可設定漸層色（2-5 種顏色）。 |
+| Size based on (大小依據) | 決定氣泡大小的欄位（選填）。 |
+| Size / Size range (大小/尺寸範圍) | 未選擇大小欄位時為固定尺寸，依欄位設定時則為最小/最大範圍。 |
+| Show legend (顯示圖例) | 切換圖例的可見性。 |
+| Background map (背景地圖) | 無 (None)、OpenStreetMap 或衛星圖 (Satellite)。設為「無」時，可自定義背景顏色。 |
+| Save current map extent (儲存當前地圖範圍) | 啟用後可保留縮放比例與平移位置。 |
+
+## 區域地圖 (Area maps / Choropleth)
+
+區域地圖根據數據值為地理區域著色。您可以使用內建的國家或美國州級形狀，也可以針對其他邊界提供自定義的 GeoJSON 檔案。
+
+### 數據需求
+
+- **國家代碼** —— 世界地圖使用 ISO 3166-1 alpha-3 代碼（例如："USA", "GBR"）。
+- **美國州代碼** —— 美國地圖使用州縮寫（例如："CA", "NY"）。
+- **自定義識別碼** —— 任何與您自定義 GeoJSON 檔案中屬性匹配的識別碼。
+
+### 版面配置 (Layout) 選項
+
+| 選項 | 描述 |
+|--------|-------------|
+| Custom region (自定義區域) | 切換是否使用自定義 GeoJSON 檔案而非內建區域。 |
+| Map region (地圖區域) | 世界 (World) 或美國 (US)（當自定義區域關閉時）。 |
+| Custom GeoJSON URL (自定義 GeoJSON 網址) | 您的 GeoJSON 檔案連結（當自定義區域開啟時）。 |
+| Map join field (地圖關聯欄位) | GeoJSON 檔案中用於關聯的屬性。 |
+| Data join field (數據關聯欄位) | 您數據中包含與地圖關聯欄位匹配值的欄位。標籤會隨地圖類型變更。 |
+
+#### 使用自定義 GeoJSON
+
+當您啟用 **Custom region** 時，可以提供定義區域邊界的 GeoJSON 檔案 URL。輸入網址後，Lightdash 會載入該檔案中可用的屬性，並顯示在 **Map join field** 下拉選單中。請選取包含與您數據匹配值的屬性。
+
+例如，若您的 GeoJSON 具備 `postal_code` 屬性，且數據中有 `zip_code` 欄位：
+1. 啟用 **Custom region** 並輸入 GeoJSON 網址。
+2. 從 **Map join field** 下拉選單選取 `postal_code`。
+3. 選取您的 `zip_code` 欄位作為 **Data join field**。
+
+### 顯示 (Display) 選項
+
+| 選項 | 描述 |
+|--------|-------------|
+| Color based on (著色依據) | 決定區域顏色深淺的欄位。 |
+| Color range (色階) | 從低值到高值的漸層色（2-5 種顏色）。 |
+| No data color (無數據顏色) | 沒有匹配數據之區域的顏色。 |
+| Show legend (顯示圖例) | 切換圖例的可見性。 |
+| Background map (背景地圖) | 無 (None)、OpenStreetMap 或衛星圖 (Satellite)。 |
+| Save current map extent (儲存當前地圖範圍) | 啟用後可保留縮放比例與平移位置。 |
+
+## 熱圖 (Heatmaps)
+
+熱圖以熱力疊加層顯示數據點的密度，適合視覺化地理區域內數據點的集中程度。
+
+### 數據需求
+
+您的數據必須包含經度與緯度座標。如果您的數據僅包含地址而非座標，您需要先使用第三方地理編碼服務將其轉換為經緯度值。
+
+### 版面配置 (Layout) 選項
+
+| 選項 | 描述 |
+|--------|-------------|
+| Latitude field (緯度欄位) | 包含緯度座標的欄位。 |
+| Longitude field (經度欄位) | 包含經度座標的欄位。 |
+
+### 顯示 (Display) 選項
+
+| 選項 | 描述 |
+|--------|-------------|
+| Color range (色階) | 從低密度到高密度的漸層色（2-5 種顏色）。 |
+| Radius (半徑) | 每個熱點的大小 (1-50)。 |
+| Blur (模糊度) | 應用於熱點的模糊程度 (0-30)。 |
+| Opacity (不透明度) | 熱力疊加層的透明度 (0.1-1)。 |
+| Show legend (顯示圖例) | 切換圖例的可見性。 |
+| Background map (背景地圖) | 無 (None)、OpenStreetMap 或衛星圖 (Satellite)。 |
+| Save current map extent (儲存當前地圖範圍) | 啟用後可保留縮放比例與平移位置。 |

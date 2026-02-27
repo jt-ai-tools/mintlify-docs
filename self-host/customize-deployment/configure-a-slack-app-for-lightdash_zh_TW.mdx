@@ -1,0 +1,144 @@
+---
+title: "為自託管 Lightdash 配置 Slack 整合"
+sidebarTitle: Slack 整合
+---
+
+在本指南中，我們將向您展示如何在自託管的 Lightdash 伺服器上啟用 [Slack 整合](/references/integrations/slack-integration_zh_TW)。
+
+### 在您的組織中建立新的 Slack 應用程式
+
+首先，我們需要建立一個 Slack 應用程式：[https://api.slack.com/apps?new\_app=1](https://api.slack.com/apps?new%5Fapp=1)
+
+為了簡化流程，建議選擇 `From an app manifest` (從應用程式資訊清單)。
+
+<Frame>
+  <img src="/images/self-host/customize-deployment/configure-a-slack-app-for-lightdash/slack-create-new-app-2d375ed270fefd13d61b835a38a22080.png" alt="建立新應用程式"/>
+</Frame>
+
+
+接著選取您想要啟用此功能的 Slack 工作區。稍後若想切換至不同的工作區，也可以點擊 `enable distribution`。
+
+<Frame>
+  <img src="/images/self-host/customize-deployment/configure-a-slack-app-for-lightdash/slack-select-worskpace-d078476820529509c8ef925794f931bc.png" alt="選取工作區"/>
+</Frame>
+
+
+然後複製下方的 manifest 代碼，以允許您的應用程式進行 URL 展開。**請務必將下方的 `your-lightdash-deployment-url.com` 更新為您的 Lightdash 部署網址**（例如：`app.lightdash.cloud`）。
+
+```json
+display_information:
+  name: Lightdash
+  description: 在您的 Slack 上分享 Lightdash URL
+  background_color: '#7262ff'
+features:
+  bot_user:
+    display_name: Lightdash
+    always_online: false
+  unfurl_domains:
+    - your-lightdash-deployment-url.com
+oauth_config:
+  redirect_urls:
+    - https://your-lightdash-deployment-url.com/api/v1/slack/oauth_redirect
+    - https://your-lightdash-deployment-url.com/api/v1/auth/slack/callback
+  scopes:
+    bot:
+      - app_mentions:read
+      - channels:join
+      - channels:read
+      - channels:history
+      - chat:write
+      - chat:write.customize
+      - files:read
+      - files:write
+      - groups:read
+      - groups:history
+      - links:read
+      - links:write
+      - users:read
+      - im:write
+settings:
+  event_subscriptions:
+    request_url: https://your-lightdash-deployment-url.com/slack/events
+    bot_events:
+      - app_mention
+      - link_shared
+      - message.channels
+  interactivity:
+    is_enabled: true
+    request_url: https://your-lightdash-deployment-url.com/slack/events
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
+```
+
+最後，點擊 `create`。
+
+### 複製憑據 (Credentials)
+
+現在，從您新建立的應用程式中複製以下憑據。
+
+在 `Basic Information` 頁面中：
+
+<Frame>
+![](/images/self-host/customize-deployment/configure-a-slack-app-for-lightdash/slack-basic-information-9a846bde79778d77d0c2616734fac8f1.png)
+</Frame>
+
+
+* Client ID
+* Client secret (點擊顯示並複製)
+* Signing secret (點擊顯示並複製)
+
+### 將憑據加入您的本地環境
+
+現在，您需要使用剛才複製的憑據，將以下環境變數加入您的 Lightdash 伺服器配置中：
+
+* `SLACK_CLIENT_ID`：Client ID（請確保加上引號使其成為字串而非數字）
+* `SLACK_CLIENT_SECRET`：Client secret
+* `SLACK_SIGNING_SECRET`：Signing secret
+* `SLACK_STATE_SECRET`：這可以是任何字串
+
+重啟您的 Lightdash 服務，現在您應該就能在自託管環境中使用 [Slack 整合](/references/integrations/slack-integration_zh_TW) 了。
+
+## 啟用 Socket Mode (替代方案設定)
+
+Socket Mode 允許您的 Slack 應用程式透過 WebSocket 連線而非 HTTP 請求接收事件與互動資訊。這在開發測試階段或您的 Lightdash 執行體無法對外公開造訪時非常有用。
+
+### 何時使用 Socket Mode
+
+- 您的 Lightdash 執行體無法從公網造訪時。
+- 正在本地開發或測試 Slack 整合功能時。
+
+### 配置 Socket Mode
+
+#### 步驟 1：在 Slack 應用程式中啟用 Socket Mode
+
+1. 前往您的 Slack 應用程式設定，在側邊欄找到 **Socket Mode** 章節。
+
+2. 開啟 **Enable Socket Mode** 切換開關。
+
+<Frame>
+  <img src="/images/self-host/customize-deployment/configure-a-slack-app-for-lightdash/slack-socket-mode-enable.png" alt="啟用 Socket Mode"/>
+</Frame>
+
+3. 啟用後，系統會提示您生成一個 app-level token (應用程式層級權杖)。為您的權杖輸入名稱（例如：「lightdash-socket-token」）。
+
+<Frame>
+  <img src="/images/self-host/customize-deployment/configure-a-slack-app-for-lightdash/slack-socket-mode-gen-token.png" alt="生成權杖對話框"/>
+</Frame>
+
+4. 點擊 **Generate** 建立權杖，然後複製生成的值。下一步會用到它。
+
+<Frame>
+  <img src="/images/self-host/customize-deployment/configure-a-slack-app-for-lightdash/slack-socket-mode-gen-copy.png" alt="複製權杖"/>
+</Frame>
+
+#### 步驟 2：更新 Lightdash 環境變數
+
+將以下環境變數加入您的 Lightdash 伺服器配置：
+
+* `SLACK_APP_TOKEN`：您在步驟 1 生成並複製的 app-level token。
+* `SLACK_SOCKET_MODE`：設為 `"true"` 以啟用 Socket Mode。
+
+#### 步驟 3：重新安裝 Slack 整合
+
+更新環境變數後，重啟 Lightdash 服務，然後在 Lightdash 執行體中重新安裝 Slack 整合以完成 Socket Mode 的設定。現在您的 Slack 整合將透過 WebSocket 與 Slack 通訊，而非透過 HTTP Webhooks。

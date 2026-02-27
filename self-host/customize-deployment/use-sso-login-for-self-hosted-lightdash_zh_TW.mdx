@@ -1,0 +1,207 @@
+---
+title: "為 Lightdash 配置密碼或 SSO 身份驗證"
+sidebarTitle: SSO 與身份驗證
+---
+
+## 多重身份驗證方法
+
+Lightdash 支援在單個執行體上同時配置多種身份驗證方法。您可以啟用任何組合的登入選項，包括：
+
+- 密碼 + Okta
+- 密碼 + Google + Okta
+- 多個 SSO 提供商（例如：Google + Azure AD + One Login）
+
+只需為您想要啟用的每種身份驗證方法配置環境變數，所有配置好的選項都會出現在您的登入頁面上。
+
+## 密碼 (Passwords)
+
+我們建議[加入 SMTP 環境變數](/self-host/customize-deployment/environment-variables_zh_TW#smtp)，以便 Lightdash 在登入頁面顯示 `忘記密碼？` 按鈕，並發送密碼重置郵件。
+
+您可以透過以下幾個步驟來覆蓋使用者密碼：
+
+1. 開啟 Lightdash Docker 容器的 bash 終端機。
+2. 使用此指令覆蓋使用者密碼：
+
+```bash
+cd ./packages/backend && node ./dist/overrideUserPassword.js <使用者電子郵件> <新密碼>
+```
+
+## SSO 設定
+
+要強制執行 SSO，建議停用密碼身份驗證。可以透過設定以下環境變數來達成：
+
+| 變數 | 描述 | 必填？ | 預設值 |
+| :-------------------------------------- | :---------------------------------------------------- | :---------: | :-------: |
+| `AUTH_DISABLE_PASSWORD_AUTHENTICATION` | 若為 `"true"`，則停用普通密碼登入 | | false |
+
+## Okta
+
+Lightdash 支援使用 Okta 作為身份驗證提供商。此整合使用 OpenID Connect (OIDC) 進行使用者驗證，並使用 JIT (及時) 配置在使用者首次登入時於 Lightdash 中建立帳號。
+
+### 建立 Okta 應用程式
+
+在 Okta 管理控制台，導覽至 **Applications** 並點擊 **Create App Integration**，選擇以下設定：
+
+* **Sign-in method**: OIDC - OpenID Connect
+* **Application type**: Web application
+
+在下一頁中，您需要使用以下設定，並將 `{{ lightdash_url }}` 替換為您的 Lightdash 執行體網址。例如：如果您平時造訪網址為 `https://lightdash.example.com/login`，則 `{{ lightdash_url }}` 應為 `https://lightdash.example.com`。
+
+* **Grant type**: Authorization Code
+* **Sign-in redirect URIs**: `{{ lightdash_url }}/api/v1/oauth/redirect/okta`
+* **Sign-out redirect URIs**: `{{ lightdash_url }}`
+* **Controlled access**: 選擇哪些使用者可以造訪此應用程式
+
+點擊 **Save** 後進入應用程式設定頁面。為了獲得最佳使用者體驗，我們建議允許 Okta 發起登入流程。點擊 **General Settings** 旁的 **Edit** 並設定：
+
+* **Login initiated by**: App and Okta Sign-in Page
+* **Application visibility**: 對使用者顯示應用程式圖示
+* **Login flow**: 重新導向至應用程式以發起登入 (OIDC Compliant)
+* **Initiate login URI**: `{{ lightdash_url }}/api/v1/login/okta`
+
+點擊 **Save** 完成。
+
+### Okta 配置變數
+
+在應用程式設定頁面，您需要複製以下數值：
+
+* **Client ID**
+* **Client secret**
+
+您還需要您的 **Okta 網域 (Okta domain)**，這是您 Okta 網址的第一部分。例如：若網址為 [https://dev-123456.okta.com](https://dev-123456.okta.com)，則網域為 `dev-123456.okta.com`。
+
+最後，您需要 **簽發者 URI (Issuer URI)**。這是您 Okta 授權伺服器的網址。您可以使用 [組織授權伺服器 (Org authorization server)](https://developer.okta.com/docs/concepts/auth-servers/#org-authorization-server)（網址為 `https://dev-123456.okta.com`）或選擇自定義授權伺服器。要尋找自定義伺服器的簽發者 URI，請導覽至 **API** > **Authorization Servers**，點擊對應的伺服器並記下 **Issuer URI**。例如：`default` 授權伺服器的簽發者 URI 為 `https://dev-123456.okta.com/oauth2/default`。
+
+#### 群組與 Okta
+
+如果您想使用群組來控制 Lightdash 造訪權限，需要配置 Okta 與 Lightdash 以支援此功能。
+
+若**未使用**自定義授權伺服器 ID：
+
+* 在 Okta 應用程式設定的 `OpenID Connect ID Token` 章節，將 `groups` 加入 `Groups claim` 欄位，將 Groups claims 類型設為 `Filter` 且過濾器匹配表達式設為 `.*`。
+
+若**使用**了自定義授權伺服器 ID：
+
+* 無需設定 `AUTH_OKTA_EXTRA_SCOPES` 環境變數。
+* 在授權伺服器設定中，新增宣告 `groups`，值類型為 `Groups`，匹配正則表達式為 `.*`。
+
+### 為 Okta 配置 Lightdash
+
+您需要在 Lightdash 部署中設定以下環境變數：
+
+| 變數 | 描述 | 必填？ |
+| :----------------------------------- | :-------------------------------------------------------------------------------------------------- | :---------: |
+| `AUTH_OKTA_DOMAIN` | Okta 網域。不應包含 `https://` | <Icon icon="square-check" iconType="solid"/> |
+| `AUTH_OKTA_OAUTH_CLIENT_ID` | 從 Okta 應用程式設定複製的 **Client ID** | <Icon icon="square-check" iconType="solid"/> |
+| `AUTH_OKTA_OAUTH_CLIENT_SECRET` | 從 Okta 應用程式設定複製的 **Client secret** | <Icon icon="square-check" iconType="solid"/> |
+| `AUTH_OKTA_OAUTH_ISSUER` | 從授權伺服器複製的 **Issuer URI**。應包含 `https://` | <Icon icon="square-check" iconType="solid"/> |
+| `AUTH_OKTA_AUTHORIZATION_SERVER_ID` | 選填。自定義授權伺服器的 **名稱**（若未使用組織預設伺服器）。 | |
+| `AUTH_OKTA_EXTRA_SCOPES` | 選填。未使用自定義授權伺服器時的額外 **Scopes**（例如 "groups"）。 | |
+
+### 啟用自動將 Okta 使用者分配至 Lightdash 群組
+
+<Warning>
+  **此功能已棄用，並將在未來的版本中移除。**
+  
+  關於如何在 Lightdash 中配置使用者與群組的詳細資訊，請參閱 [SCIM 整合](/references/workspace/scim-integration_zh_TW) 文件。
+</Warning>
+
+如果您已[配置 Okta 與 Lightdash 分享群組](/references/workspace/groups_zh_TW#使用-okta-管理-lightdash-中的群組)，Okta 使用者將自動被分配至 Lightdash 中對應的群組。要啟用此功能，請確保設定以下環境變數：
+
+| 變數 | 描述 | 必填？ |
+| :------------------------ | :----------------------------------------- | :---------: |
+| `AUTH_ENABLE_GROUP_SYNC` | 若為 `"true"`，則啟用來自 Okta 的群組同步。 | |
+
+進一步了解[使用 OKTA 管理 Lightdash 中的群組](/references/workspace/groups_zh_TW#使用-okta-管理-lightdash-中的群組)。
+
+## Google
+
+要啟用 Google 單一登入 (SSO)，請參考說明以[建立 OAuth 網頁用戶端 ID](https://support.google.com/workspacemigrate/answer/9222992?hl=zh-Hant)。在**第 13 步**配置用戶端時，請輸入以下詳情：
+
+* 已授權的 JavaScript 來源：`https://{{ lightdash_domain }}`
+* 已授權的重新導向 URI：`https://{{ lightdash_domain }}/api/v1/oauth/redirect/google`
+
+其中 `{{ lightdash_domain }}` 是您登入 Lightdash 的網域，例如 `mycompany.lightdash.com`。
+
+必須為 Lightdash 提供以下環境變數以啟用 Google SSO：
+
+| 變數 | 描述 | 必填？ | 預設值 |
+| :---------------------------------- | :------------------------------------------- | :---------: | :-------: |
+| `AUTH_GOOGLE_ENABLED` | 必須設為 `true` 以啟用 Google SSO | <Icon icon="square-check" iconType="solid"/> | |
+| `AUTH_GOOGLE_OAUTH2_CLIENT_ID` | 必填，請參考上述說明 | <Icon icon="square-check" iconType="solid"/> | |
+| `AUTH_GOOGLE_OAUTH2_CLIENT_SECRET` | 必填，請參考上述說明 | <Icon icon="square-check" iconType="solid"/> | |
+
+## One Login
+
+建立 One Login 整合：
+
+ - 前往 **Administration** 門戶。
+ - 在頂部導覽列選取 **Applications** > **Applications**。
+ - 點擊 **Add App** 按鈕。
+ - 在 **Find Applications** 中搜尋 **OpenID Connect (OIDC)** 並選取。
+ - 設定 **Display Name**，**Icon** 部分可使用我們的 [Lightdash 媒體素材庫](https://lightdash.notion.site/Media-kit-957921de51c7453f90ca7dcec11ef52b) 獲取 Lightdash Bolt 標誌，然後點擊 **Save**。
+ - 為應用程式設定以下數值：
+   - **Configuration** > **Login URL**：`{{site_url}}/api/v1/login/oneLogin`
+   - **Configuration** > **Redirect URL**：`{{site_url}}/api/v1/oauth/redirect/oneLogin`
+   - **SSO** > **Application Type**：`web`
+   - **SSO** > **Token endpoint**：`post`
+   - **SSO** > **Enable login hint**：`true`
+ - 在 **SSO** 頁面複製 Client ID, Client Secret 以及 Issuer URL。
+
+必須提供以下環境變數以啟用 One Login SSO：
+
+| 變數 | 描述 | 必填？ | 預設值 |
+| :------------------------------------ | :-------------------------- | :---------: | :-------: |
+| `AUTH_ONE_LOGIN_OAUTH_CLIENT_ID` | One Login SSO 必填 | <Icon icon="square-check" iconType="solid"/> | |
+| `AUTH_ONE_LOGIN_OAUTH_CLIENT_SECRET` | One Login SSO 必填 | <Icon icon="square-check" iconType="solid"/> | |
+| `AUTH_ONE_LOGIN_OAUTH_ISSUER` | One Login SSO 必填 | <Icon icon="square-check" iconType="solid"/> | |
+
+## Azure Active Directory
+
+### 建立 Azure AD 應用程式
+
+在管理控制台導覽至 **App Registrations** 並點擊 **New registration**，為重新導向 URI 選擇以下設定：
+
+* **Type**: Web
+* **URI**: `{{ lightdash_url }}/api/v1/oauth/redirect/azuread`
+
+在下一頁中，將 `{{ lightdash_url }}` 替換為您的 Lightdash 執行體網址（例如：`https://lightdash.example.com`）。
+
+點擊 **Register** 後進入應用程式設定頁面。複製「Application (client) ID」與「Directory (tenant) ID」數值備用。
+
+在左側選單導覽至 **Certificates & secrets**，點擊 **New client secret**。為秘密提供描述並選擇到期時間。點擊 **Add** 後會顯示秘密值，請立即複製備用。
+
+### 為 Azure AD 配置 Lightdash
+
+必須提供以下環境變數以啟用 Azure AD SSO：
+
+| 變數 | 描述 | 必填？ | 預設值 |
+| :-------------------------------------- | :--------------------- | :---------: | :-------: |
+| `AUTH_AZURE_AD_OAUTH_CLIENT_ID` | Azure AD 必填 | <Icon icon="square-check" iconType="solid"/> | |
+| `AUTH_AZURE_AD_OAUTH_CLIENT_SECRET` | Azure AD 必填 | <Icon icon="square-check" iconType="solid"/> | |
+| `AUTH_AZURE_AD_OAUTH_TENANT_ID` | Azure AD 必填 | <Icon icon="square-check" iconType="solid"/> | |
+| `AUTH_AZURE_AD_OIDC_METADATA_ENDPOINT` | Azure AD 選填 | | |
+| `AUTH_AZURE_AD_X509_CERT_PATH` | Azure AD 選填 | | |
+| `AUTH_AZURE_AD_X509_CERT` | Azure AD 選填 | | |
+| `AUTH_AZURE_AD_PRIVATE_KEY_PATH` | Azure AD 選填 | | |
+| `AUTH_AZURE_AD_PRIVATE_KEY` | Azure AD 選填 | | |
+
+## OpenID Connect
+
+Lightdash 支援符合 OpenID Connect 規範的 SSO 提供商。
+
+### 為 OpenID Connect 配置 Lightdash
+
+必須提供以下環境變數以啟用通用 OIDC 提供商：
+
+| 變數 | 描述 | 必填？ | 預設值 |
+| :--------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- | :---------: | :---------------------: |
+| `AUTH_OIDC_CLIENT_ID` | | <Icon icon="square-check" iconType="solid"/> | |
+| `AUTH_OIDC_CLIENT_SECRET` | 必填（除非驗證方式為 `private_key_jwt`） | | |
+| `AUTH_OIDC_METADATA_DOCUMENT_URL` | [OIDC 元數據發現端點 URL](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfigurationRequest) | <Icon icon="square-check" iconType="solid"/> | |
+| `AUTH_OIDC_AUTH_METHOD` | `client_secret_basic` 或 `private_key_jwt` | | `client_secret_basic` |
+| `AUTH_OIDC_X509_CERT` | 用於 `private_key_jwt` 的 PEM 編碼公鑰憑證內容 | | |
+| `AUTH_OIDC_PRIVATE_KEY` | 用於 `private_key_jwt` 的 PEM 編碼私鑰檔案內容 | | |
+| `AUTH_OIDC_X509_CERT_PATH` | 用於 `private_key_jwt` 的 PEM 編碼公鑰憑證路徑 | | |
+| `AUTH_OIDC_PRIVATE_KEY_PATH` | 用於 `private_key_jwt` 的 PEM 編碼私鑰路徑 | | |
+| `AUTH_OIDC_SCOPES` | 以空格分隔的 OIDC 範圍清單 | | |
