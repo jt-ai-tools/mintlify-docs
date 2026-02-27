@@ -1,0 +1,73 @@
+---
+title: "SQL 執行器 (SQL runner)"
+description: "SQL 執行器用於使用完全自定義的 SQL 構建即時查詢或圖表。"
+---
+
+在 SQL 執行器中構建的查詢可以：
+
+- 用於驅動單個儲存圖表
+- 轉換為虛擬視圖 (Virtual View)，使其變為可重用的表格
+- 寫回 dbt 作為一個模型
+
+僅具備 [`開發者或管理員權限 (developer or admin access)`](/references/workspace/roles_zh_TW) 的使用者可以使用 SQL 執行器。
+
+## 開始使用 SQL 執行器
+
+您可以從導覽列中的 `New` --\> `Query using SQL Runner` 選項造訪 SQL 執行器。
+
+<Frame>
+  ![](/images/guides/developer/sql-runner/access-sql-runner-e299a63e83e2ecb4b3b09c64f94211be.jpg)
+</Frame>
+
+進入 SQL 執行器後，您將看到四個核心組件：
+
+1. 數據倉庫中 Lightdash 有權存取的表格列表（基於您在 Lightdash 中的數據倉庫連接）。
+2. 選定表格的 Schema（結構格式）。
+3. SQL 查詢構建器。
+4. 最新 SQL 查詢的結果。
+
+<Frame>
+  ![](/images/guides/developer/sql-runner/sql-runner-components-60eb488682b46fb2ecedad92a2656adb.jpg)
+</Frame>
+
+要在 SQL 執行器中構建查詢，只需在 SQL 查詢構建器中編寫查詢，然後點擊 `Run query` 查看結果。
+
+您可以透過點擊 `Run query` 旁邊的 `SQL Query history` 按鈕來造訪當前對話的 **查詢歷史 (Query history)**。
+
+<Frame>
+  ![](/images/guides/developer/sql-runner/query-history-3c6295f2352f2d118474de3a51d83fd7.jpg)
+</Frame>
+
+執行查詢後，您可以選擇：
+
+1. [**構建並儲存圖表**](#在-sql-執行器中構建圖表)
+2. [**建立虛擬視圖 (Virtual View)，使您的查詢成為 Lightdash 中的可重用表格**](/guides/developer/virtual-views_zh_TW)
+3. [**寫回至 dbt，將查詢儲存為受管理的模型**](/guides/developer/dbt-write-back_zh_TW)
+4. 點擊右上角的連結圖示，與同事分享您的查詢草稿（或自行儲存以便日後造訪）。
+
+## SQL 執行器中的儲存圖表
+
+執行查詢後，您可以透過點擊 SQL 執行器中的 `chart` 標籤來構建圖表。
+
+SQL 執行器中的圖表是根據您查詢生成的數據構建的。圖表構建器會根據您選擇的聚合類型自動對查詢結果中的數據進行聚合。根據欄位類型，聚合選項包括：
+
+- count（不重複計數，將忽略重複項）
+- any（計數並包含重複項）
+- sum (總和)
+- average (平均)
+- max (最大值)
+- min (最小值)
+
+<Frame>
+  ![](/images/guides/developer/sql-runner/build-chart-sql-runner-72c3e95c8e37b83f48189599e25ddba1.jpg)
+</Frame>
+
+配置好圖表後，您可以點擊 `save chart` 將其儲存、添加到空間或添加到儀表板。
+
+儀表板上的 SQL 執行器圖表可以在 UI 中進行過濾。欲了解更多資訊，請參閱[過濾文件](/guides/limiting-data-using-filters_zh_TW)。
+
+## 限制
+
+### 不保證 ORDER BY
+
+SQL 執行器的結果不保證會遵守您的 `ORDER BY` 子句。這是因為 Lightdash 會將您的查詢封裝在一個子查詢中以支援儀表板過濾，而 SQL 資料庫通常不會保留子查詢的排序。

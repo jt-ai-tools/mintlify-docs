@@ -1,0 +1,124 @@
+---
+title: "dbt 寫回 (dbt write-back)"
+description: "dbt 寫回功能允許您在 Lightdash 中開發模型與指標，並將這些變更寫回您的 dbt 專案。寫回 dbt 會在您的專案中建立一個新分支與拉取請求 (Pull Request)，以便您儲存與管理這些變更。"
+---
+
+<Info>
+  - dbt 寫回功能目前僅適用於託管在 GitHub 與 GitLab 的 dbt 專案。
+  - 您至少需要具備 [`專案開發者 (project Developer)`](/references/workspace/roles_zh_TW) 角色才能使用 dbt 寫回功能。
+</Info>
+
+## 從自定義指標寫回指標
+
+您可以在 Lightdash 中構建「自定義指標 (Custom Metrics)」，並將其寫回您的 dbt 專案，使其晉升為 YAML 中永久存在的指標。
+
+我們建議對經常建立/使用的自定義指標使用 dbt 寫回功能，使其變為可重用、受管理且可供所有人參考構建的指標。
+
+<Info>
+  **「指標 (Metric)」與「自定義指標 (Custom Metric)」有什麼不同？**
+
+  寫入 dbt 專案（或 YAML 指標）的[指標](/references/metrics_zh_TW)可供專案中的每個人重複使用，並會顯示在表格的可用指標列表中。而[自定義指標](/guides/custom-fields_zh_TW#自定義指標-custom-metrics)僅儲存在使用它們的圖表中，當您或他人打開同一個表格來建立新圖表時，它們將無法使用。
+</Info>
+
+要開始操作，請在探索器 (Explorer) 中建立一個[自定義指標](/guides/custom-fields_zh_TW#自定義指標-custom-metrics)。將滑鼠懸停在側邊欄的自定義指標上，點擊三點選單，然後選擇 `Write back to dbt (寫回至 dbt)`。
+
+![](/images/guides/developer/write-back-metrics.jpg)
+
+一旦包含新指標的拉取請求被合併，您可以在 Lightdash 中點擊 `Refresh dbt`（或者，如果您[正在使用 GitHub Actions](/guides/cli/how-to-use-lightdash-deploy_zh_TW#使用-github-action-自動將變更部署到-lightdash)，專案將在變更合併後自動重新整理），您的自定義指標將自動被新的 YAML 指標替換。
+
+![](/images/guides/developer/refresh-after-write-back.jpg)
+
+<Info>
+  **任何定義與新 YAML 指標相符的自定義指標都會被自動替換。** 這意味著如果有人在另一個儲存圖表中建立了相同的自定義指標（具有相同的格式、過濾條件等），它也會自動被您的新 YAML 指標替換。
+</Info>
+
+## 從自定義維度寫回維度
+
+您可以在 Lightdash 中構建「自定義維度 (Custom Dimensions)」並將其寫回您的 dbt 專案。
+
+我們建議對經常建立的自定義維度使用 dbt 寫回功能，使其變為可重用、受管理且可供所有人參考構建的維度。
+
+<Info>
+  **維度 (Dimension) 與自定義維度 (Custom Dimension) 有什麼不同？**
+
+  寫入 dbt 專案（或 YAML 維度）的[維度](/references/dimensions_zh_TW)可供專案中的每個人重複使用，並會顯示在表格的可用維度列表中。而[自定義維度](/guides/custom-fields_zh_TW#自定義維度-custom-dimensions)僅儲存在使用它們的圖表中，當您或他人打開同一個表格來建立新圖表時，它們將無法使用。
+</Info>
+
+要開始操作，請在探索器中建立一個[自定義維度](/guides/custom-fields_zh_TW#自定義維度-custom-dimensions)。將滑鼠懸停在側邊欄的自定義維度上，點擊三點選單，然後選擇 `Write back to dbt`。
+
+1. 點擊 `Write back to dbt`
+
+   ![](/images/guides/developer/write-back-custom-dimension-1.png)
+2. 預覽維度的 YAML 並開啟拉取請求。
+
+   ![](/images/guides/developer/write-back-custom-dimension-2.png)
+3. 在您的 dbt 專案中核准並合併該拉取請求。
+
+   ![](/images/guides/developer/write-back-custom-dimension-3.png)
+
+一旦包含新維度的拉取請求被合併，您可以在 Lightdash 中點擊 `Refresh dbt`（或者，如果您使用 GitHub Actions，專案將在合併後自動重新整理）。
+
+### 已知限制
+
+##### 分箱維度 (Bin Dimensions)
+
+目前尚不支持寫回分箱維度。如果您想協助測試我們的 Beta 功能，請聯繫支援團隊。
+
+#### 寫回維度是否會自動替換自定義維度
+
+目前，如果您將自定義維度寫回 dbt 專案的 YAML，該自定義維度**不會**自動被新的 YAML 維度替換。在 dbt 中建立新維度後，您需要手動更新圖表，將自定義維度替換為正式的新維度。
+
+## 從 SQL 執行器 (SQL Runner) 寫回 dbt 模型
+
+您可以使用 Lightdash 將 SQL 執行器中構建的查詢轉換為 dbt 中的模型。如果您打算定期使用該查詢，我們建議將其從 SQL 執行器寫回，以便它可以像 Lightdash 專案中的其他 dbt 模型一樣被輕鬆使用、管理與維護。
+
+要開始操作，在 SQL 執行器中構建並執行查詢，然後從 `Save (儲存)` 下拉選單中選擇 `Write back to dbt` 選項。
+
+<Frame>
+  ![](/images/guides/developer/dbt-write-back/dbt-write-back-3774e219cdb58ad09a5e290b28e8b427.jpg)
+</Frame>
+
+系統會要求您輸入一個名稱，該名稱將作為 dbt 專案中的模型名稱和檔名。點擊 `Open pull request` 將由 Lightdash 在 GitHub 或 GitLab 中針對您的 dbt 專案建立一個拉取請求。
+
+<Frame>
+  ![](/images/guides/developer/dbt-write-back/write-back-pull-request-5c36c33617a258728a644d1e76896725.jpg)
+</Frame>
+
+新模型將被寫入您 dbt 專案中的 `models/lightdash/` 目錄。該模型將在模型配置中包含標籤 `created-by-lightdash`。
+
+### 讓您的模型在 Lightdash 中顯示為「表格 (Table)」
+
+您可能需要調整專案中的表格配置設置，以便讓您的新模型顯示為 Lightdash 中的表格。
+
+如果您選擇了：
+
+- `Show entire project (顯示整個專案)`：則無需執行任何操作。如果您重新整理 dbt 專案連接，模型應自動出現。
+- `Show models with any of these tags (顯示具有任一標籤的模型)`：您需要將 `created-by-lightdash` 添加到允許的標籤列表中。預設情況下，寫回 dbt 的模型會包含此標籤。
+- `Show models in this list (顯示此列表中的模型)`：您需要手動將新模型添加到此處的允許模型列表中。
+
+<Frame>
+  ![](/images/guides/developer/dbt-write-back/tables-configuration-write-back-c4be0ae3c4c13aab3c93a81e4956cd4d.jpg)
+</Frame>
+
+### 在 dbt 中執行您的模型
+
+如果您遇到 `Error: not found your_table_name` 錯誤，通常是因為您尚未在數據倉庫中構建由新模型生成的表格。處理方式有以下幾種：
+
+#### 手動方式
+
+模型合併到 dbt 專案後，您可以執行 `dbt run -s 您的模型名稱` 在數據倉庫中建立表格。如果您的預設設定檔設為 `dev`，您可能需要添加 `--target prod`！
+
+#### 使用 dbt Cloud 自動執行
+
+如果您使用 dbt Cloud 管理專案，可以建立一個作業來自動執行任何帶有 `created-by-lightdash` 標籤的新模型。
+
+建立此類作業的步驟：
+
+1. 打開 dbt Cloud，前往 `Deploy` --\> `Jobs` 並點擊 `create new job`。
+2. 在 `Git Trigger` 部分開啟 `triggered by pull requests (由拉取請求觸發)`。
+3. 添加指令 `dbt run --select tag:created-by-lightdash`。
+4. 將 `compare changes against environment (與環境比較變更)` 設置為 `prod`。這將確保該作業僅在您的拉取請求修改了模型時才執行。
+
+<Frame>
+  ![](/images/guides/developer/dbt-cloud-run-automatically-561d3a59b2dc47a003adaf926fbe5a3b.jpg)
+</Frame>

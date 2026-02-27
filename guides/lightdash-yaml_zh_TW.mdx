@@ -1,0 +1,178 @@
+---
+title: "Lightdash YAML"
+sidebarTitle: Lightdash YAML
+icon: "file-code"
+description: "無需 dbt 專案即可直接在 YAML 檔案中定義您的語義層，開始使用 Lightdash。"
+---
+
+<Frame>
+  <iframe width="100%" height="420" src="https://www.loom.com/embed/d7cab1a72e2a40f088998c4fb387e185" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen />
+</Frame>
+
+## 什麼是 Lightdash YAML？
+
+Lightdash YAML 允許您在沒有現成 dbt 專案的情況下使用 Lightdash。您不再是在 dbt 模型 YAML 檔案中定義語義層，而是直接在指向數據倉庫表格的獨立 YAML 檔案中進行定義。
+
+這種方法讓您可以直接利用 Lightdash 的強大功能，而無需先採用 dbt。
+
+## 為什麼要使用 Lightdash YAML？
+
+Lightdash 一直以來都以 dbt 為核心運行。傳統上，客戶擁有活躍的 dbt 專案，而 Lightdash 在該 dbt 上下文中構建其語義層。
+
+然而，並非每個團隊都使用 dbt。如果您對以下 Lightdash 功能感興趣：
+
+- **AI 代理 (AI agents)**：能回答關於您數據的問題。
+- **語義層 (Semantic layer)**：具備一致的指標定義。
+- **自助式分析 (Self-service analytics)**：供業務使用者使用。
+
+...但您尚未設置好 dbt，Lightdash YAML 提供了一條前進的道路。您可以直接定義語義層並立即開始使用 Lightdash，無需負擔採用 dbt 的額外開銷。
+
+## dbt vs Lightdash YAML：該選哪一個？
+
+| 場景 | 建議 |
+|----------|----------------|
+| 您已有 dbt 專案 | 使用標準的 [dbt 整合](/references/integrations/dbt-projects_zh_TW) |
+| 您計畫近期採用 dbt | 考慮先設定好 dbt，再連接 Lightdash |
+| 您不使用 dbt 且想快速嘗試 Lightdash | 使用 Lightdash YAML |
+| 您想要不依賴 dbt 的 AI 代理或語義層功能 | 使用 Lightdash YAML |
+| 您的倉庫中已有準備好探索的表格 | 使用 Lightdash YAML |
+
+好消息是：如果您從 Lightdash YAML 開始，日後決定採用 dbt，兩者的 YAML 格式是相容的，因此遷移非常簡單。
+
+## 開始使用 Lightdash YAML
+
+### 前置條件
+
+在開始之前，請確保您已具備：
+
+1. [安裝好 Lightdash CLI](/guides/cli/how-to-install-the-lightdash-cli_zh_TW)。
+2. [已通過 Lightdash 驗證](/guides/cli/cli-authentication_zh_TW)。
+3. 具備數據倉庫的憑據（例如：Snowflake）。
+4. 倉庫中有您想要探索的表格。
+
+### 步驟 1：建立專案配置
+
+在專案根目錄，建立一個 `lightdash.config.yml` 檔案來指定您的倉庫類型：
+
+```yaml
+warehouse:
+  type: snowflake
+```
+
+將 `snowflake` 替換為您的倉庫類型（例如：`bigquery`, `databricks`, `redshift`, `postgres`, `trino`）。
+
+### 步驟 2：建立您的第一個模型
+
+Lightdash YAML 使用與 [dbt 中的 Lightdash 語義層](/references/integrations/dbt-projects_zh_TW) 相同的語法，但不同於將所有內容嵌套在 `meta` 標籤下，所有的配置都位在檔案的最頂層。
+
+為您的 Lightdash 專案建立目錄結構：
+
+```bash
+mkdir -p lightdash/models
+```
+
+為您的第一個模型建立一個 YAML 檔案。例如：`./lightdash/models/users.yml`：
+
+```yaml
+# 元數據
+type: model
+name: users
+
+# 表格定義
+sql_from: 'DB.SCHEMA.USERS'
+
+# 指標定義
+# 更多配置請參考：https://docs.lightdash.com/references/metrics
+metrics:
+  user_count:
+    type: count_distinct
+    sql: ${TABLE}.USER_ID
+    description: 總不重複使用者數
+
+# 維度定義
+# 更多配置請參考：https://docs.lightdash.com/references/dimensions
+dimensions:
+  - name: subscription_type
+    sql: ${TABLE}.SUBSCRIPTION
+    type: string
+
+  - name: signed_up_at
+    sql: ${TABLE}.SIGNED_UP
+    type: date
+    time_intervals:
+      - DAY
+      - WEEK
+      - MONTH
+```
+
+更新配置內容：
+
+- 將 `sql_from` 設為您表格的完整限定名稱（例如：`DATABASE.SCHEMA.TABLE`）。
+- 更新維度以匹配表格中的欄位。
+- 添加對您的數據有意義的指標。
+
+### 步驟 3：驗證您的 YAML
+
+透過執行以下指令檢查 YAML 檔案是否有誤：
+
+```bash
+lightdash lint
+```
+
+此指令會在部署前驗證您的配置並報告任何問題。
+
+### 步驟 4：部署您的專案
+
+使用 CLI 部署並建立您的 Lightdash 專案：
+
+```bash
+lightdash deploy --create --no-warehouse-credentials
+```
+
+`--no-warehouse-credentials` 標籤告訴 Lightdash 您正在進行部署，但 CLI 中未嵌入倉庫憑據。部署後，您需要在 Lightdash UI 中配置倉庫連接：
+
+1. 前往 **Settings**（右上角的齒輪圖示）。
+2. 在 **Current project** 下，點擊 **Connection settings**。
+3. 使用您的資料庫憑據配置 **Warehouse connection**。
+
+<Frame>
+  ![倉庫連接設定](../images/guides/lightdash-yaml/warehouse-connection.png)
+</Frame>
+
+關於配置倉庫連接的詳細說明，請參閱 [連接到倉庫](/get-started/setup-lightdash/connect-project_zh_TW#1-連接到數據倉庫)。
+
+### 步驟 5：更新您的專案
+
+初次部署後，您可以隨時編輯 `.yml` 檔案並重新部署變更：
+
+```bash
+lightdash deploy --no-warehouse-credentials
+```
+
+## 與 AI Copilots 一起開發
+
+如果您使用 Cursor, Claude Code, Kilo Code 或其他 AI copilot 進行開發，可以顯著加速工作流程。
+
+### 推薦配置
+
+1. **提供 Schema 參考**：將 Lightdash YAML 格式規範連結提供給您的 copilot：
+   ```
+   https://raw.githubusercontent.com/lightdash/lightdash/refs/heads/main/packages/common/src/schemas/json/model-as-code-1.0.json
+   ```
+
+2. **使用驗證功能**：提示您的 copilot 在做出任何更改後務必執行 `lightdash lint`，以及早捕捉錯誤。
+
+3. **分享您的倉庫 Schema**：讓您的 copilot 能存取您的倉庫 schema。這使得生成匹配實際表格結構的 YAML 檔案變得非常迅速。
+
+<Tip>
+透過存取倉庫 schema，AI copilot 可以在幾秒鐘內為整張表格自動生成維度與指標定義。
+</Tip>
+
+## 後續步驟
+
+部署好您的 Lightdash YAML 專案後：
+
+- 在 Lightdash UI 中[探索您的數據](/get-started/exploring-data/using-explores_zh_TW)。
+- [建立指標](/get-started/develop-in-lightdash/how-to-create-metrics_zh_TW)來定義關鍵的業務計算。
+- [設定 AI 代理](/guides/ai-agents_zh_TW)以啟用自然語言查詢。
+- 了解關於[語義層參考文件](/references/metrics_zh_TW)中的進階配置選項。

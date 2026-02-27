@@ -1,0 +1,58 @@
+---
+title: "累計總額 (Running total)"
+description: 累計總額會為您顯示當前值加上該欄位中所有先前值的總和。
+---
+
+
+[直接給我代碼！ <Icon icon="bug" iconType="solid"/>](#這裡是可以複製貼上用來計算累計總額的-sql)
+
+以下是累計總額的範例：
+
+<Frame>
+  <img src="/images/guides/table-calculations/table-calculation-sql-templates/running-total-3d2fba5e8104a413e6d99545c75ee4d1.jpg"/>
+</Frame>
+
+
+以及用於該表格計算的 SQL：
+
+```sql
+SUM(${orders.total_order_amount}) OVER (
+  ORDER BY
+    ${orders.order_date_month}
+  ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+)
+```
+
+一般來說，計算累計總額的 SQL 包含兩個部分（以及一個可選的第三部分）：
+
+* `column_I_want_to_sum` (我想加總的欄位) \- 這是包含您想累加數值的欄位。
+* `column_I_want_to_order_by` (我想據以排序的欄位) \- 這是您想用來計算累計總額排序基準的欄位。
+* `optional_other_column_I_want_to_order_by` (其他選填的排序欄位) \- 此欄位是選填的，您可以根據需要添加更多排序欄位。為了讓您的累計總額按行遞增，您需要將結果表格中的每個維度都添加到 SQL 的 `ORDER BY` 部分。而且，這些欄位的順序應與您在結果表格中設定的排序順序一致。
+
+### 這裡是可以複製貼上用來計算累計總額的 SQL
+
+```sql
+SUM(${table.column_I_want_to_sum}) OVER (
+  ORDER BY
+    ${table.column_I_want_to_order_by},
+    ${table.optional_other_column_I_want_to_order_by}
+  ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+)
+```
+
+
+<Info>
+**💎 提升您的 SQL 技巧**：
+
+* 您可以使用 `ORDER BY` 子句中的關鍵字 `ASC` (遞增) 和 `DESC` (遞減) 來指定欄位的排序方式。預設情況下，欄位會按遞增順序排序 —— 因此如果您想要遞增排序，則不需要添加任何內容。
+
+```sql
+SUM(${table.column_I_want_to_sum}) OVER (
+  ORDER BY
+    ${table.column_I_want_to_order_by} ASC,
+    ${table.optional_other_column_I_want_to_order_by} DESC
+  ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+)
+
+```
+</Info>

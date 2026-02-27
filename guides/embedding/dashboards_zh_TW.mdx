@@ -1,0 +1,458 @@
+---
+title: "如何嵌入儀表板 (Dashboards)"
+sidebarTitle: "儀表板"
+description: "完整的嵌入 Lightdash 儀表板指南，包含 iframe 和 React SDK 方法的全方位配置選項"
+---
+
+import EmbedAvailability from '/snippets/embedding-availability_zh_TW.mdx';
+
+<EmbedAvailability />
+
+## 概覽
+
+儀表板嵌入允許您在應用程式中顯示完整的 Lightdash 儀表板，包含多個視覺化圖表、篩選器與互動功能。這對於想要為使用者提供全面分析視圖的場景非常理想。
+
+### 何時使用儀表板嵌入
+
+- **高層主管儀表板**：在管理面板中顯示多個 KPI 和數據指標。
+- **面向客戶的分析**：為 SaaS 客戶提供分析門戶。
+- **嵌入式報告**：將全面的數據視圖整合到您的工作流程中。
+- **多圖表視圖**：透過共享篩選器同時顯示相關的視覺化圖表。
+
+### 核心功能
+
+- 多個圖表磚塊與 Markdown 內容。
+- 儀表板層級篩選器（若啟用則具備互動性）。
+- 用於組織內容的多個分頁 (Tabs)。
+- 支援參數 (Parameters)。
+- 匯出選項（CSV、圖片、PDF）。
+- 針對時間序列圖表的日期縮放 (Date zoom)。
+- 「從此處探索 (Explore from here)」功能，可導覽至查詢構建器。
+- 查看任何視覺化圖表的底層數據。
+
+## 設置
+
+### 配置允許嵌入的儀表板
+
+只有明確添加到「允許的儀表板 (allowed dashboards)」清單中的儀表板才能被嵌入。請導覽至 **Settings → Embed** 並添加您的儀表板。
+
+<Frame>
+  <img src="/images/guides/embedding/embed-add-dashboard-cb6bef5fde69ba9d6eaeb693744d75cc.png" alt="添加允許的儀表板"/>
+</Frame>
+
+或者，切換「Allow all dashboards (允許所有儀表板)」以啟用專案中任何儀表板的嵌入功能。
+
+## 配置互動功能
+
+透過配置互動選項來控制使用者對嵌入儀表板的操作權限。這些選項適用於 iframe 和 React SDK 嵌入方式，並在 JWT 中進行設定。
+
+SDK 選項是透過 React 屬性 (Props) 配置的，而 iframe 選項則是在您設置嵌入的後台 UI 中配置的：
+
+<Frame>
+  <img src="/images/guides/embedding/embed-iframe-interactivity.png" alt="配置 iframe 互動性"/>
+</Frame>
+
+### 儀表板篩選器
+
+儀表板篩選器允許使用者對儀表板中的所有圖表進行細分和過濾。您可以控制使用者是否可以與這些篩選器互動、可以修改哪些篩選器，以及篩選器 UI 是否可見。
+
+**在 JWT 中配置：**
+
+```javascript
+{
+  content: {
+    type: 'dashboard',
+    dashboardUuid: '您的儀表板-uuid',
+    dashboardFiltersInteractivity: {
+      enabled: 'all',  // 'all' (全部), 'some' (部分), 或 'none' (無)
+    },
+  }
+}
+```
+
+**選項說明：**
+- `'all'`：所有儀表板篩選器均可互動且可見。
+- `'some'`：僅指定的篩選器可互動（使用 `allowedFilters` 陣列）。
+- `'none'`：套用篩選器但不可見或不可編輯。
+
+**僅允許特定篩選器：**
+
+```javascript
+{
+  content: {
+    type: 'dashboard',
+    dashboardUuid: '您的儀表板-uuid',
+    dashboardFiltersInteractivity: {
+      enabled: 'some',
+      allowedFilters: ['篩選器-uuid-1', '篩選器-uuid-2'],
+    },
+  }
+}
+```
+
+**隱藏篩選器 UI：**
+
+```javascript
+{
+  dashboardFiltersInteractivity: {
+    enabled: 'all',
+    hidden: true,  // 篩選器有效但 UI 被隱藏
+  }
+}
+```
+
+### 參數 (Parameters)
+
+參數是可以在查詢和篩選器中引用的動態值。啟用後，使用者可以修改參數值以更改整個儀表板顯示的數據。
+
+**在 JWT 中配置：**
+
+```javascript
+{
+  content: {
+    type: 'dashboard',
+    dashboardUuid: '您的儀表板-uuid',
+    parameterInteractivity: {
+      enabled: true,
+    },
+  }
+}
+```
+
+### 匯出選項
+
+允許使用者從嵌入的儀表板匯出數據和視覺化結果。您可以控制哪些匯出格式可用。
+
+**在 JWT 中配置：**
+
+```javascript
+{
+  content: {
+    type: 'dashboard',
+    dashboardUuid: '您的儀表板-uuid',
+    canExportCsv: true,        // 匯出圖表數據為 CSV
+    canExportImages: true,     // 匯出圖表為 PNG/圖片
+    canExportPagePdf: true,    // 匯出整個儀表板頁面為 PDF
+  }
+}
+```
+
+**可用匯出選項：**
+- **CSV**：下載個別圖表的原始數據。
+- **圖片**：將圖表匯出為 PNG 圖片。
+- **PDF**：將整個儀表板頁面匯出為 PDF 文件。
+
+### 日期縮放 (Date zoom)
+
+日期縮放允許使用者動態更改時間序列視覺化圖表的時間粒度（例如：按天、週、月、季、年檢視），而無需修改底層查詢。
+
+**在 JWT 中配置：**
+
+```javascript
+{
+  content: {
+    type: 'dashboard',
+    dashboardUuid: '您的儀表板-uuid',
+    canDateZoom: true,
+  }
+}
+```
+
+### 從此處探索 (Explore from here)
+
+「從此處探索」允許使用者從儀表板圖表導覽至完整的查詢構建器介面，在那裡他們可以修改維度、指標、篩選器，並以該圖表的配置為起點進行即時分析。
+
+**在 JWT 中配置：**
+
+```javascript
+{
+  content: {
+    type: 'dashboard',
+    dashboardUuid: '您的儀表板-uuid',
+    canExplore: true,
+  }
+}
+```
+
+啟用後，使用者會在圖表磚塊上看到「Explore from here」選項，點擊後會開啟探索介面。
+
+### 查看底層數據 (View underlying data)
+
+查看底層數據向使用者顯示任何視覺化圖表背後的原始數據表，方便檢查建立圖表的實際數值和記錄。
+
+**在 JWT 中配置：**
+
+```javascript
+{
+  content: {
+    type: 'dashboard',
+    dashboardUuid: '您的儀表板-uuid',
+    canViewUnderlyingData: true,
+  }
+}
+```
+
+### 完整配置範例
+
+```javascript
+import jwt from 'jsonwebtoken';
+
+const token = jwt.sign({
+  content: {
+    type: 'dashboard',
+    projectUuid: '您的專案-uuid',
+    dashboardUuid: '您的儀表板-uuid',
+
+    // 篩選器控制
+    dashboardFiltersInteractivity: {
+      enabled: 'all',
+    },
+
+    // 參數控制
+    parameterInteractivity: {
+      enabled: true,
+    },
+
+    // 匯出能力
+    canExportCsv: true,
+    canExportImages: true,
+    canExportPagePdf: true,
+
+    // 互動功能
+    canDateZoom: true,
+    canExplore: true,
+    canViewUnderlyingData: true,
+  },
+
+  // 使用者資訊（用於分析）
+  user: {
+    externalId: 'user-123',
+    email: 'user@example.com',
+  },
+
+  // 使用者屬性（用於行級過濾）
+  userAttributes: {
+    tenant_id: 'tenant-abc',
+  },
+}, LIGHTDASH_EMBED_SECRET, { expiresIn: '1h' });
+```
+
+## iframe 嵌入
+
+iframe 嵌入是嵌入儀表板最簡單的方法，不需要特殊的函式庫或依賴。
+
+### URL 結構
+
+```
+https://您的執行體.lightdash.cloud/embed/{projectUuid}/dashboard/{dashboardUuid}#{jwtToken}
+```
+
+或使用儀表板 Slug：
+
+```
+https://您的執行體.lightdash.cloud/embed/{projectUuid}/dashboard/{dashboardSlug}#{jwtToken}
+```
+
+為了安全性，JWT 會在 URL 的 hash 部分傳遞。
+
+### 生成 JWT
+
+<CodeGroup>
+
+```javascript Node.js
+import jwt from 'jsonwebtoken';
+
+const LIGHTDASH_EMBED_SECRET = process.env.LIGHTDASH_EMBED_SECRET;
+const projectUuid = '您的專案-uuid';
+
+const token = jwt.sign({
+  content: {
+    type: 'dashboard',
+    dashboardUuid: '您的儀表板-uuid',
+  },
+}, LIGHTDASH_EMBED_SECRET, { expiresIn: '1h' });
+
+const embedUrl = `https://app.lightdash.cloud/embed/${projectUuid}/dashboard/您的儀表板-uuid#${token}`;
+```
+
+```python Python
+import jwt
+import datetime
+
+LIGHTDASH_EMBED_SECRET = os.getenv('LIGHTDASH_EMBED_SECRET')
+project_uuid = '您的專案-uuid'
+
+payload = {
+    'content': {
+        'type': 'dashboard',
+        'dashboardUuid': '您的儀表板-uuid',
+    },
+    'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+}
+
+token = jwt.encode(payload, LIGHTDASH_EMBED_SECRET, algorithm='HS256')
+embed_url = f"https://app.lightdash.cloud/embed/{project_uuid}/dashboard/您的儀表板-uuid#{token}"
+```
+
+```ruby Ruby
+require 'jwt'
+
+lightdash_embed_secret = ENV['LIGHTDASH_EMBED_SECRET']
+project_uuid = '您的專案-uuid'
+
+payload = {
+  content: {
+    type: 'dashboard',
+    dashboardUuid: '您的儀表板-uuid'
+  },
+  exp: Time.now.to_i + 3600
+}
+
+token = JWT.encode(payload, lightdash_embed_secret, 'HS256')
+embed_url = "https://app.lightdash.cloud/embed/#{project_uuid}/dashboard/您的儀表板-uuid##{token}"
+```
+
+</CodeGroup>
+
+### 在 HTML 中嵌入
+
+```html
+<iframe
+  src="https://app.lightdash.cloud/embed/專案-uuid/dashboard/儀表板-uuid#jwt-token"
+  width="100%"
+  height="600"
+  frameborder="0"
+  style="border: none;"
+></iframe>
+```
+
+## React SDK
+
+React SDK 提供無縫整合，並支援程式化篩選器、回呼 (Callbacks) 與樣式自定義等額外功能。
+
+<Info>
+請參閱 [React SDK 參考](/references/react-sdk_zh_TW) 了解安裝、設置和完整的配置選項。
+</Info>
+
+### 基本用法
+
+```tsx
+import Lightdash from '@lightdash/sdk';
+
+function MyDashboard() {
+  return (
+    <Lightdash.Dashboard
+      instanceUrl="https://app.lightdash.cloud"
+      token={tokenFromServer}
+    />
+  );
+}
+```
+
+### 組件屬性 (Props)
+
+```typescript
+type DashboardProps = {
+  instanceUrl: string;                    // 必填：您的 Lightdash 執行體 URL
+  token: string | Promise<string>;        // 必填：JWT 權杖
+  styles?: {
+    backgroundColor?: string;             // 儀表板背景顏色或 'transparent'
+    fontFamily?: string;                  // 文字字體
+  };
+  filters?: SdkFilter[];                  // 透過程式碼套用篩選器
+  contentOverrides?: LanguageMap;         // 翻譯/在地化覆蓋
+  onExplore?: (options: { chart: SavedChart }) => void;  // 當使用者導覽至探索視圖時的回呼
+};
+```
+
+### 帶有篩選器的進階範例
+
+```tsx
+import Lightdash, { FilterOperator } from '@lightdash/sdk';
+
+<Lightdash.Dashboard
+  instanceUrl="https://app.lightdash.cloud"
+  token={await generateToken()}
+  filters={[
+    {
+      model: 'orders',
+      field: 'status',
+      operator: FilterOperator.EQUALS,
+      value: 'completed',
+    },
+    {
+      model: 'orders',
+      field: 'created_date',
+      operator: FilterOperator.IN_BETWEEN,
+      value: ['2024-01-01', '2024-12-31'],
+    },
+  ]}
+  styles={{
+    backgroundColor: '#f5f5f5',
+    fontFamily: 'Inter, sans-serif',
+  }}
+  onExplore={({ chart }) => {
+    console.log('使用者正在探索圖表：', chart.name);
+  }}
+/>
+```
+
+## 進階功能
+
+### 用於分析的使用者元數據
+
+傳遞使用者資訊以追蹤是誰在查看您的嵌入儀表板。
+
+```javascript
+{
+  user: {
+    externalId: 'user-123',       // 您的內部使用者 ID
+    email: 'user@example.com',    // 使用者電子郵件
+  }
+}
+```
+
+這些元數據將出現在 Lightdash 使用量分析的[查詢標籤 (Query tags)](/references/workspace/usage-analytics_zh_TW#查詢標籤)中。
+
+### 自定義樣式（僅限 SDK）
+
+套用自定義樣式以匹配您的應用程式設計。
+
+```tsx
+<Lightdash.Dashboard
+  instanceUrl="https://app.lightdash.cloud"
+  token={token}
+  styles={{
+    backgroundColor: 'transparent',
+    fontFamily: 'Helvetica, Arial, sans-serif',
+  }}
+/>
+```
+
+### 在地化（僅限 SDK）
+
+使用 `contentOverrides` 屬性翻譯嵌入的儀表板。詳情請參閱 [React SDK 在地化](/references/react-sdk_zh_TW#在地化)。
+
+### 使用使用者屬性進行行級安全 (Row-level security)
+
+根據造訪使用者的屬性過濾數據。詳情請參閱[使用者屬性參考](/references/workspace/user-attributes_zh_TW)。
+
+## 後續步驟
+
+<CardGroup cols={2}>
+  <Card title="嵌入圖表" icon="chart-line" href="/guides/embedding/charts_zh_TW">
+    嵌入單個圖表以實現專注的顯示效果
+  </Card>
+
+  <Card title="使用者屬性與行級安全" icon="shield-check" href="/references/workspace/user-attributes_zh_TW">
+    向不同使用者顯示不同數據
+  </Card>
+
+  <Card title="iframe 嵌入參考" icon="code" href="/references/iframe-embedding_zh_TW">
+    完整的 iframe URL 模式與 HTML 嵌入說明
+  </Card>
+
+  <Card title="嵌入 API 參考" icon="book" href="/references/embedding_zh_TW">
+    完整的 JWT 結構文件
+  </Card>
+</CardGroup>

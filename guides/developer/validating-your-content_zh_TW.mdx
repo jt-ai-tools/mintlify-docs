@@ -1,0 +1,60 @@
+---
+title: "驗證您的內容"
+description: "損壞的內容毫無用處。我們在 Lightdash 中構建了工具來協助驗證您的內容，讓您能維持其可用性，並在內容出現問題時通知您。"
+---
+
+專案設置中的內容驗證頁面可由[管理員和開發者 (admins and developers)](/references/workspace/roles_zh_TW) 開啟。在那裡，您可以看到專案中任何損壞的圖表或儀表板，以及導致錯誤的原因資訊。
+
+您可以透過前往專案設置並選擇 **Validator (驗證器)** 標籤來造訪內容驗證儀表板。
+
+![驗證器頁面](/images/guides/developer/validator-page.jpg)
+
+或者，如果您有進行中的驗證錯誤，也可以點擊導覽列中的鈴鐺圖示，然後選擇 **Validation Errors (驗證錯誤)**。
+
+![導覽列中的驗證錯誤](/images/guides/developer/validation-errors.png)
+
+
+## 我該如何驗證內容？
+
+每當執行內容驗證器時，您的專案都會被驗證。內容驗證器會在以下情況下執行：
+
+* 使用者在應用程式中點擊 `Refresh dbt`。
+* 在 [Lightdash CLI](/get-started/develop-in-lightdash/intro_zh_TW) 上執行 `lightdash deploy` 指令（欲了解更多關於使用 GitHub Actions 自動部署變更的資訊，請參閱[此處](/guides/cli/how-to-use-lightdash-deploy_zh_TW#使用-github-action-自動將變更部署到-lightdash)）。
+* 您更新了專案設置並點擊 `Test and compile (測試並編譯)`。
+* 您直接在內容驗證器儀表板內點擊 `Run validation (執行驗證)`。
+* 您[從 CLI](/guides/cli/how-to-use-lightdash-validate_zh_TW) 執行 `lightdash validate`。
+
+
+## 哪些內容包含在驗證中？
+
+驗證器會顯示由不再存在、已重新命名或定義無效的指標或維度所引起的錯誤。驗證器**不會**顯示在執行時由無效 SQL 引起的錯誤（例如：無效的 SQL 語法、除以 0、嘗試對字串值類型執行數值計算）。
+
+以下是一些會出現在內容驗證器中的錯誤範例：
+
+* 將指標從 `total_revenue` 重新命名為 `sum_revenue`。舊指標名稱在某個圖表中使用，導致該圖表損壞。
+* 刪除了一個指標的自定義 SQL 定義中引用的維度 `is_premium_user`。
+* 刪除了一個在儀表板上用作篩選器的維度 `is_premium_user`。
+
+驗證器儀表板包含的內容類型有：
+
+* **表格 (Tables)：** 當維度或指標已被刪除或重新命名，但仍被表格中的其他地方引用時，會導致表格錯誤。
+* **圖表 (Charts)：** 當結果表格或篩選器引用了不再存在的指標或維度時，會導致圖表錯誤。
+* **儀表板 (Dashboards)：** 當儀表板中的某個圖表損壞，或者某個篩選器引用了不再存在的指標或維度時，會導致儀表板錯誤。
+
+
+## 如何修復錯誤
+
+有幾種方法可以修復驗證器中出現的錯誤：
+
+**表格錯誤**要求您檢查 YAML 並修復孤立引用。這可以透過程式碼編輯器中的「尋找並取代」功能來完成。
+
+**圖表與儀表板錯誤**可以透過在 Lightdash 中開啟該內容並更新欄位引用來解決，但這通常意味著您必須重新構建圖表。修復錯誤的首選方法是[在應用程式中重新命名欄位](/guides/developer/renaming-models-and-fields_zh_TW#在-lightdash-中重新命名)或[在 CLI 中](/guides/developer/renaming-models-and-fields_zh_TW#在-cli-中重新命名)使用 `lightdash rename`。您也可以使用[儀表板即代碼 (Dashboards as code)](/guides/developer/dashboards-as-code_zh_TW) 在圖表和儀表板中尋找並取代引用。
+
+
+## 如何忽略錯誤
+
+您可以透過將滑鼠懸停在驗證表中的某一行，並點擊出現的「x」按鈕來忽略驗證錯誤。
+
+![](/images/guides/developer/validator-dismiss-errors.png)
+
+被忽略的驗證錯誤將套用於所有人。因此，如果您忽略了一個錯誤，該錯誤將從您以及其他所有人的驗證結果中移除。如果您重新執行驗證且問題尚未修復，您忽略的錯誤將再次出現。

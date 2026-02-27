@@ -1,0 +1,233 @@
+---
+title: "使用 Lightdash Compile 測試變更"
+description: "如果您已將 Lightdash 連接到 GitHub，可以設置一個 `github action`，讓 Lightdash 在您每次開啟 Pull Request 時編譯專案並測試變更。"
+---
+
+
+添加此 Lightdash 編譯動作 (Compile action) 將會編譯您 dbt 專案的 .yml 檔案，並檢查是否存在任何會破壞 Lightdash 專案的錯誤。例如，一個指標引用了不存在的維度。
+
+### 步驟 1：向 Github Secrets 添加憑據
+
+我們將向 GitHub Actions 添加一些秘密 (Secrets) 和配置，但您不希望這些資訊公開，因此最佳做法是將它們添加為 Github 上的 Secrets。
+
+<Info>
+如果您已經有針對 Lightdash 的 GitHub Action，則可以使用為該 Action 建立的相同 Lightdash 秘密。
+</Info>
+
+前往您的儲存庫，點擊 `Settings`，在左側邊欄的 `Security` 下點擊 `Secrets`。現在點擊 `New repository secret`。
+
+<Frame>
+  <img src="/images/guides/cli/github-secrets-fc35152c7ebb768974b385a0e2601dc5.png"/>
+</Frame>
+
+
+我們需要添加以下秘密：
+
+##### `LIGHTDASH_API_KEY`
+
+前往 `Settings` \> `Personal Access Tokens` 建立一個新的個人存取權杖。這就是您要在 `LIGHTDASH_API_KEY` 中填入的權杖。
+
+<Frame>
+  <img src="/images/guides/cli/personal-access-token-9ed8a8c2b16edc5ee745c4909d4093d3.png"/>
+</Frame>
+
+
+##### `LIGHTDASH_PROJECT`
+
+專案的 UUID。例如，如果您的網址看起來像 `https://eu1.lightdash.cloud/projects/3538ab33-dc90-aabb-bc00-e50bba3a5f69/tables`，那麼 `3538ab33-dc90-45f0-aabb-e50bba3a5f69` 就是您的 `LIGHTDASH_PROJECT`。
+
+##### `LIGHTDASH_URL`
+
+對於 Lightdash Cloud 使用者，這可以是 `https://eu1.lightdash.cloud` 或 `https://app.lightdash.cloud`（請檢查您 Lightdash 專案的網址）。如果您是自託管，則應為您自己的自定義網域。
+
+##### `DBT_PROFILES`
+
+此部分的一些提示：
+
+* 您可以從本地的 `profiles.yml` 檔案中複製大部分資訊。您可以透過在終端機中輸入 `cat ~/.dbt/profiles.yml` 來查看其中的內容。
+* 如果您有獨立的 `prod` 和 `dev` 設定檔，您可能想為 GitHub Action 使用 `prod` 設定檔中的資訊。
+* 如果您希望根據開啟 Pull Request 的使用者使用不同的連接設置（開發者設定檔），請[參考此指南](/guides/cli/how-to-use-lightdash-preview_zh_TW#如何在預覽專案中使用開發者憑據)。
+
+從下方列表中尋找您的數據倉庫以獲取 profiles.yml 檔案模板。填寫此模板，這就是您的 `DBT_PROFILES` 秘密。
+
+<AccordionGroup>
+ <Accordion title="BigQuery">
+ BigQuery OAuth:
+
+步驟 1：建立一個名為 `GOOGLE_APPLICATION_CREDENTIALS` 的秘密
+
+添加您想用於 GitHub Action 的服務帳戶憑據（JSON 檔案）。內容應如下所示：
+
+```json
+{
+  "type": "service_account",
+  "project_id": "jaffle_shop",
+  "private_key_id": "12345",
+  "private_key": "-----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----
+",
+  "client_email": "jaffle_shop@jaffle_shop.iam.gserviceaccount.com",
+  "client_id": "12345",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/jaffle_shop"
+}
+```
+
+步驟 2：建立另一個名為 `DBT_PROFILES` 的秘密
+
+複製並貼上此模板到秘密中並填寫詳細資訊。
+
+這將始終在您的 GitHub Actions 中使用此專案連接。如果您希望預覽專案根據開啟 Pull Request 的使用者使用不同的連接設置，請參閱[此指南](/guides/cli/how-to-use-lightdash-preview_zh_TW#如何在預覽專案中使用開發者憑據)。
+
+```yaml
+[我的-bigquery-db]: # 這是您的專案名稱
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      keyfile: keyfile.json # 無需更改此項！我們會自動使用您在上一步建立的 keyfile。
+      project: [GCP 專案 ID]
+      dataset: [您的 dbt 數據集名稱]
+```
+
+更多資訊請參閱 dbt 的 profiles 文件：[https://docs.getdbt.com/reference/warehouse-profiles/bigquery-profile#service-account-file](https://docs.getdbt.com/reference/warehouse-profiles/bigquery-profile#service-account-file)
+</Accordion>
+<Accordion title="Postgres">
+Postgres 設定檔配置：
+
+```yaml
+company-name:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: [主機名稱]
+      user: [使用者名稱]
+      password: [密碼]
+      port: [連接埠]
+      dbname: [資料庫名稱]
+      schema: [dbt schema]
+      threads: [1 或更多]
+      keepalives_idle: 0
+      connect_timeout: 10
+      retries: 1
+```
+
+更多資訊請參閱 dbt 的 profiles 文件：[https://docs.getdbt.com/reference/warehouse-profiles/postgres-profile#profile-configuration](https://docs.getdbt.com/reference/warehouse-profiles/postgres-profile#profile-configuration)
+
+這將始終在您的 GitHub Actions 中使用此專案連接。
+</Accordion>
+<Accordion title="Redshift">
+Redshift 基於密碼的驗證：
+
+```yaml
+company-name:
+  target: dev
+  outputs:
+    dev:
+      type: redshift
+      host: [hostname.region.redshift.amazonaws.com]
+      user: [使用者名稱]
+      password: [密碼]
+      port: 5439
+      dbname: analytics
+      schema: analytics
+      threads: 4
+      keepalives_idle: 240
+      connect_timeout: 10
+      ra3_node: true # 啟用跨資料庫來源
+```
+
+更多資訊請參閱 dbt 的 profiles 文件：[https://docs.getdbt.com/reference/warehouse-profiles/redshift-profile#password-based-authentication](https://docs.getdbt.com/reference/warehouse-profiles/redshift-profile#password-based-authentication)
+</Accordion>
+<Accordion title="Snowflake">
+使用者 / 密碼驗證：
+
+```yaml
+我的-snowflake-db:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: [帳戶 ID]
+
+      # 使用者/密碼驗證
+      user: [使用者名稱]
+      password: [密碼]
+
+      role: [使用者角色]
+      database: [資料庫名稱]
+      warehouse: [數據倉庫名稱]
+      schema: [dbt schema]
+      threads: [1 或更多]
+      client_session_keep_alive: False
+      query_tag: [任何標記]
+```
+
+更多資訊請參閱 dbt 的 profiles 文件：[https://docs.getdbt.com/reference/warehouse-profiles/snowflake-profile#user--password-authentication](https://docs.getdbt.com/reference/warehouse-profiles/snowflake-profile#user--password-authentication)
+</Accordion>
+<Accordion title="DataBricks">
+設置 DataBricks 目標：
+
+```yaml
+your_profile_name:
+  target: dev
+  outputs:
+    dev:
+      type: databricks
+      catalog:
+        [
+          選填的編目名稱,
+          如果您正在使用 Unity Catalog,
+          僅適用於 dbt-databricks>=1.1.1,
+        ]
+      schema: [schema 名稱]
+      host: [yourorg.databrickshost.com]
+      http_path: [/sql/your/http/path]
+      token: [dapiXXXXXXXXXXXXXXXXXXXXXXX] # 個人存取權杖 (PAT)
+      threads: [1 或更多]
+```
+
+更多資訊請參閱 dbt 的 profiles 文件：[https://docs.getdbt.com/reference/warehouse-profiles/bigquery-profile#service-account-json](https://docs.getdbt.com/reference/warehouse-profiles/bigquery-profile#service-account-json)
+</Accordion>
+</AccordionGroup>
+
+### 步驟 2：在 Github 中建立 deploy.yml 工作流程
+
+前往您的儲存庫，點擊 `Actions` 選單。
+
+如果您沒有任何 GitHub Actions，只需點擊 `Configure`。
+<Frame>
+  <img src="/images/guides/cli/github-actions-f74f88aa1b1413a111be7dbf16d65d53.png" alt="Github actions 頁面"/>
+</Frame>
+
+如果您的儲存庫中已經有一些 GitHub Actions，請點擊 `New workflow`，然後選擇 `setup a workflow yourself`。
+
+<Frame>
+  <img src="/images/guides/cli/new-workflow-existing-actions-e321bd117d93bf139a01424d3771d0e6.jpg"/>
+</Frame>
+
+現在從我們的 [cli-actions](https://github.com/lightdash/cli-actions) 儲存庫中複製 [此檔案](https://github.com/lightdash/cli-actions/blob/main/compile.yml)。
+
+
+<Info>
+如果您僅在 Lightdash 中使用 dbt 模型的一個子集，則需要在檔案中的[此處](https://github.com/lightdash/cli-actions/blob/d91de777ed3668b537acd141b734eca75def4e52/compile.yml#L65)指定該子集。
+
+例如：為了僅編譯帶有 `lightdash` 標籤的模型，您應將該行更改為：`run: lightdash compile --select tag:lightdash --project-dir "$PROJECT_DIR" --profiles-dir . --profile prod || lightdash compile --select tag:lightdash --project-dir "$PROJECT_DIR" --profiles-dir .`
+</Info>
+
+給它取一個好記的名字，如 `compile-lightdash.yml`。
+
+點擊 `Start commit` 提交到您的儲存庫。
+
+### 您完成了！
+
+每當您在包含 Lightdash 專案的儲存庫中開啟新的 Pull Request 時，`lightdash compile` 就會執行，並檢查您所做的任何更改是否會破壞您的 Lightdash 執行體。
+
+您可以在 `Github actions` 頁面查看日誌。
+
+<Frame>
+  <img src="/images/guides/cli/github-run-e24152442d7002253f6fd6dc66a9a24e.png"/>
+</Frame>

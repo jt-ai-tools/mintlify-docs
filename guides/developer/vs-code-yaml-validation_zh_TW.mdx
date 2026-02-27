@@ -1,0 +1,27 @@
+---
+title: "如何為 VS Code 設置 Lightdash YAML 驗證"
+sidebarTitle: "VS Code 的 YAML 驗證"
+---
+
+如果您使用 VS Code 編輯 dbt 專案，我們建議設置 Lightdash YAML 驗證。驗證器會在編譯專案前標示出任何格式或配置問題，讓您可以更快地修復問題。
+
+此驗證使用的邏輯與 Lightdash 編譯專案時使用的邏輯完全相同。
+
+您只需將此代碼片段添加到 VS Code 的 `settings.json` 檔案中即可。[閱讀此指南](https://code.visualstudio.com/docs/getstarted/settings#%5Fsettings-json-file)了解如何編輯您的 `settings.json`。
+
+```json
+    "yaml.schemas": {
+        "https://raw.githubusercontent.com/lightdash/lightdash/main/packages/common/src/schemas/json/lightdash-dbt-2.0.json": [
+            "/**/models/**/*.yml",
+            "/**/models/**/*.yaml"
+        ]
+    },
+```
+
+您還需要[安裝 YAML VS Code 擴充功能](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)才能使驗證功能正常運作。
+
+安裝擴充功能並更新設置後，您在處理 `schema.yml` 檔案時就會看到如下圖所示的警告。
+
+<Frame>
+  <img src="/images/guides/developer/vs-code-yaml-validation/vs-code-error-799eb7e9b48916f2f57100a0c87095e4.png"/>
+</Frame>

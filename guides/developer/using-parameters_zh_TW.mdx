@@ -1,0 +1,808 @@
+---
+title: "如何使用參數 (Parameters)"
+sidebarTitle: 參數
+---
+
+**參數 (Parameters)** 是允許您在 Lightdash 中建立**動態且可重複使用查詢**的變數。它們使使用者無需編寫 SQL 即可與查詢互動並進行自定義。
+
+參數定義在您的 `lightdash.config.yml` 檔案中，或特定模型的 `schema.yml` 檔案中，並且可以在 Lightdash 專案的各個部分被引用。
+
+<Info>
+  如果您還不熟悉 lightdash.config.yml，請參考我們的[入門指南](/references/lightdash-config-yml_zh_TW#開始使用-lightdashconfigyml)來了解如何建立與設置此檔案。
+</Info>
+
+觀看此影片，了解參數的實際運作！您也可以在我們的[線上示範中嘗試](https://demo.lightdash.com/projects/2014e038-ff4b-4761-ae6f-fbf551e7b468/dashboards/587b3317-18c2-4048-b7ce-c51e3f25d0d5/view/tabs/b455b648-c3dc-4c26-a989-6b4e3a33832d)。
+
+<iframe src="https://www.loom.com/embed/84c7e03d0cf4470eabb2f48f3e70c5ac?sid=aab458f9-f83a-4cbf-959b-1b62c48636b7" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style={{ width: '100%', height: '450px' }} ></iframe>
+
+
+## 什麼是參數？
+
+參數是您可以定義一次，並在整個 Lightdash 專案中的多個地方引用的變數。它們允許您：
+
+- 建立使用者可在執行時更改的動態篩選器。
+- 使您的 SQL 更具可重用性且易於維護。
+- 讓非技術使用者無需編寫 SQL 即可自定義查詢。
+- 在圖表和儀表板層級儲存參數值。
+
+例如：您可以定義一個 `region` (區域) 參數，供使用者設定以按地理區域過濾數據；定義一個 `date_range` (日期範圍) 參數，允許使用者選擇不同的分析時段；或者定義一個具有數值的 `min_revenue` (最小營收) 參數，讓使用者設定分析的營收門檻。
+
+<Info>
+  **參數類型**：參數支援字串、日期和數字值。您可以使用字串（如 `"EMEA"`）、數字（如 `1000`）或日期（日期參數將在 UI 顯示日曆選取器）作為參數選項。
+</Info>
+
+
+## 可以在哪裡使用參數？
+
+參數可以在 Lightdash 專案中的許多地方被引用：
+
+1. **維度 SQL**：在[維度 (Dimension)](/references/dimensions_zh_TW) 的 SQL 定義中使用參數。
+2. **指標 SQL**：在[指標 (Metric)](/references/metrics_zh_TW) 的 SQL 定義中使用參數。
+3. **表格 SQL**：在 [sql_from](/references/tables_zh_TW#sql-from) 和 [sql_filter](/references/tables_zh_TW#sql-filter-行級安全) 定義中使用參數。
+4. **表格關聯 (Joins)**：在[關聯](/references/joins_zh_TW)條件中使用參數。
+5. **SQL 執行器 (SQL Runner)**：在 [SQL Runner](/guides/developer/sql-runner_zh_TW) 查詢中使用參數。
+6. **表格計算**：在[表格計算 (Table Calculations)](/guides/table-calculations_zh_TW) 中使用參數。
+7. **額外維度**：在[額外維度](/references/dimensions_zh_TW#額外維度)的 SQL 定義中使用參數。
+8. **自定義維度**：在[自定義維度](/guides/custom-fields_zh_TW#自定義-sql)定義中使用參數。
+
+
+## 參數類型
+
+Lightdash 中的參數支援不同的數據類型，以幫助您處理各類數據。預設情況下，所有參數都被視為字串，但您可以根據需要將它們轉換為其他類型。
+
+### 支援的參數類型
+
+Lightdash 正式支援以下參數類型：
+
+- **String** (字串，預設)：文字值。
+- **Number** (數字)：數值（整數或小數）。
+- **Date** (日期)：日期值（在 UI 中顯示日期選取器）。
+
+
+### 類型轉換變通方法
+
+雖然目前尚未正式支援，但您可以透過 SQL 類型強制轉換 (type casting) 來處理其他數據類型。
+要將參數轉換為特定類型，請使用 `::` 語法，後接類型名稱：
+
+```sql
+${lightdash.parameters.parameter_name}::type
+```
+
+<Note>
+    類型轉換是在 SQL 層級發生的，因此可用類型取決於您的資料庫系統（PostgreSQL, BigQuery, Snowflake 等）。大多數資料庫都支援常用的 `integer`, `numeric`, `date`, `timestamp`, 和 `boolean`。
+</Note>
+
+
+#### 布林值 (Boolean) 轉換
+
+作為變通方法，您可以使用 `::boolean` 將 "true"/"false" 的字串值轉換為布林值：
+
+```sql
+-- 轉換為布林值 (變通方法)
+WHERE ${TABLE}.is_active = ${lightdash.parameters.active_only}::boolean
+```
+
+#### 其他類型轉換
+
+您可以使用資料庫支援的任何 SQL 類型轉換：
+
+```sql
+-- 轉換為特定資料庫類型
+WHERE ${TABLE}.category_id = ${lightdash.parameters.category}::uuid
+WHERE ${TABLE}.amount = ${lightdash.parameters.amount}::decimal(10,2)
+```
+
+
+## 如何在 SQL 中引用參數
+
+### 專案層級參數
+
+要在 SQL 中引用專案層級參數，請使用以下語法：
+
+```sql
+${lightdash.parameters.parameter_name}
+```
+
+例如，引用名為 `region` 的參數：
+
+```sql
+${lightdash.parameters.region}
+```
+
+
+### 模型層級參數
+
+要在 SQL 中引用模型層級參數，您需要包含模型名稱：
+
+```sql
+${lightdash.parameters.model_name.parameter_name}
+```
+
+例如，從 `orders` 模型中引用名為 `region` 的參數：
+
+```sql
+${lightdash.parameters.orders.region}
+```
+
+
+### 使用簡短別名
+
+您也可以使用簡短別名 `ld` 代替 `lightdash`：
+
+```sql
+# 專案參數
+${ld.parameters.parameter_name}
+
+# 模型參數
+${ld.parameters.model_name.parameter_name}
+```
+
+例如：
+
+```sql
+# 專案參數
+${ld.parameters.region}
+
+# 來自 orders 模型 模型參數
+${ld.parameters.orders.region}
+```
+
+
+## 如何定義參數
+
+可以在 Lightdash 專案的兩個不同層級定義參數：
+
+
+### 專案層級參數
+
+專案層級參數定義在您的 `lightdash.config.yml` 檔案中，並可在整個專案中使用。以下是一個範例：
+
+```yaml
+parameters:
+  # 帶有簡單選項列表的參數
+  team:
+    label: "團隊"
+    description: "按團隊過濾數據"
+    options:
+      - "Sales"
+      - "Marketing"
+      - "Finance"
+    default: "Sales"
+  
+  # 啟用多選的參數
+  region:
+    label: "區域"
+    description: "按區域過濾數據"
+    options:
+      - "EMEA"
+      - "AMER"
+      - "APAC"
+    default: ["EMEA", "AMER"]
+    multiple: true
+  
+  # 數字類型的參數
+  min_revenue:
+    label: "最小營收"
+    description: "篩選最小營收門檻"
+    type: "number"
+    options:
+      - 1000
+      - 5000
+      - 10000
+    default: 5000
+
+  # 日期類型的參數
+  min_date:
+    label: "最小日期"
+    description: "僅顯示此日期之後的數據"
+    type: "date"
+
+  # 選項來自維度的參數
+  department:
+    label: "部門"
+    description: "按部門過濾數據"
+    options_from_dimension:
+      model: "employees"
+      dimension: "department"
+```
+
+欲了解專案層級參數屬性與選項的完整參考，請參閱 [lightdash.config.yml 參考文件](/references/lightdash-config-yml_zh_TW#parameters-configuration)。
+
+
+### 模型層級參數
+
+模型層級參數定義在 dbt 專案個別模型的 YAML 檔案中，其範圍僅限於定義該參數的模型。這些參數定義在模型配置的 `meta.parameters` 部分：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders
+        meta:
+          parameters:
+            date_range_start:
+              label: "日期範圍開始"
+              description: "自定義時段指標中過濾訂單的開始日期"
+              type: "date"
+            date_range_end:
+              label: "日期範圍結束"
+              description: "自定義時段指標中過濾訂單的結束日期"
+              type: "date"
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: orders
+        config:
+          meta:
+            parameters:
+              date_range_start:
+                label: "日期範圍開始"
+                description: "自定義時段指標中過濾訂單的開始日期"
+                type: "date"
+              date_range_end:
+                label: "日期範圍結束"
+                description: "自定義時段指標中過濾訂單的結束日期"
+                type: "date"
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    parameters:
+      date_range_start:
+        label: "日期範圍開始"
+        description: "自定義時段指標中過濾訂單的開始日期"
+        type: "date"
+      date_range_end:
+        label: "日期範圍結束"
+        description: "自定義時段指標中過濾訂單的結束日期"
+        type: "date"
+    ```
+  </Tab>
+</Tabs>
+
+模型層級參數提供與專案層級參數相同的配置選項，但透過將參數保留在與其使用處相鄰的位置，提供了更好的封裝與組織。
+
+欲了解模型層級參數屬性與選項的完整參考，請參閱[表格參考文件](/references/tables_zh_TW#parameters-configuration)。
+
+
+## 使用參數的範例
+
+讓我們看看如何在 Lightdash 專案的不同部分使用參數。
+
+### 在維度 SQL 中
+
+您可以在維度的 SQL 定義中引用參數：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders
+        columns:
+          - name: filtered_revenue
+            meta:
+              dimension:
+                type: number
+                sql: |
+                  CASE
+                    WHEN ${TABLE}.region IN (${lightdash.parameters.region})
+                    THEN ${TABLE}.revenue
+                    ELSE 0
+                  END
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: orders
+        columns:
+          - name: filtered_revenue
+            config:
+              meta:
+                dimension:
+                  type: number
+                  sql: |
+                    CASE
+                      WHEN ${TABLE}.region IN (${lightdash.parameters.region})
+                      THEN ${TABLE}.revenue
+                      ELSE 0
+                    END
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    dimensions:
+      - name: filtered_revenue
+        type: number
+        sql: |
+          CASE
+            WHEN ${TABLE}.region IN (${lightdash.parameters.region})
+            THEN ${TABLE}.revenue
+            ELSE 0
+          END
+    ```
+  </Tab>
+</Tabs>
+
+在此範例中，`filtered_revenue` 維度將僅顯示在 `region` 參數中選定區域的營收。
+
+
+### 在數值維度 SQL 中
+
+您可以直接引用數字參數而無需類型轉換：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders
+        columns:
+          - name: high_value_orders
+            meta:
+              dimension:
+                type: boolean
+                sql: ${TABLE}.revenue >= ${lightdash.parameters.min_revenue}
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: orders
+        columns:
+          - name: high_value_orders
+            config:
+              meta:
+                dimension:
+                  type: boolean
+                  sql: ${TABLE}.revenue >= ${lightdash.parameters.min_revenue}
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    dimensions:
+      - name: high_value_orders
+        type: boolean
+        sql: ${TABLE}.revenue >= ${lightdash.parameters.min_revenue}
+    ```
+  </Tab>
+</Tabs>
+
+在此範例中，對於營收大於或等於數值參數 `min_revenue` 的訂單，`high_value_orders` 維度將為 true。
+
+
+### 在指標 SQL 中
+
+您可以在指標的 SQL 定義中引用參數：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: races
+        meta:
+          metrics:
+            avg_distance_unit_param:
+              type: average
+              sql: |
+                case
+                  when ${lightdash.parameters.unit} = 'Miles'
+                    then ${TABLE}.distance_miles
+                  when ${lightdash.parameters.unit} = 'Kilometers'
+                    then ${TABLE}.distance_km
+                end
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: races
+        config:
+          meta:
+            metrics:
+              avg_distance_unit_param:
+                type: average
+                sql: |
+                  case
+                    when ${lightdash.parameters.unit} = 'Miles'
+                      then ${TABLE}.distance_miles
+                    when ${lightdash.parameters.unit} = 'Kilometers'
+                      then ${TABLE}.distance_km
+                  end
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: races
+
+    metrics:
+      avg_distance_unit_param:
+        type: average
+        sql: |
+          case
+            when ${lightdash.parameters.unit} = 'Miles'
+              then ${TABLE}.distance_miles
+            when ${lightdash.parameters.unit} = 'Kilometers'
+              then ${TABLE}.distance_km
+          end
+    ```
+  </Tab>
+</Tabs>
+
+在此範例中，當 `unit` 參數設為 Miles 時，`avg_distance_unit_param` 指標將回傳以英里為單位的比賽平均距離；當設為 Kilometers 時則回傳公里。
+
+
+### 基於指標的參數
+
+參數不僅可以用於過濾，還可以切換整個指標。與其為每個 KPI 建立多個圖表，不如使用單個參數動態控制顯示哪個指標。使用者可以從同一個下拉選單中切換 `total_revenue`, `won_revenue`, `deal_count`, 和 `win_rate`。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: deals
+        meta:
+          metrics:
+            selected_kpi:
+              label: 選定的 KPI
+              description: 根據 KPI Metric 參數選擇而變化的動態指標
+              type: number
+              sql: |
+                CASE
+                  WHEN ${lightdash.parameters.kpi_selector} = 'total_revenue' THEN ${deals.total_amount}
+                  WHEN ${lightdash.parameters.kpi_selector} = 'won_revenue' THEN ${deals.total_won_amount}
+                  WHEN ${lightdash.parameters.kpi_selector} = 'deal_count' THEN ${deals.unique_deals}
+                  WHEN ${lightdash.parameters.kpi_selector} = 'win_rate' THEN ${deals.win_rate} * 100
+                END
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: deals
+        config:
+          meta:
+            metrics:
+              selected_kpi:
+                label: 選定的 KPI
+                description: 根據 KPI Metric 參數選擇而變化的動態指標
+                type: number
+                sql: |
+                  CASE
+                    WHEN ${lightdash.parameters.kpi_selector} = 'total_revenue' THEN ${deals.total_amount}
+                    WHEN ${lightdash.parameters.kpi_selector} = 'won_revenue' THEN ${deals.total_won_amount}
+                    WHEN ${lightdash.parameters.kpi_selector} = 'deal_count' THEN ${deals.unique_deals}
+                    WHEN ${lightdash.parameters.kpi_selector} = 'win_rate' THEN ${deals.win_rate} * 100
+                  END
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: deals
+
+    metrics:
+      selected_kpi:
+        label: 選定的 KPI
+        description: 根據 KPI Metric 參數選擇而變化的動態指標
+        type: number
+        sql: |
+          CASE
+            WHEN ${lightdash.parameters.kpi_selector} = 'total_revenue' THEN ${deals.total_amount}
+            WHEN ${lightdash.parameters.kpi_selector} = 'won_revenue' THEN ${deals.total_won_amount}
+            WHEN ${lightdash.parameters.kpi_selector} = 'deal_count' THEN ${deals.unique_deals}
+            WHEN ${lightdash.parameters.kpi_selector} = 'win_rate' THEN ${deals.win_rate} * 100
+          END
+    ```
+  </Tab>
+</Tabs>
+
+在此範例中，`selected_kpi` 指標會根據 `kpi_selector` 參數動態回傳不同的值。這允許您構建一個可以顯示多個 KPI 的單一圖表。[在我們的示範網站查看實際效果](https://demo.lightdash.com/projects/d496d901-a76d-4916-9eae-b81bc7337013/dashboards/5d752e3e-7548-4117-a155-da90ba371598/view/tabs/6111424c-aa0c-4013-b454-3ff76ab9ac53)。
+
+
+### 在表格關聯 (Joins) 中
+
+您可以在表格關聯的 SQL_ON 子句中使用參數。這包括專案層級參數以及來自關聯模型的模型層級參數：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders
+        meta:
+          joins:
+            - join: customers
+              sql_on: |
+                ${orders.customer_id} = ${customers.id}
+                AND ${customers.region} IN (${lightdash.parameters.region})
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: orders
+        config:
+          meta:
+            joins:
+              - join: customers
+                sql_on: |
+                  ${orders.customer_id} = ${customers.id}
+                  AND ${customers.region} IN (${lightdash.parameters.region})
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    joins:
+      - join: customers
+        sql_on: |
+          ${orders.customer_id} = ${customers.id}
+          AND ${customers.region} IN (${lightdash.parameters.region})
+    ```
+  </Tab>
+</Tabs>
+
+此關聯將僅包含來自專案層級 `region` 參數所選區域的客戶。
+
+您也可以引用來自關聯模型的模型層級參數：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders
+        meta:
+          joins:
+            - join: customers
+              sql_on: |
+                ${orders.customer_id} = ${customers.customer_id}
+                AND ${customers.status} = ${lightdash.parameters.customers.customer_status}
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: orders
+        config:
+          meta:
+            joins:
+              - join: customers
+                sql_on: |
+                  ${orders.customer_id} = ${customers.customer_id}
+                  AND ${customers.status} = ${lightdash.parameters.customers.customer_status}
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    joins:
+      - join: customers
+        sql_on: |
+          ${orders.customer_id} = ${customers.customer_id}
+          AND ${customers.status} = ${lightdash.parameters.customers.customer_status}
+    ```
+  </Tab>
+</Tabs>
+
+在此範例中，關聯使用了 `customers` 模型中定義的模型層級參數 `customer_status`。這允許您根據關聯表專有的參數動態過濾關聯數據。
+
+
+### 在表格計算中
+
+您可以在表格計算中引用參數：
+
+```sql
+-- 表格計算範例
+CASE 
+  WHEN ${orders.order_date} >= ${lightdash.parameters.date_range_start}
+  THEN ${orders.revenue}
+  ELSE 0
+END
+```
+
+此表格計算將僅包含在 `date_range` 參數選定日期當天或之後下單的營收。
+
+
+### 在額外維度中
+
+您可以在自定義維度定義中使用參數：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders
+        columns:
+          - name: order_date
+            meta:
+              dimension:
+                type: date
+              additional_dimensions:
+                is_after_cutoff_date:
+                  type: boolean
+                  sql: ${order_date} >= ${lightdash.parameters.date_range_start}
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: orders
+        columns:
+          - name: order_date
+            config:
+              meta:
+                dimension:
+                  type: date
+                additional_dimensions:
+                  is_after_cutoff_date:
+                    type: boolean
+                    sql: ${order_date} >= ${lightdash.parameters.date_range_start}
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    dimensions:
+      - name: order_date
+        type: date
+        additional_dimensions:
+          is_after_cutoff_date:
+            type: boolean
+            sql: ${order_date} >= ${lightdash.parameters.date_range_start}
+    ```
+  </Tab>
+</Tabs>
+
+此額外維度將標示訂單是否是在 `date_range` 參數選定日期當天或之後下單的。
+
+
+### 在 SQL 執行器 (SQL Runner) 中
+
+參數也可以用於 SQL Runner 查詢：
+
+```sql
+SELECT
+  order_id,
+  order_date,
+  revenue
+FROM orders
+WHERE region IN (${lightdash.parameters.region})
+  AND order_date >= ${lightdash.parameters.date_range_start}
+  AND revenue >= ${lightdash.parameters.min_revenue}
+```
+
+此查詢將根據 `region` 參數選定的區域、`date_range` 參數選定的日期，以及營收大於或等於數字參數 `min_revenue` 的條件來過濾訂單。
+
+
+### 維度中引用關聯表的模型參數
+
+處理關聯表時，您可以在維度定義中引用來自關聯表的模型層級參數：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders
+        meta:
+          joins:
+            - join: customers
+              sql_on: ${orders.customer_id} = ${customers.id}
+        columns:
+          - name: filtered_customer_revenue
+            meta:
+              dimension:
+                type: number
+                sql: |
+                  CASE
+                    WHEN ${customers.segment} = ${lightdash.parameters.customers.target_segment}
+                    THEN ${TABLE}.revenue
+                    ELSE 0
+                  END
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: orders
+        config:
+          meta:
+            joins:
+              - join: customers
+                sql_on: ${orders.customer_id} = ${customers.id}
+        columns:
+          - name: filtered_customer_revenue
+            config:
+              meta:
+                dimension:
+                  type: number
+                  sql: |
+                    CASE
+                      WHEN ${customers.segment} = ${lightdash.parameters.customers.target_segment}
+                      THEN ${TABLE}.revenue
+                      ELSE 0
+                    END
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    joins:
+      - join: customers
+        sql_on: ${orders.customer_id} = ${customers.id}
+
+    dimensions:
+      - name: filtered_customer_revenue
+        type: number
+        sql: |
+          CASE
+            WHEN ${customers.segment} = ${lightdash.parameters.customers.target_segment}
+            THEN ${TABLE}.revenue
+            ELSE 0
+          END
+    ```
+  </Tab>
+</Tabs>
+
+在此範例中，`filtered_customer_revenue` 維度使用來自關聯模型 `customers` 的模型層級參數 `target_segment` 來有條件地顯示營收。
+
+
+## 儲存參數值
+
+參數值可以在圖表和儀表板層級儲存。
+
+
+### 在圖表中儲存數值
+
+使用參數建立圖表時，您可以將特定的參數值隨圖表一併儲存。這意味著當有人查看該圖表時，他們將看到根據儲存的參數值過濾後的數據。
+
+要在圖表中儲存參數值：
+
+1. 建立或編輯圖表。
+2. 根據需要設定參數值。
+3. 儲存圖表。
+
+參數值將與圖表一併儲存，並在每次造訪圖表時自動套用。
+
+
+### 在儀表板中儲存數值
+
+您也可以在儀表板層級儲存參數值，這允許您建立在所有圖表中具有一致參數值的儀表板。
+
+要在儀表板中儲存參數值：
+
+1. 建立或編輯儀表板。
+2. 向儀表板添加圖表。
+3. 根據需要設定參數值。
+4. 儲存儀表板。
+
+參數值將與儀表板一併儲存，並套用到儀表板上所有具有參數化欄位的圖表。
+
+
+## 使用參數的最佳實踐
+
+以下是使用參數時應遵循的一些最佳實踐：
+
+1. **使用具描述性的名稱**：選擇能清楚標示其用途的參數名稱。
+2. **提供預設值**：為參數設定預設值，以確保即使使用者未設定參數值，查詢也能正常運作。
+3. **添加描述**：為參數包含清晰的描述，幫助使用者理解其用途。
+4. **考慮使用 options_from_dimension**：對於應與數據中的值匹配的參數，請使用 `options_from_dimension` 來動態填充選項。
+5. **考量效能**：注意參數如何影響查詢效能，特別是在處理大型數據集時。

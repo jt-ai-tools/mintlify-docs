@@ -1,0 +1,161 @@
+---
+title: Lightdash 的 dbt 模型最佳實踐
+sidebarTitle: dbt 模型最佳實踐
+description: 了解如何構建您的 dbt 模型，以在 Lightdash 中獲得最佳效能與易用性。
+---
+
+在為 Lightdash 構建 dbt 模型時，遵循這些最佳實踐將有助於為您的終端使用者在 Lightdash 中創造更好的體驗，並提升查詢效能。
+
+## 在 BI 層使用「寬且扁平」的表格 (Wide, Flat Tables)
+
+我們建議在 BI 層使用**寬且扁平的表格**，因為這能最大限度地減少運行時需要處理的複雜關聯 (Joins)。
+
+### 為什麼寬表的效果更好
+
+現代列式數據倉庫（如 Snowflake、BigQuery 和 Redshift）針對寬表格式進行了優化。星型模型 (Star Schema) 最初是為了優化行式數據倉庫的效能而引入的，但在當今的列式數據倉庫中，寬且扁平才是王道。
+
+寬表具有多項優勢：
+
+- **更快的查詢效能**：更少的關聯意味著運行時查詢速度更快。
+- **更好的使用者體驗**：所有相關欄位都集中出現在 Lightdash 側邊欄的單個部分，使業務使用者更容易找到所需的內容。
+- **更易於理解**：終端使用者不需要理解多張表之間的複雜關係。
+- **更準確的 [AI 代理 (AI agents)](/guides/ai-agents_zh_TW)**：AI 代理在處理寬表時擁有更多背景資訊，因此能提供更準確的答案。
+
+### 如何實作寬表
+
+如果您的上游數據已經以星型模型建模，您可以維持該結構於轉換層，然後將這些模型合併為寬表，並呈現在 BI 層。
+
+針對關鍵業務領域構建這些較寬的表格，特別是那些您可能需要專門分析或使用 [AI 代理](/guides/ai-agents_zh_TW) 能力的領域，例如：
+
+- 營收與銷售
+- 行銷與活動
+- 營運與物流
+- 客戶行為
+
+例如：與其擁有需要關聯的獨立 `orders`、`customers` 和 `products` 表，不如建立一個寬表 `orders_enriched`，將所有相關的客戶和產品資訊與訂單數據放在一起。
+
+## 每個 dbt 模型一個 schema.yml 檔案
+
+我們建議您的 dbt 專案結構採行**一個模型對應一個 `.yml` 檔案**（或 `.sql` 檔案）。
+
+這種方法使得：
+
+- 隨著專案增長，更容易瀏覽 YAML 檔案。
+- 更容易管理與維護個別模型。
+- 避免共享 schema 檔案過於混亂。
+- 將相關配置保持在一起。
+
+範例結構如下：
+
+```
+models/
+  orders.sql
+  orders.yml
+  customers.sql
+  customers.yml
+  products.sql
+  products.yml
+```
+
+雖然 Lightdash 支援將所有模型定義放在目錄層級的單個 `schema.yml` 檔案中，但我們發現隨著專案增長，為每個模型建立獨立檔案具備更好的擴展性。
+
+## 那麼星型模型呢？
+
+雖然我們建議使用寬扁平表，但**我們在 Lightdash 中支援關聯 (Joins)** 以及透過 [AI 代理](/guides/ai-agents_zh_TW) 進行存取，因此您可以靈活地以最適合團隊的方式構建語義層。
+
+如果您使用的是星型模型，請記住：
+
+- 欄位會被拆分到 Lightdash 側邊欄的多個部分，這對業務使用者來說可能不夠直觀。
+- 底層值中的跨模型引用會變得更難管理。
+- 既然 Lightdash 現在有了扇出 (Fanout) 保護，關聯帶來的主要效能擔憂已得到緩解。
+
+一種做法是在上游維持星型模型以進行數據建模，然後根據需要為特定業務場景實例化 (Materialize) 寬摘要表。這讓您兩全其美：上游擁有乾淨的數據建模實踐，下游擁有為 BI 消費優化的表格。
+
+## 優化查詢效能與數據倉庫成本
+
+所有 Lightdash 查詢都在您的數據倉庫上執行。除了上述使用寬扁平表外，以下額外策略也有助於提高效能並降低成本。
+
+| 策略 | 效能影響 | 成本影響 |
+|----------|-------------------|-------------|
+| [實例化為表格](#實例化模型為表格) | 高 | 高 |
+| [索引與分區數據](#對數據進行索引與分區) | 高 | 高 |
+| [最小化關聯](#最小化查詢時的關聯) | 高 | 中 |
+| [啟用快取](#利用快取) | 中 | 高 |
+| [限制暴露的模型](#限制暴露給-bi-層的模型) | 低 | 中 |
+| [監控使用量](#監控查詢使用量) | — | 可視化程度 |
+
+### 實例化模型為表格
+
+視圖 (Views) 在每次查詢時都會重新執行 SQL。[表格 (Tables)](https://docs.getdbt.com/docs/build/materializations#table) 則儲存預先計算好的結果。
+
+```yaml
+# 建議用於頻繁查詢的模型
+{{ config(materialized='table') }}
+
+# 用於僅追加更新的大型數據集
+{{ config(materialized='incremental') }}
+```
+
+安排定時執行 dbt (每日/每小時)，以保持表格數據最新，同時避免隨選計算。對於僅追加更新的大型數據集，請考慮使用[增量模型 (Incremental models)](https://docs.getdbt.com/docs/build/incremental-models)。
+
+### 對數據進行索引與分區
+
+在數據倉庫中進行適當的索引與分區可以大幅提升查詢效能並降低成本。這些優化發生在倉庫層級，並使所有查詢（包括來自 Lightdash 的查詢）受益。
+
+**分區 (Partitioning)** 將大表根據某一欄位（通常是日期）劃分為較小的片段。對分區欄位進行篩選的查詢僅掃描相關分區，而非整張表。
+
+**叢集/索引 (Clustering/Indexing)** 在分區內組織數據，以加快對頻繁查詢欄位的篩選與排序。
+
+| 數據倉庫 | 分區 (Partitioning) | 叢集/索引 (Clustering/Indexing) |
+|-----------|--------------|---------------------|
+| BigQuery | `partition_by` | `cluster_by` |
+| Snowflake | 自動微噴區 (Micro-partitions) | `cluster_by` |
+| Redshift | `dist` 和 `sort` 鍵 | `sort` 鍵 |
+| Databricks | `partition_by` | `zorder` |
+
+BigQuery 的 dbt 配置範例：
+
+```yaml
+{{ config(
+    materialized='table',
+    partition_by={
+      "field": "created_at",
+      "data_type": "date",
+      "granularity": "day"
+    },
+    cluster_by=["customer_id", "status"]
+) }}
+```
+
+最佳實踐：
+- 針對時間篩選常用的日期欄位進行分區（例如：`created_at`, `order_date`）。
+- 針對 `WHERE` 子句或 `GROUP BY` 中常用的欄位進行叢集。
+- 審查您的倉庫查詢歷史，識別可從分區受益的高成本查詢。
+
+### 最小化查詢時的關聯
+
+在 dbt 模型中預先關聯數據，而不是在查詢時才關聯。如[寬扁平表](#在-bi-層使用寬且扁平的表格-wide-flat-tables)中所述，這種做法優於運行時關聯。
+
+### 利用快取
+
+[快取 (Caching)](/guides/developer/caching_zh_TW) 儲存查詢結果，重複 造訪可完全跳過倉庫。最有效的情境包括：
+
+- 頻繁造訪的儀表板。
+- 不含動態時間篩選的圖表。
+- 定時交付。
+
+### 限制暴露給 BI 層的模型
+
+僅將已具備生產水準、經過優化的模型暴露給 Lightdash 使用者。暫存模型 (Staging models)、中間轉換過程、開發中 (Work-in-progress) 內容以及尚未針對查詢效能優化的表格應對終端使用者隱藏，以避免混淆並確保他們使用的是可靠、高效的數據。
+
+- **[dbt 標籤](/get-started/develop-in-lightdash/adding-tables-to-lightdash_zh_TW#使用-dbt-標籤限制-lightdash-中的表格)**：控制哪些模型顯示在 Lightdash 中。
+- **[使用者屬性](/references/workspace/user-attributes_zh_TW)**：按角色限制模型造訪。
+
+### 監控查詢使用量
+
+[查詢標籤 (Query Tags)](/references/workspace/usage-analytics_zh_TW#query-tags) 幫助您識別優化機會：
+
+- 需要實例化或索引的表格。
+- 需要優化的高昂查詢。
+- 用於快取決策的使用模式。
+- 按儀表板、圖表或使用者進行成本歸因。

@@ -1,0 +1,38 @@
+---
+title: "如何透過 URL 過濾儀表板"
+sidebarTitle: "透過 URL 過濾儀表板"
+---
+
+在本指南中，您將學習如何格式化儀表板 URL，以便將動態數值套用到該儀表板已儲存的篩選器中。您甚至可以設置一個維度，當您點擊它時，會被導向到一個根據您點擊的維度值過濾後的儀表板！
+
+例如：您可能有一個顯示最賺錢合作夥伴的銷售儀表板，接著透過 URL 設置，當您點擊特定合作夥伴名稱時，它會將您引導至一個新的儀表板，且該儀表板已自動過濾為僅顯示該合作夥伴的 KPI。
+
+## 儀表板 URL 過濾範例
+
+這是一段快速演示影片，展示完成後的樣子：
+
+<iframe src="https://cdn.loom.com/sessions/thumbnails/2afb9990e3d7407dadcf53d8db2719c8-644f09eaf407adac.mp4" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style={{ width: '100%', height: '400px' }} ></iframe>
+
+## 設置儀表板 URL 過濾
+
+以下是設置流程：
+
+<iframe src="https://cdn.loom.com/sessions/thumbnails/aa6b7aa3001d4b1fa86a2c98a7fe044c-1341cb311f5a956d.mp4" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style={{ width: '100%', height: '400px' }} ></iframe>
+
+### 設置步驟
+
+1. 打開您想要動態過濾的儀表板。
+2. 為您想要動態過濾的篩選器添加一個值。
+3. 複製套用篩選器後顯示的 URL。它應該看起來像下圖所示。
+
+<Frame>
+  <img src="/images/guides/developer/filtering-dashboard-in-url/dashboard-url-filter-4eb115b7e180529d7a5d50343d500743.png"/>
+</Frame>
+
+
+<Info>
+您會注意到 URL 中有一個 `?filters=` 鍵。之後的所有內容都是經過 URL 編碼的 JSON 物件。如果您想查看該 JSON，可以找一個線上的 URL 解碼器 (URL decoder) 進行重新格式化。
+</Info>
+
+1. 將您在步驟 2 中選擇的篩選值替換為 `${ value.formatted | url_encode }` 以使其變為動態。在範例中，該值為 `Plant+Paradise`（如圖中高亮所示）。
+2. 將該 URL 貼到您正在處理的模型 YAML 檔案中。請參考[我們示範專案中的範例](https://github.com/lightdash/lightdash-demo-data-gardening/blob/5632406cb5b43fdf066a2086142dc3e86a41e947/dbt/models/dbt%5Forders.yml#L31-L32)。

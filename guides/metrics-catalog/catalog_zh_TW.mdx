@@ -1,0 +1,923 @@
+---
+title: "Catalog (目錄)"
+description: "在 Spotlight 指標目錄中瀏覽、探索並策劃您的指標。"
+---
+
+## 瀏覽目錄
+
+在 **Metrics Catalog (指標目錄)** 中瀏覽所有您有權造訪的專案指標（基於權限與使用者屬性）。
+
+<Frame>
+  ![](/images/guides/metrics-catalog/browsing-the-catalog-a9520c871903cedd96eb7923a1b3ae4e.webp)
+</Frame>
+
+1. **搜尋**：透過搜尋列輕鬆按名稱或 .yml 描述找到指標。
+
+2. **查看 .yml 描述**：點擊任何描述即可展開並查看完整內容，包含渲染後的 Markdown 格式。
+
+3. **類別 (Categories)**：使用類別來精簡您的指標與 KPI。按類別過濾指標，並直接在 UI 中新增。***具備編輯者 (Editor) 權限或以上的使用者*** 可以點擊任何類別儲存格進行編輯、重新命名、更改顏色或刪除。
+
+4. **查看受歡迎程度**：探索指標的受歡迎程度並查看其使用處。點擊可查看使用該指標的完整圖表清單。指標預設按使用頻率排序，最常用的會排在前面。
+
+5. **探索**：***互動檢視者 (Interactive Viewer) 及以上*** 使用者可以點擊「Explore」進一步以圖表形式視覺化指標。
+
+## 探索指標
+
+在 **Metrics Explorer (指標探索器)** 中視覺化您的指標。
+
+<Frame>
+  ![](/images/guides/metrics-catalog/exploring-a-metric.png)
+</Frame>
+
+1. **繪製時間趨勢圖**：查看選定指標隨時間維度變化的折線圖。您可以調整該維度，或在 `.yml` 中設定預設時間維度以簡化使用者操作。[查看方法](#在-yml-中配置預設時間設定)
+
+2. **按日期過濾**：使用具備便捷預設選項的日期選取器進行快速選取。[查看預設選項如何運作](#常見問題)
+
+3. **調整時間粒度**：選擇所需的日期粒度層級以精確化您的視圖。
+
+4. **按維度過濾**：按同一表格中的任何字串或布林維度過濾您的指標。
+
+5. **細分 (Segment-by)**：按數據集中的任何非時間維度細分指標。
+
+6. **進行比較**：
+
+   * **「與去年同期比較 (This time last year)」**：將選定時段與去年同期進行比較。
+
+   * **「與其他指標比較」**：與專案中任何**已在 `.yml` 中指定預設時間維度**的指標進行比較。這包括關聯表 (Joins) 中的指標。[查看方法](#在-yml-中配置預設時間設定)
+
+7. **拖拽縮放**：在圖表上點擊並拖拽以高亮選取的時段或數據點，放開後即可縮放該片段。點擊「Reset Zoom」重置圖表。
+
+## 為業務使用者策劃 Spotlight
+
+Spotlight 旨在成為業務使用者探索與理解數據的工具。
+
+為了讓 Spotlight 對業務使用者更有用，您可以策劃他們可以看到並探索的指標。
+
+為此，您可以：
+
+* 控制目錄中指標的可見性。
+
+* 為指標添加類別。
+
+* 為指標添加預設時間設定。
+
+以上皆可透過您的 Lightdash `.yml` 檔案完成。
+
+### 配置指標的全域可見性
+
+您可以透過在 dbt 專案根目錄建立一個名為 `lightdash.config.yml` 的新檔案，來控制目錄中指標的可見性。
+
+<Info>
+  如果您還不熟悉 lightdash.config.yml，請參考我們的[入門指南](/references/lightdash-config-yml_zh_TW#開始使用-lightdashconfigyml)了解如何建立並設定此檔案。
+</Info>
+
+觀看此影片了解如何設定：
+
+<div
+  style={{
+position: "relative",
+paddingBottom: "56.25%",
+height: "0",
+marginBottom: "40px",
+}}
+>
+  <iframe
+    src="https://www.loom.com/embed/1cedbf73be24445abecde95132284e91?sid=67cf36bd-f81e-40a8-b64e-972bbcfc836a"
+    frameborder="0"
+    webkitallowfullscreen
+    mozallowfullscreen
+    allowfullscreen
+    style={{
+  position: "absolute",
+  top: 0,
+  left: 0,
+  width: "100%",
+  height: "100%",
+}}
+  />
+</div>
+
+**分步指南**
+
+1. 將以下內容添加到您的 `lightdash.config.yml` 檔案中：
+
+```yml
+spotlight:
+  default_visibility: show
+```
+
+<Info>
+  **預設可見性 (Default visibility) 可以設為 `show` (顯示) 或 `hide` (隱藏)。**
+
+  如果您不設定此項，預設值為 `show`，這意味著所有指標預設都會顯示在目錄中（但使用者屬性等其他設定仍會套用）。
+</Info>
+
+這將使專案中所有指標在目錄中的預設可見性設為 `show`。如果您偏好預設隱藏指標，並在個別模型/指標層級進行覆蓋，也可以將其設為 `hide`。
+
+2. 設定好預設可見性後，您可以在模型或指標層級進行覆蓋。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yml
+    models:
+      - name: events
+        meta:
+          spotlight:
+            visibility: hide
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yml
+    models:
+      - name: events
+        config:
+          meta:
+            spotlight:
+              visibility: hide
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yml
+    type: model
+    name: events
+
+    spotlight:
+      visibility: hide
+    ```
+  </Tab>
+</Tabs>
+
+這將會從目錄中隱藏整個 `events` 模型。
+
+3. 如果 `events` 模型中有您想要顯示的特定指標，可以覆蓋其預設可見性。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yml
+    models:
+      - name: events
+        meta:
+          spotlight:
+            visibility: hide
+          metrics:
+            event_count:
+              type: count
+              spotlight:
+                visibility: show
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yml
+    models:
+      - name: events
+        config:
+          meta:
+            spotlight:
+              visibility: hide
+            metrics:
+              event_count:
+                type: count
+                spotlight:
+                  visibility: show
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yml
+    type: model
+    name: events
+
+    spotlight:
+      visibility: hide
+
+    metrics:
+      event_count:
+        type: count
+        spotlight:
+          visibility: show
+    ```
+  </Tab>
+</Tabs>
+
+4. 編譯專案後，您將在目錄中看到 `event_count` 指標，即使整個 `events` 模型是隱藏的。
+
+### 為指標分配類別 (Categories)
+
+類別是組織目錄指標的好方法。您可以透過在 `lightdash.config.yml` 檔案中添加 `categories` 欄位來建立新類別。
+
+觀看此影片了解設定方法：
+
+<div
+  style={{
+position: "relative",
+paddingBottom: "56.25%",
+height: "0",
+marginBottom: "40px",
+}}
+>
+  <iframe
+    src="https://www.loom.com/embed/16690385fac04d97963d0dc36aba5f87?sid=7119a8aa-b4d2-4ba4-859c-0d76a6fe081b"
+    frameborder="0"
+    webkitallowfullscreen
+    mozallowfullscreen
+    allowfullscreen
+    style={{
+  position: "absolute",
+  top: 0,
+  left: 0,
+  width: "100%",
+  height: "100%",
+}}
+  />
+</div>
+
+**分步指南**
+
+1. 將以下內容添加到您的 `lightdash.config.yml` 檔案中：
+
+```yml
+spotlight:
+  categories:
+    revenue: # 必填，類別名稱，用於在目錄中進行引用。必須是唯一的。
+      label: 營收 # 必填，在目錄中顯示的標籤名稱
+      color: "orange" # 選填，預設為 "gray"。可選顏色： "gray", "violet", "red", "orange", "green", "blue", "indigo", "pink", "yellow"
+```
+
+2. 添加類別後，您可以透過在模型 `.yml` 檔案中添加 `categories` 欄位將指標分配至該類別。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yml
+    models:
+      - name: events
+        meta:
+          spotlight:
+            visibility: show
+            categories:
+              - revenue
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yml
+    models:
+      - name: events
+        config:
+          meta:
+            spotlight:
+              visibility: show
+              categories:
+                - revenue
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yml
+    type: model
+    name: events
+
+    spotlight:
+      visibility: show
+      categories:
+        - revenue
+    ```
+  </Tab>
+</Tabs>
+
+這將為 `events` 模型中的所有指標添加 `revenue` 類別。
+
+如果您想為特定指標添加其他類別，可以在該指標的 `.yml` 配置中添加 `categories`。請記住，您只能添加已在 `lightdash.config.yml` 中定義過的類別。
+
+3. 為 `event_count` 指標添加 `marketing` 類別：
+   首先在 `lightdash.config.yml` 中定義 `marketing` 類別：
+
+```yml
+spotlight:
+  categories:
+    marketing:
+      label: 行銷
+      color: "blue"
+    revenue:
+      label: 營收
+      color: "orange"
+```
+
+接著將其分配給指標：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yml
+    models:
+      - name: events
+        meta:
+          spotlight:
+            visibility: show
+            categories:
+              - revenue
+          metrics:
+            event_count:
+              type: count
+              spotlight:
+                categories:
+                  - marketing
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yml
+    models:
+      - name: events
+        config:
+          meta:
+            spotlight:
+              visibility: show
+              categories:
+                - revenue
+            metrics:
+              event_count:
+                type: count
+                spotlight:
+                  categories:
+                    - marketing
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yml
+    type: model
+    name: events
+
+    spotlight:
+      visibility: show
+      categories:
+        - revenue
+
+    metrics:
+      event_count:
+        type: count
+        spotlight:
+          categories:
+            - marketing
+    ```
+  </Tab>
+</Tabs>
+
+在此範例中，`event_count` 指標將同時擁有 `行銷` 和 `營收` 兩個類別（它是累加的）。
+
+4. 編譯專案後，您會在目錄中看到帶有這兩個類別標籤的 `event_count` 指標，並可以使用類別來過濾指標。
+
+<Info>
+  **定義的類別必須具備唯一名稱，不能重複。**
+
+  如果您嘗試添加同名的類別，系統將會報錯。該錯誤會在編譯專案時顯示於 UI 和終端機中。
+</Info>
+
+## 為指標分配擁有者 (Owners)
+
+您可以使用 `spotlight.owner` 屬性為指標分配擁有者。擁有者的姓名與頭像將顯示在指標目錄中。
+
+### 在指標層級設定擁有者
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders
+        columns:
+          - name: amount
+            meta:
+              metrics:
+                total_revenue:
+                  type: sum
+                  spotlight:
+                    owner: alice@yourcompany.com
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: orders
+        columns:
+          - name: amount
+            config:
+              meta:
+                metrics:
+                  total_revenue:
+                    type: sum
+                    spotlight:
+                      owner: alice@yourcompany.com
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    dimensions:
+      - name: amount
+
+    metrics:
+      total_revenue:
+        type: sum
+        sql: ${TABLE}.amount
+        spotlight:
+          owner: alice@yourcompany.com
+    ```
+  </Tab>
+</Tabs>
+
+### 在模型層級設定預設擁有者
+
+您可以為模型中的所有指標設定一個預設擁有者。指標層級的擁有者會覆蓋模型層級的設定。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders
+        meta:
+          spotlight:
+            owner: bob@yourcompany.com  # 此模型中所有指標的預設擁有者
+        columns:
+          - name: amount
+            meta:
+              metrics:
+                total_revenue:
+                  type: sum
+                  spotlight:
+                    owner: alice@yourcompany.com  # 覆蓋模型層級擁有者
+                avg_revenue:
+                  type: average
+                  # 繼承自模型層級的 bob@yourcompany.com
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: orders
+        config:
+          meta:
+            spotlight:
+              owner: bob@yourcompany.com  # 此模型中所有指標的預設擁有者
+        columns:
+          - name: amount
+            config:
+              meta:
+                metrics:
+                  total_revenue:
+                    type: sum
+                    spotlight:
+                      owner: alice@yourcompany.com  # 覆蓋模型層級擁有者
+                  avg_revenue:
+                    type: average
+                    # 繼承自模型層級的 bob@yourcompany.com
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    spotlight:
+      owner: bob@yourcompany.com  # 此模型中所有指標的預設擁有者
+
+    dimensions:
+      - name: amount
+
+    metrics:
+      total_revenue:
+        type: sum
+        sql: ${TABLE}.amount
+        spotlight:
+          owner: alice@yourcompany.com  # 覆蓋模型層級擁有者
+      avg_revenue:
+        type: average
+        sql: ${TABLE}.amount
+        # 繼承自模型層級的 bob@yourcompany.com
+    ```
+  </Tab>
+</Tabs>
+
+<Info>
+  - 請使用您組織中 Lightdash 使用者的電子郵件位址。
+  - 指標層級的擁有者優先於模型層級。
+  - 您可以在 Spotlight UI 中按擁有者進行過濾。
+  - 如果電子郵件與 Lightdash 使用者不匹配，指標將顯示為「未分配 (Unassigned)」。
+</Info>
+
+## 控制過濾與細分選項
+
+您可以控制在探索指標時，哪些維度會出現在「過濾 (filter)」和「細分 (segment-by)」下拉選單中。這有助於使用者專注於相關維度。
+
+### 對所有指標隱藏某個維度
+
+在維度層級使用布林值，對該模型中的所有指標隱藏特定的維度：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders
+        columns:
+          - name: internal_tracking_id
+            meta:
+              dimension:
+                spotlight:
+                  filter_by: false   # 從過濾下拉選單中隱藏
+                  segment_by: false  # 從細分下拉選單中隱藏
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: orders
+        columns:
+          - name: internal_tracking_id
+            config:
+              meta:
+                dimension:
+                  spotlight:
+                    filter_by: false   # 從過濾下拉選單中隱藏
+                    segment_by: false  # 從細分下拉選單中隱藏
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    dimensions:
+      - name: internal_tracking_id
+        spotlight:
+          filter_by: false   # 從過濾下拉選單中隱藏
+          segment_by: false  # 從細分下拉選單中隱藏
+    ```
+  </Tab>
+</Tabs>
+
+### 為特定指標設定維度允許清單 (Allowlist)
+
+在指標層級使用維度名稱陣列，為該特定指標建立維度允許清單：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders
+        columns:
+          - name: amount
+            meta:
+              metrics:
+                total_revenue:
+                  type: sum
+                  spotlight:
+                    filter_by:
+                      - status
+                      - region
+                      - order_date
+                    segment_by:
+                      - status
+                      - customer_segment
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: orders
+        columns:
+          - name: amount
+            config:
+              meta:
+                metrics:
+                  total_revenue:
+                    type: sum
+                    spotlight:
+                      filter_by:
+                        - status
+                        - region
+                        - order_date
+                      segment_by:
+                        - status
+                        - customer_segment
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    dimensions:
+      - name: amount
+
+    metrics:
+      total_revenue:
+        type: sum
+        sql: ${TABLE}.amount
+        spotlight:
+          filter_by:
+            - status
+            - region
+            - order_date
+          segment_by:
+            - status
+            - customer_segment
+    ```
+  </Tab>
+</Tabs>
+
+### 運作原理
+
+- **維度層級 (布林值，預設為 `true`)**：控制維度是否出現在該模型所有指標的下拉選單中。
+- **指標層級 (維度名稱陣列)**：為該特定指標建立允許清單。
+- **指標層級的允許清單優先於維度層級設定**：如果一個維度設定了 `filter_by: false`，但某個指標將其包含在 `filter_by` 陣列中，則該維度對於該指標仍然可用。
+
+### 使用場景
+
+- 隱藏對分析無用的內部/技術維度。
+- 為每個指標策劃專屬的探索體驗（例如：營收指標僅能按業務維度進行過濾）。
+- 減少具有大量維度模型中的雜亂感。
+
+## 在 .yml 中配置預設時間設定
+
+我們建議設定預設的時間欄位，以方便業務使用者並節省他們的時間。
+
+要在探索視圖中預先選取時間欄位，只需在您的 Lightdash `.yml` 檔案中定義預設設定即可。
+
+### 設定表格層級的預設時間維度
+
+1. 在 .yml 檔案中建立或修改表格配置。例如：為 `events` 表設定預設時間維度：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yml
+    models:
+      - name: events
+        columns:
+          - name: event_date
+            description: "事件日期"
+            meta:
+              dimension:
+                label: "事件日期"
+                type: date
+                time_intervals:
+                  - DAY
+          - name: event
+            description: "事件"
+            meta:
+              dimension:
+                type: string
+              metrics:
+                count:
+                  type: count
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yml
+    models:
+      - name: events
+        columns:
+          - name: event_date
+            description: "事件日期"
+            config:
+              meta:
+                dimension:
+                  label: "事件日期"
+                  type: date
+                  time_intervals:
+                    - DAY
+          - name: event
+            description: "事件"
+            config:
+              meta:
+                dimension:
+                  type: string
+                metrics:
+                  count:
+                    type: count
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yml
+    type: model
+    name: events
+
+    dimensions:
+      - name: event_date
+        description: "事件日期"
+        label: "事件日期"
+        type: date
+        time_intervals:
+          - DAY
+      - name: event
+        description: "事件"
+        type: string
+
+    metrics:
+      count:
+        type: count
+        sql: ${TABLE}.event
+    ```
+  </Tab>
+</Tabs>
+
+2. 在表格層級添加預設時間維度：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: events
+        meta:
+          default_time_dimension:
+            field: event_date
+            interval: DAY
+        columns:
+          # ... 您的欄位定義
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: events
+        config:
+          meta:
+            default_time_dimension:
+              field: event_date
+              interval: DAY
+        columns:
+          # ... 您的欄位定義
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: events
+
+    default_time_dimension:
+      field: event_date
+      interval: DAY
+
+    dimensions:
+      # ... 您的維度定義
+    ```
+  </Tab>
+</Tabs>
+
+3. [編譯您的專案](/references/integrations/dbt-projects_zh_TW)。
+
+4. 導覽至指標目錄。
+
+5. 開啟 `events` 表中的任何指標。
+
+6. 所有設定了該預設時間的指標都將以「過去 30 天」為範圍，並以「天」為粒度對應 `event_date` 繪圖。
+
+### 設定指標層級的預設時間維度
+
+這會覆蓋表格層級定義的時間維度。
+
+1. 修改表格配置以添加指標層級的預設時間維度：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: events
+        meta:
+          default_time_dimension:
+            field: event_date
+            interval: DAY
+        columns:
+          - name: event
+            description: "事件"
+            meta:
+              metrics:
+                count:
+                  type: count
+                  # 這會覆蓋表格層級的預設時間維度
+                  default_time_dimension:
+                    field: event_date
+                    interval: MONTH
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: events
+        config:
+          meta:
+            default_time_dimension:
+              field: event_date
+              interval: DAY
+        columns:
+          - name: event
+            description: "事件"
+            config:
+              meta:
+                metrics:
+                  count:
+                    type: count
+                    # 這會覆蓋表格層級的預設時間維度
+                    default_time_dimension:
+                      field: event_date
+                      interval: MONTH
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: events
+
+    default_time_dimension:
+      field: event_date
+      interval: DAY
+
+    dimensions:
+      - name: event
+        description: "事件"
+
+    metrics:
+      count:
+        type: count
+        sql: ${TABLE}.event
+        # 這會覆蓋表格層級的預設時間維度
+        default_time_dimension:
+          field: event_date
+          interval: MONTH
+    ```
+  </Tab>
+</Tabs>
+
+2. [編譯您的專案](/references/integrations/dbt-projects_zh_TW)。
+
+3. 導覽至指標目錄。
+
+4. 探索 `events` 的 `count` 指標。
+
+5. 該指標將以**月**為粒度對應 `event_date` 繪圖，而非表格預設的**天**。
+
+## 常見問題 (FAQs)
+
+**a. 支援哪些時間間隔？**
+
+目前僅支援：DAY (天), WEEK (週), MONTH (月), YEAR (年)。
+
+**b. 會套用哪些預填的過濾器？**
+
+* 時間粒度 Year -> 過去 3 年。
+
+* 時間粒度 Month -> 過去 12 個月。
+
+* 時間粒度 Week -> 過去 12 週。
+
+* 時間粒度 Day -> 過去 30 天。
+
+因此，如果業務使用者探索一個預設粒度為 DAY 的指標，指標將預填顯示過去 30 天以天為單位的數據。
+
+**c. 我可以從 .yml 檔案中抓取其他元數據嗎？**
+
+目前還不行，但很快您將能夠直接在 UI 中管理元數據並同步回 dbt。
+
+**d. 我可以將選定的指標與哪些其他指標進行比較？**
+
+1. **在 `.yml` 中有預設設定的指標**：指定了預設時間維度的指標將始終出現。
+
+2. **只有單個時間維度的指標**：來自僅有一個時間維度表格的指標會出現，因為它被視為最相關的。
+
+3. **來自關聯表的指標**：符合上述 1 或 2 點標準的關聯表指標也會出現。
+
+**e. 如何確保我的 YAML 更改是正確的？**
+
+如果您使用 VSCode，可以使用我們的 Lightdash schema 驗證功能。
+
+1. 安裝 VSCode 的 YAML 擴充功能：[請點此安裝](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)。
+
+2. 以 JSON 格式開啟使用者設定，並添加以下內容：
+
+```json
+"[yaml]": {
+  "editor.defaultFormatter": "redhat.vscode-yaml"
+},
+"yaml.schemas": {
+  "https://raw.githubusercontent.com/lightdash/lightdash/refs/heads/main/packages/common/src/schemas/json/lightdash-dbt-2.0.json": [
+    "*.yml",
+    "/**/models/**/*.yml",
+    "/**/models/**/*.yaml",
+    "!lightdash.config.yml",
+    "!dbt_project.yml"
+  ],
+  "https://raw.githubusercontent.com/lightdash/lightdash/refs/heads/main/packages/common/src/schemas/json/lightdash-project-config-1.0.json": [
+    "lightdash.config.yml"
+  ]
+}
+```
+
+這將為您的模型 YAML 檔案與 `lightdash.config.yml` 添加結構驗證。
+
+3. 重新載入 VSCode。
+
+4. 您會在 YAML 檔案的錯誤下方看到紅色波浪線，並獲得修復建議與可用選項提示。
+
+![](/images/guides/metrics-catalog/vscode-schema-validation-example.png)
+
+## 角色與權限
+
+| **動作** | **專案管理員** | **專案開發者** | **專案編輯者** | **專案互動檢視者** | **專案檢視者** |
+| :---------------------------- | :-------------------------------------------: | :-------------------------------------------: | :-------------------------------------------: | :-------------------------------------------: | :-------------------------------------------: |
+| 瀏覽「指標目錄」 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> |
+| 新增/編輯/刪除「類別」 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 開啟「指標探索器」 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |

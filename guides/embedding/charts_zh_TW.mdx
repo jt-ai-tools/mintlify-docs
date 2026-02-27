@@ -1,0 +1,344 @@
+---
+title: "如何嵌入圖表 (Charts)"
+sidebarTitle: "圖表"
+description: "了解如何嵌入單個 Lightdash 圖表，並使用極簡 UI 呈現專注的單一指標。"
+---
+
+import EmbedAvailability from 'snippets/embedding-availability_zh_TW.mdx'
+
+<EmbedAvailability />
+
+## 概覽
+
+圖表嵌入允許您在應用程式中以極簡、專注的介面顯示來自 Lightdash 的單個儲存圖表。與儀表板嵌入不同，圖表嵌入僅針對特定圖表，提供乾淨、無干擾的單一視覺化視圖。
+
+<Warning>
+圖表嵌入**目前僅可透過 React SDK 使用**。目前尚不支持圖表的 iframe 嵌入。
+</Warning>
+
+### 何時使用圖表嵌入
+
+- **單一 KPI 顯示**：顯示一個關鍵指標或視覺化圖表。
+- **嵌入式小組件 (Widgets)**：向應用程式頁面添加分析小組件。
+- **行銷頁面**：在對外公開的頁面上顯示數據指標。
+- **極簡 UI 需求**：當您需要乾淨且專注的顯示效果時。
+- **範圍存取**：僅授予對特定圖表的存取權，而非整個儀表板。
+
+### 與儀表板嵌入的主要區別
+
+| 功能 | 儀表板嵌入 | 圖表嵌入 |
+|---------|-------------------|-----------------|
+| **嵌入方法** | iframe 或 React SDK | 僅限 React SDK |
+| **內容** | 多個磚塊、分頁 | 僅限單個圖表 |
+| **篩選器** | 互動式儀表板篩選器 | 無篩選器（預先配置） |
+| **JWT 範圍** | 儀表板 UUID | 僅限圖表 UUID |
+| **使用者介面** | 完整儀表板介面 | 極簡圖表視圖 |
+| **探索 (Explore)** | 可導覽至探索視圖 | 無法造訪探索視圖 |
+
+### 可用功能
+
+圖表嵌入支援：
+- 所有圖表類型（長條圖、折線圖、圓餅圖、表格、大數字等）。
+- 帶有預設值的參數化圖表。
+- 匯出為 CSV（若已啟用）。
+- 匯出為 PNG/圖片（若已啟用）。
+- 查看底層數據（若已啟用）。
+
+<Warning>
+圖表嵌入是**唯讀的**。使用者無法修改圖表配置、套用篩選器或造訪底層數據模型。
+</Warning>
+
+## 設置
+
+### 配置允許嵌入的圖表
+
+將您想要嵌入的圖表添加到專案的嵌入設置中。導覽至 **Settings → Embed** 並將特定圖表添加到允許清單中。
+
+<Frame>
+  <img src="/images/guides/embedding/embed-add-chart.png" alt="添加允許的圖表"/>
+</Frame>
+
+## 使用 React SDK 進行嵌入
+
+圖表嵌入需要 Lightdash React SDK 以實現與 React 應用程式的無縫整合。
+
+<Info>
+請參閱 [React SDK 參考](/references/react-sdk_zh_TW) 了解安裝、設置和完整的配置選項。
+</Info>
+
+### 基本用法
+
+```tsx
+import Lightdash from '@lightdash/sdk';
+
+function MyChart() {
+  return (
+    <Lightdash.Chart
+      instanceUrl="https://app.lightdash.cloud"
+      id="您的圖表-uuid"
+      token={generateToken()} // 伺服器端函數
+    />
+  );
+}
+```
+
+### 組件屬性 (Props)
+
+```typescript
+type ChartProps = {
+  instanceUrl: string;                    // 必填：您的 Lightdash 執行體 URL
+  id: string;                             // 必填：圖表 UUID (savedQueryUuid)
+  token: string | Promise<string>;        // 必填：JWT 權杖
+  styles?: {
+    backgroundColor?: string;             // 圖表背景顏色或 'transparent'
+    fontFamily?: string;                  // 文字字體
+  };
+  contentOverrides?: LanguageMap;         // 翻譯/在地化覆蓋
+};
+```
+
+<Info>
+與 Dashboard 組件不同，Chart 不支援 `filters` 或 `onExplore` 屬性，因為圖表是唯讀的且無法導覽至探索視圖。
+</Info>
+
+#### 帶有樣式設定的進階範例
+
+```tsx
+import Lightdash from '@lightdash/sdk';
+
+<Lightdash.Chart
+  instanceUrl="https://app.lightdash.cloud"
+  id="您的圖表-uuid"
+  token={await generateToken()}
+  styles={{
+    backgroundColor: 'white',
+    fontFamily: 'Inter, sans-serif',
+  }}
+/>
+```
+
+## 配置功能
+
+透過配置功能選項來控制使用者對嵌入圖表的操作權限。這些選項適用於 React SDK 嵌入方式，且需在 JWT 中設定。
+
+### 匯出 CSV
+
+匯出 CSV 允許使用者下載圖表背後的原始數據為 CSV 檔案，便於在試算表軟體中進行進一步分析。
+
+**在 JWT 中配置：**
+
+```javascript
+{
+  content: {
+    type: 'chart',
+    contentId: '您的圖表-uuid',
+    canExportCsv: true,
+  }
+}
+```
+
+啟用後，使用者會在圖表選單中看到「Download CSV (下載 CSV)」選項。
+
+### 匯出圖片
+
+匯出圖片允許使用者將圖表視覺化結果下載為 PNG 圖片檔案，適用於簡報和報告。
+
+**在 JWT 中配置：**
+
+```javascript
+{
+  content: {
+    type: 'chart',
+    contentId: '您的圖表-uuid',
+    canExportImages: true,
+  }
+}
+```
+
+### 查看底層數據 (View underlying data)
+
+查看底層數據向使用者顯示圖表背後的原始數據表，方便檢查建立視覺化圖表的實際數值和記錄。
+
+**在 JWT 中配置：**
+
+```javascript
+{
+  content: {
+    type: 'chart',
+    contentId: '您的圖表-uuid',
+    canViewUnderlyingData: true,
+  }
+}
+```
+
+### 完整配置範例
+
+```javascript
+import jwt from 'jsonwebtoken';
+
+const token = jwt.sign({
+  content: {
+    type: 'chart',
+    projectUuid: '您的專案-uuid',
+    contentId: '您的圖表-uuid',
+
+    // 匯出能力
+    canExportCsv: true,
+    canExportImages: true,
+    canViewUnderlyingData: true,
+  },
+
+  // 使用者資訊（用於分析）
+  user: {
+    externalId: 'user-123',
+    email: 'user@example.com',
+  },
+}, LIGHTDASH_EMBED_SECRET, { expiresIn: '24h' });
+```
+
+## 限制
+
+與儀表板嵌入相比，圖表嵌入具有以下限制：
+
+### 無法修改圖表
+圖表始終是唯讀的。使用者無法：
+- 更改維度或指標。
+- 套用篩選器。
+- 修改圖表配置。
+- 更改視覺化類型。
+
+### 不支援篩選器
+圖表使用其儲存的篩選配置。您無法：
+- 添加互動式篩選器。
+- 透過 SDK 程式化套用篩選器。
+- 在執行時更改篩選值。
+
+### 無法造訪探索 (Explore) 視圖
+使用者無法：
+- 導覽至探索視圖。
+- 造訪底層數據模型。
+- 執行自定義查詢。
+- 查看或編輯 SQL。
+
+### 權限範圍限制
+JWT 的範圍被限定在 `contentId` 中的特定圖表 UUID。使用者無法：
+- 造訪未包含在權杖中的其他圖表。
+- 查看專案配置。
+- 造訪探索元數據。
+
+<Info>
+如果您需要篩選器互動功能或探索能力，請考慮使用[儀表板嵌入](/guides/embedding/dashboards_zh_TW)或聯繫我們討論您的使用場景。
+</Info>
+
+## 使用場景與範例
+
+### 單一 KPI 組件
+
+在您的應用程式儀表板中顯示關鍵績效指標：
+
+```tsx
+<div className="kpi-widget">
+  <h3>每月營收</h3>
+  <Lightdash.Chart
+    instanceUrl="https://app.lightdash.cloud"
+    id="revenue-chart-uuid"
+    token={token}
+    styles={{ backgroundColor: 'transparent' }}
+  />
+</div>
+```
+
+### 行銷頁面中的嵌入指標
+
+在您的網站上顯示公開的數據指標：
+
+```html
+<section class="metrics">
+  <div class="metric">
+    <h2>活躍使用者</h2>
+    <iframe
+      src="https://app.lightdash.cloud/embed/project-uuid/chart/active-users-uuid#token"
+      width="300"
+      height="200"
+      frameborder="0"
+    ></iframe>
+  </div>
+</section>
+```
+
+### 參數化圖表
+
+顯示帶有預設參數值的圖表：
+
+```javascript
+// 圖表儲存時帶有一個 "region" 參數
+// 在圖表配置中傳遞參數值
+const token = jwt.sign({
+  content: {
+    type: 'chart',
+    contentId: 'sales-by-region-uuid',
+    canExportCsv: true,
+  },
+}, LIGHTDASH_EMBED_SECRET, { expiresIn: '1h' });
+```
+
+<Info>
+參數值是在儲存圖表時設定的。圖表嵌入會根據儲存的參數配置來顯示圖表。
+</Info>
+
+## 進階功能
+
+### 用於分析的使用者元數據
+
+傳遞使用者資訊以追蹤是誰在查看您的嵌入圖表。
+
+```javascript
+{
+  user: {
+    externalId: 'user-123',       // 您的內部使用者 ID
+    email: 'user@example.com',    // 使用者電子郵件
+  }
+}
+```
+
+這些元數據將出現在 Lightdash 使用量分析的[查詢標籤 (Query tags)](/references/workspace/usage-analytics_zh_TW#查詢標籤)中。
+
+### 自定義樣式（僅限 SDK）
+
+套用自定義樣式以匹配您的應用程式設計。
+
+```tsx
+<Lightdash.Chart
+  instanceUrl="https://app.lightdash.cloud"
+  id="chart-uuid"
+  token={token}
+  styles={{
+    backgroundColor: 'transparent',
+    fontFamily: 'Helvetica, Arial, sans-serif',
+  }}
+/>
+```
+
+### 在地化（僅限 SDK）
+
+使用 `contentOverrides` 屬性翻譯嵌入的圖表。詳情請參閱 [React SDK 在地化](/references/react-sdk_zh_TW#在地化)。
+
+## 後續步驟
+
+<CardGroup cols={2}>
+  <Card title="嵌入儀表板" icon="grid-2" href="/guides/embedding/dashboards_zh_TW">
+    嵌入多個帶有篩選器與互動功能的圖表
+  </Card>
+
+  <Card title="iframe 嵌入參考" icon="code" href="/references/iframe-embedding_zh_TW">
+    完整的 iframe URL 模式與 HTML 嵌入說明
+  </Card>
+
+  <Card title="嵌入 API 參考" icon="book" href="/references/embedding_zh_TW">
+    完整的 JWT 結構文件
+  </Card>
+
+  <Card title="React SDK 參考" icon="react" href="/references/react-sdk_zh_TW">
+    完整的 SDK 組件文件
+  </Card>
+</CardGroup>

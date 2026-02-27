@@ -1,0 +1,37 @@
+---
+title: "虛擬視圖 (Virtual views)"
+description: "虛擬視圖建立於 [SQL 執行器 (SQL runner)](/guides/developer/sql-runner_zh_TW)，允許其他使用者在 Lightdash 中重用您的自定義 SQL 查詢。它們會被列在您的「表格 (Tables)」中，並可以像來自 dbt 專案的表格一樣被使用。"
+---
+
+<Info>
+
+  **虛擬視圖不會被儲存或管理在您的 dbt 專案中。**
+  
+  如果您預計會定期使用此查詢，我們建議將其[寫回 dbt (write-back to dbt)](/guides/developer/dbt-write-back_zh_TW)。
+</Info>
+
+## 建立虛擬視圖
+
+要從 SQL 執行器建立虛擬視圖，請從 `Save (儲存)` 下拉選單中選擇 `Create Virtual View` 選項。
+
+<Frame>
+![](/images/guides/developer/virtual-views/create-virtual-view-561e25141894abbe7b7613343ea5c563.jpg)
+
+</Frame>
+
+您的虛擬視圖將出現在 Lightdash 的可探索表格列表中。團隊中的每個人都可以使用虛擬視圖來建立查詢和圖表，就像使用其他任何表格一樣。
+
+<Frame>
+  ![](/images/guides/developer/virtual-views/using-virtual-views-ffc9321842862ae0f198c885aa1a9f54.jpg)
+
+</Frame>
+
+## 編輯或刪除虛擬視圖
+
+要編輯虛擬視圖，您需要先在探索器 (Explorer) 中開啟它，然後在名稱旁邊的三點選單中選擇 `edit (編輯)` 或 `delete (刪除)` 該虛擬視圖。
+
+<Frame>
+  ![](/images/guides/developer/virtual-views/edit-delete-virtual-view-0f3ec1b5b343f2a5ca156ffe0075e658.jpg)
+</Frame>
+
+您所做的任何變更都會影響所有使用該虛擬視圖構建的現有內容。

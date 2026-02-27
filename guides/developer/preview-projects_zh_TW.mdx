@@ -1,0 +1,189 @@
+---
+title: "預覽專案 (Preview projects)"
+description: "**預覽專案** 是臨時的 Lightdash 專案，您可以在其中安全地實驗您的指標、維度與圖表，而不會影響您的生產專案。"
+---
+
+圖表和儀表板會從您的生產專案複製到預覽專案中，以便您測試變更並更新現有內容。
+
+預覽專案通常用於：
+
+- 測試模型、指標和維度的變更。
+- 在不中斷生產環境的情況下修改重要內容，待準備就緒後再透過[推廣內容 (Promoting content)](/guides/how-to-promote-content_zh_TW) 功能將變更同步回生產專案。
+
+## 建立預覽專案
+
+<Info>
+  只有在專案中具備開發者 (Developer) 或以上權限的使用者才能建立預覽專案。
+</Info>
+
+### Lightdash CLI 工具 (本地)
+
+您可以使用 [Lightdash CLI 工具](/guides/cli/how-to-install-the-lightdash-cli_zh_TW) 從命令行生成 Lightdash 預覽專案。
+
+```bash
+# 這將建立一個預覽環境，並等待您按鍵後刪除該預覽專案
+lightdash preview
+```
+
+或
+
+```bash
+# 這將建立一個預覽環境後退出，您必須執行 lightdash stop-preview 來手動刪除它
+lightdash start-preview
+```
+
+您可以點此查看更多關於 [lightdash preview CLI 指令](/references/lightdash-cli_zh_TW#lightdash-preview) 的資訊。
+
+### Lightdash 應用程式 (UI)
+
+您可以透過點擊 Lightdash 網頁版應用程式中的專案列表，然後點擊 `+ Create Preview` 來建立預覽專案。
+
+<Frame>
+  ![建立預覽專案](/images/guides/developer/create-preview.jpg)
+</Frame>
+
+在應用程式中建立預覽專案在以下兩種場景中非常有用：
+
+1. 您只想更改圖表和儀表板（而不涉及 YAML 或 dbt 模型）。
+2. 您想透過從特定的 git 分支拉取代碼來預覽變更。
+
+**修改生產環境中的重要內容**
+
+您可以不填寫 **branch (分支)** 和 **schema (模式)** 欄位，系統會為您建立一個包含所有內容副本的預覽專案。您可以建立或更新圖表和儀表板，然後在準備就緒時將[內容推廣](/guides/how-to-promote-content_zh_TW)回您的主專案。
+
+**從 GitHub 分支建立預覽專案**
+
+透過選擇分支（以及選填的 schema 或環境變數），您可以建立一個使用與主專案不同分支代碼的預覽專案。這非常適合預覽您在 dbt Cloud 分支上所做的變更，或者在不想啟動 CLI 時進行快速編輯。
+
+<Tip>
+  從 GitHub 分支建立預覽專案對於尚未設置本地開發環境或 CLI 的團隊成員來說是一個絕佳的解決方案。
+</Tip>
+
+<Info> 
+  注意：此功能僅支援 GitHub。目前尚無法在 Lightdash 應用程式介面中從 GitLab 分支建立預覽。
+</Info>
+
+### Pull Requests (GitHub Actions)
+
+您可以設置在每次開啟 Pull Request 時自動在 GitHub 中建立預覽專案。這讓您能輕鬆地在 Lightdash 中測試對 dbt 專案所做的變更。
+
+了解更多關於如何使用 GitHub Actions 為 Pull Request 設置 Lightdash 預覽專案的資訊：[請點此](/guides/cli/how-to-use-lightdash-preview_zh_TW#在-pull-request-上設置開發者預覽)。
+
+## 權限
+
+### 權限會從父專案複製
+
+父專案的所有權限都會轉移到預覽專案中。
+
+例如：
+
+- Priyanka 在名為 `Marketing Insights` 的專案中是 **專案互動檢視者 (project interactive viewer)**，而 Irakli 是 **開發者 (developer)**。
+- Irakli 建立了 `Marketing Insights` 的預覽專案，名為 `Marketing Insights Preview`。
+- 他在 `Marketing Insights Preview` 中建立了一個圖表並與 Priyanka 分享。
+- Priyanka 可以打開該圖表，因為她是 `Marketing Insights` 的互動檢視者，她的權限已被複製到 `Marketing Insights Preview`。
+
+<Info>
+  **只有開發者或管理員可以在專案列表中看到預覽專案。**
+
+  然而，具備預覽專案存取權限的使用者可以打開從該預覽專案分享給他們的連結。
+</Info>
+
+### 僅使用者有權造訪的內容會被複製到預覽專案
+
+對於建立專案的使用者，只有他們有權造訪的內容才會被複製到預覽專案中。
+
+例如：
+
+- Irakli 是 `Marketing Insights` 專案中的開發者。
+- 專案內有一個名為 `Finance private space` 的私有空間。
+- Irakli 沒有該空間的造訪權限。
+- Irakli 建立了 `Marketing Insights` 的預覽專案。
+- `Finance private space` 將不會被複製到他的預覽專案中。
+
+## 專案連接設置 (Project connection settings)
+
+預覽專案中的連接設置無法更改。
+
+### Lightdash CLI 工具 (本地)
+
+對於從 CLI 建立的預覽專案，所有專案連接設置都來自您**本地**的 `profiles.yml` 檔案。
+
+這意味著我們將使用您在本地進行開發時所使用的預設連接設置，除非您在 CLI 指令中指定了不同選項。
+
+例如：
+
+- 預設情況下，`lightdash preview` 將使用位於 `~/.dbt/profiles.yml` 的設定檔。如果您想使用不同的設定檔目錄，可以使用 `lightdash preview --profiles-dir path/to/directory` 選項指定。
+- `lightdash preview` 將使用您 `profiles.yml` 檔案中設置的任何預設目標 (target)。該目標的資料庫連接設置（schema, project, dataset 等）將作為預覽專案的資料庫連接設置。您可以使用標籤 `lightdash preview --target my-target-name` 來覆蓋用於建立預覽專案的目標。
+
+### Lightdash 應用程式 (UI)
+
+對於在 Lightdash 應用程式中建立的預覽專案，所有專案連接設置都會直接從來源專案複製。
+
+例如：
+
+- 我有一個名為 `Lightdash Analytics` 的專案，並為其建立了一個名為 `Preview Lightdash Analytics` 的預覽專案。
+- `Preview Lightdash Analytics` 將擁有與 `Lightdash Analytics` 相同的專案連接設置（數據倉庫連接、dbt 專案連接等）。
+
+預覽專案中的連接設置無法更改。
+
+### Pull Requests (GitHub Actions)
+
+對於從 GitHub Actions 建立的預覽專案，專案連接設置來自您在 GitHub Action 中指定的 `profiles.yml` 檔案。
+
+如果您沒有更改我們預設的 [GitHub Action 指令碼](https://github.com/lightdash/cli-actions/blob/main/start-preview.yml)，那麼預覽專案使用的連接設置將是您在 [DBT_PROFILES 秘密](/guides/cli/how-to-use-lightdash-preview_zh_TW#dbt_profiles) 中指定的內容。
+
+您有三種在 GitHub Actions 中設置專案連接的選項：
+
+1. 設置單一專案連接用於每個 Pull Request。例如：始終使用 `prod` 目標。您可以針對您的數據倉庫[參考此處的說明](/guides/cli/how-to-use-lightdash-preview_zh_TW#dbt_profiles)。
+2. 如果您使用 dbt Cloud，可以[使用 dbt Cloud schema](/guides/cli/how-to-use-lightdash-preview_zh_TW#如何在預覽專案中使用-dbt-cloud-schema) 來管理 Pull Request 中使用的連接。
+3. [在 GitHub 中為每位開發者建立一個專案連接](/guides/cli/how-to-use-lightdash-preview_zh_TW#如何在預覽專案中使用開發者憑據)（類似於 dbt 專案中的 `dev` 設定檔），這樣連接就會根據開啟 Pull Request 的人而改變。這對於在 dbt 中進行開發且使用不同開發 schema 的團隊成員非常有用。
+
+## 預覽專案中的內容
+
+建立預覽專案時，內容會從生產專案複製。預覽專案中的內容**不會**與來源專案持續同步。
+
+例如：
+
+- 我有一個名為 `Lightdash Analytics` 的專案，其中包含一個名為 `Revenue by source` 的圖表。
+- 我建立了一個預覽專案。
+- 預覽專案中也會有一個相同的 `Revenue by source` 圖表。
+- 接著我更改了生產專案中的 `Revenue by source` 圖表。
+- 預覽專案中的該圖表**不會**更新，它仍維持在建立預覽專案時的狀態。
+
+### 從預覽專案推廣內容 (Promoting content)
+
+推廣功能允許您將在預覽專案中建立或更新的圖表與儀表板同步到生產專案。這意味著您可以使用預覽專案來對生產環境中的重要內容進行修改，而不會造成任何停機。
+
+了解更多關於從預覽專案推廣內容的資訊：[請點此](/guides/how-to-promote-content_zh_TW)。
+
+## 刪除預覽專案
+
+使用任何方法建立的預覽專案都可以直接在 [Lightdash 應用程式](/guides/developer/preview-projects_zh_TW#lightdash-應用程式-2) 中刪除。
+
+下方說明了在 Lightdash CLI 和 GitHub Actions 中刪除預覽專案的其他自動化方式。
+
+### Lightdash CLI 工具 (本地)
+
+如果您使用 `lightdash preview` 指令從 CLI 生成預覽專案，那麼在 CLI 中按下 `Enter` 鍵即可刪除預覽專案。
+
+如果您使用 `lightdash start-preview` 指令，則執行 `lightdash stop-preview` 會刪除您的預覽專案。
+
+欲了解更多關於 `lightdash preview` CLI 指令的詳情，請參閱[此處的文件](/references/lightdash-cli_zh_TW#lightdash-preview)。
+
+### Lightdash 應用程式 (UI)
+
+您可以透過導覽至 `project settings (專案設置)`，然後點擊 `organization settings (組織設置)` 標題下的側邊欄中的 `all projects (所有專案)` 來刪除您在應用程式中建立的預覽專案。
+
+您將看到組織中所有專案的列表。您可以切換到 `preview projects` 標籤以篩選出組織中的預覽專案列表。
+
+<Frame>
+  ![](/images/guides/developer/delete-preview-4a4c1516a007ea4641ffd2683ae7d94e.jpg)
+</Frame>
+
+如果您具備 **開發者 (developer)** 權限，您只能刪除自己建立的預覽專案。
+
+如果您是 **組織管理員 (organization admin)**，您可以刪除組織中的任何預覽專案。
+
+### Pull Requests (GitHub Actions)
+
+如果您在 GitHub 中添加了 [start-preview 和 stop-preview 工作流程](/guides/cli/how-to-use-lightdash-preview_zh_TW#步驟-2：在-github-中建立-start-previewyml-與-close-previewyml-工作流程)，那麼在 Pull Request 被合併時，預覽環境應會自動被刪除。

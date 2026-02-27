@@ -1,0 +1,170 @@
+---
+title: "Canvas (畫布)"
+description: "在自由形式的工作區中，使用畫布視圖來視覺化指標之間的關係、層級結構與依賴性。"
+---
+
+**畫布視圖 (Canvas View)** 是一個靈活的工作區，用於視覺化與組織指標。您可以使用它來構建 **指標樹 (Metric Trees)**，展示指標之間如何相互關聯、視覺化層級結構，並了解整個數據模型中的依賴關係。
+
+### 如何使用畫布視圖
+
+1. **篩選指標**：使用搜尋列、類別或表格過濾器來縮小清單。類別可幫助您對相關指標進行分組與標記，讓您更容易找到所需內容。需要建立類別方面的幫助？[在此了解更多資訊](/guides/metrics-catalog/catalog_zh_TW#瀏覽目錄)。
+2. **啟用畫布視圖**：在指標目錄中切換至畫布視圖 (Canvas view)。
+3. **添加指標**：將指標從側邊欄拖入畫布工作區。
+4. **建立連接**：在節點控點之間拖拽以繪製代表關係與依賴性的連線 (Edges)。
+5. **移除節點**：選取一個節點並按下 **Backspace** 鍵即可將其刪除。
+
+<Note>
+  檢視者 (Viewers) 可以查看樹狀圖與連接，但無法進行編輯。
+</Note>
+
+## 已儲存的樹狀圖 (Saved Trees)
+
+<Info>
+  **實驗性功能：**「已儲存的樹狀圖」目前受功能標誌控制。請聯繫支援團隊為您的組織啟用此功能。了解更多關於 [功能成熟度分級](/references/workspace/feature-maturity-levels_zh_TW)。
+</Info>
+
+「已儲存的樹狀圖」是具備名稱且持久化的畫布版面，可以保留您的指標排列與連接。與臨時畫布（未連接的節點位置在不同對話間會重置）不同，「已儲存的樹狀圖」會儲存完整的版面配置，包括每個節點的位置與連線。
+
+儲存的樹狀圖會在團隊間共享：任何有權造訪該專案的人都可以查看它們，具備適當權限的使用者則可以建立、編輯與刪除它們。
+
+### 建立已儲存的樹狀圖
+
+<Frame>
+  <img
+    className="hidden dark:block"
+    src="/images/guides/metrics-catalog/canvas-saved-trees-dark.png"
+    alt="畫布視圖中的已儲存樹狀圖"
+  />
+  <img
+    className="dark:hidden"
+    src="/images/guides/metrics-catalog/canvas-saved-trees.png"
+    alt="畫布視圖中的已儲存樹狀圖"
+  />
+</Frame>
+
+1. 在畫布視圖中，點擊 **New Tree (新建樹狀圖)** 進入編輯模式。
+2. 在畫布頂部的文字輸入框中輸入名稱。
+3. 將指標從側邊欄拖入畫布，並在它們之間繪製連線。
+4. 點擊 **Save (儲存)**。在提供名稱並添加至少一個節點之前，此按鈕會被禁用。
+
+儲存時，樹狀圖名稱、節點位置、連線以及指標引用都會被持久化儲存。
+
+點擊 **Cancel (取消)** 可捨棄工作內容。如果您有未儲存的變更，會出現確認對話框。
+
+<Info>
+  [驅動因素連線 (Driver edges)](#驅動因素-drivers) 不會儲存在樹狀圖中 —— 每當匹配的節點出現時，它們會被自動注入。
+</Info>
+
+### 協作鎖定 (Collaborative locking)
+
+一次只能有一位使用者編輯「已儲存的樹狀圖」。當您開始編輯時，樹狀圖會對您進行鎖定。鎖定在您工作期間維持有效 —— 如果您停止編輯超過 2 分鐘，鎖定將自動解除，以便他人進行變更。
+
+當樹狀圖被另一位使用者鎖定時，您會在標頭中看到「**Editing by [使用者名稱]**」的標誌，且編輯與刪除選項會被禁用，直到鎖定解除。
+
+您的變更在編輯過程中會自動儲存為草稿，因此如果您意外關閉分頁或重新整理頁面，返回後即可恢復進行中的工作。
+
+### 權限
+
+| 動作 | 管理員 (Admin) | 開發者 (Developer) | 編輯者 (Editor) | 互動檢視者 (Interactive Viewer) | 檢視者 (Viewer) |
+| :------------------ | :-------------------------------------------: | :-------------------------------------------: | :-------------------------------------------: | :-------------------------------------------: | :-------------------------------------------: |
+| 查看儲存的樹狀圖 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> |
+| 建立儲存的樹狀圖 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 編輯儲存的樹狀圖 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+| 刪除儲存的樹狀圖 | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="square-check" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> | <Icon icon="xmark" iconType="solid" /> |
+
+## 驅動因素 (Drivers)
+
+驅動因素是指那些直接影響或流入另一個指標的指標。透過在 `.yml` 檔案中定義驅動因素，您可以自動在畫布視圖中視覺化指標之間的關聯 —— 無需手動繪圖。
+
+例如：`total_order_amount` (訂單總額) 是 `total_revenue` (總營收)、`average_order_size` (平均訂單大小) 和 `total_completed_order_amount` (已完成訂單總額) 的驅動因素 —— 因為這些指標中的每一個都受到訂單總額的影響。在畫布上，這會建立一個樹狀結構，由 `total_order_amount` 向外擴展到它所驅動的指標。
+
+### 定義驅動因素
+
+在任何指標中添加 `drivers` 屬性，列出流入該指標的指標。您可以使用 `table.metric` 語法引用同表或跨表的指標：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders
+        columns:
+          - name: order_amount
+            meta:
+              metrics:
+                total_revenue:
+                  type: sum
+                  drivers:
+                    - total_order_amount
+                average_order_size:
+                  type: average
+                  drivers:
+                    - total_order_amount
+                total_completed_order_amount:
+                  type: sum
+                  drivers:
+                    - total_order_amount
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: orders
+        columns:
+          - name: order_amount
+            config:
+              meta:
+                metrics:
+                  total_revenue:
+                    type: sum
+                    drivers:
+                      - total_order_amount
+                  average_order_size:
+                    type: average
+                    drivers:
+                      - total_order_amount
+                  total_completed_order_amount:
+                    type: sum
+                    drivers:
+                      - total_order_amount
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+    
+    dimensions:
+      - name: order_amount
+    
+    metrics:
+      total_revenue:
+        type: sum
+        sql: ${TABLE}.order_amount
+        drivers:
+          - total_order_amount
+      average_order_size:
+        type: average
+        sql: ${TABLE}.order_amount
+        drivers:
+          - total_order_amount
+      total_completed_order_amount:
+        type: sum
+        sql: ${TABLE}.order_amount
+        drivers:
+          - total_order_amount
+    ```
+  </Tab>
+</Tabs>
+
+這會在畫布上建立從每個驅動因素指向當前指標的連線（例如：`total_order_amount` → `total_revenue`）。
+
+### 驅動因素如何出現在畫布上
+
+- **自動化**：只要驅動因素與目標指標同時出現在畫布上，驅動因素連線就會顯示。
+- **唯讀**：您無法從 UI 中刪除或修改驅動因素連線 —— 它們是透過 `.yml` 配置進行管理的。
+
+在「已儲存的樹狀圖」中，驅動因素連線會與手動建立的連線一同顯示，讓您能完整地看到您繪製的關係以及在數據模型中定義的關係。
+
+<Info>
+  驅動因素連線無法從「已儲存的樹狀圖」中單獨移除。如果您不希望某個驅動因素連線出現，請從畫布中移除其中一個端點節點。
+</Info>

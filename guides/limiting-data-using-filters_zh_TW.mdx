@@ -1,0 +1,388 @@
+---
+title: "使用過濾器"
+description: 過濾器出現在探索 (Explore) 視圖或儀表板的頂部，允許使用者更改抓取到圖表中的數據。
+---
+
+
+例如：如果我構建了一個顯示隨時間變化的營收圖表，但我希望它僅包含在法國產生的營收，我可以添加一個過濾條件為 `country 等於 France`。
+
+您可以[在探索視圖中單獨為圖表添加過濾器](#在探索視圖中添加過濾器)，或者[為儀表板中的所有圖表添加過濾器](#向儀表板添加過濾器)。別擔心，我們會引導您完成這兩項操作，您很快就會成為過濾器專家！
+
+
+<Info>
+如果您是開發者，可以使用 `sql_filter` YAML 選項向表格添加永久性過濾器。欲了解更多資訊，請參閱[表格配置參考](/references/tables_zh_TW#sql-filter)。
+</Info>
+
+## 通用過濾器技巧
+
+以下是一些關於過濾器的通用技巧，適用於探索視圖和儀表板。
+
+### 如果您想擁有多個過濾器，只需點擊 `+ Add filter`
+
+在探索視圖中：
+
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/add-filter-db38c3ba85a83efe38708f015da29b7a.jpg"/>
+</Frame>
+
+
+或在儀表板中：
+
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/add-more-filters-dashboard-9b7893b070973350a1fb286723636696.jpg"/>
+</Frame>
+
+
+### 如果添加了多個過濾器，您可以選擇匹配 `ALL` (全部) 或 `ANY` (任一) 條件
+
+要選擇所需的選項，只需點擊過濾器左上角的下拉選單。
+
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/multiple-filter-options-dd52d4c5666ef4e346b5dda73024ab80.jpg"/>
+</Frame>
+
+
+選擇 `ALL` 匹配意味著在 SQL 的條件之間添加 `AND`。因此，上述探索視圖中的範例將生成如下編譯 SQL：
+
+```sql
+WHERE (
+  (pages.source) IN ('lightdash_demo', 'lightdash_documentation')
+  AND (pages.path) = '/20%crunchbase'
+)
+```
+
+選擇 `ANY` 匹配意味著在 SQL 的條件之間添加 `OR`。因此，範例將生成如下編譯 SQL：
+
+```sql
+WHERE (
+  (pages.source) IN ('lightdash_demo', 'lightdash_documentation')
+  OR (pages.path) = '/20%crunchbase'
+)
+```
+
+### 如果您想在過濾器中包含多個值，只需在列表中的每個條目之間按 `Enter`
+
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/screenshot-multiple-values-filter-2c1e6691eb63a8d80378314cfaa398c7.jpg"/>
+</Frame>
+
+
+列出的多個值在編譯 SQL 中會由 OR 語句分隔。例如，上圖會產生：
+
+```sql
+WHERE (
+  (pages.source) = 'lightdash_demo'
+   OR (pages.source) = 'lightdash_documentation'
+)
+```
+
+### 欲了解可用的過濾器類型，請參考過濾器參考指南。
+
+查看我們的[過濾器參考指南](/guides/filters_zh_TW)以獲取所有可用過濾器及其用途的列表。
+
+## 在探索視圖中添加過濾器
+
+在探索視圖中，有幾種添加過濾器的方法。
+
+### 從 `Filters` 標籤中添加過濾器
+
+在探索視圖中，您可以直接從 `Filters` 標籤添加過濾器。只需點擊開啟該面板，然後點擊 `add filter` 即可。
+
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/adding-filters-from-toggle-1-ce5fc6c2ad6259dcae43a9ff16937ffc.jpg"/>
+</Frame>
+
+
+從下拉列表中選擇您想要過濾的欄位，然後設定過濾選項。
+
+### 從側邊欄添加過濾器
+
+從側邊欄的欄位列表中直接添加過濾器非常簡單。只需點擊欄位的 `options` (選項)，然後點擊 `add filter`。
+
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/add-filter-sidebar-32d08090746e3cd362b982a7238b9b6f.jpg"/>
+</Frame>
+
+
+### 從結果表格中添加過濾器
+
+結果表格出現數據後，您可以點擊欄位標題的三點選單，或者直接點擊您想要據以過濾的數值來添加過濾器。
+
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/add-filter-results-table-52825577533d8ee37e5b9031e7bd54d0.jpg"/>
+</Frame>
+
+
+### 添加巢狀過濾器 (Nested filters)
+
+您可以點擊過濾器右側的選項按鈕，然後點擊 `convert to group (轉換為群組)` 來添加巢狀過濾器。
+
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/convert-to-filter-group-c9f2d2a4a0260d5f8b869c9d156b07a9.png"/>
+</Frame>
+
+
+接著，您可以點擊 `add filter` 向該巢狀群組中添加新過濾器。
+
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/nested-filters-eae25b7df33e4f47b1408d8a7bfd8ce5.png"/>
+</Frame>
+
+
+## 向儀表板添加過濾器
+
+向儀表板添加過濾器有幾種方式。
+
+### 向儀表板添加暫時性過濾器 (Temporary filters)
+
+如果您向儀表板添加暫時性過濾器，則只有您自己會看到套用的效果（您不會更改其他所有人看到的儀表板）。如果您想儲存正在添加的過濾器，請參考[向儀表板添加儲存的過濾器](#向儀表板添加儲存的過濾器)。
+
+有兩種方法可以添加暫時性過濾器：
+
+##### 使用 `add filters` 按鈕添加暫時性過濾器
+
+1. 開啟您的儀表板。
+2. 點擊 `add filter`，指定欄位以及您要過濾的值。
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/dashboard-temporary-filter-add-new-de0bc7bd337efb6669034882acf22249.png"/>
+</Frame>
+
+3. 如果需要，您可以點擊 `Tiles` (磚塊) 標籤來調整過濾器套用到哪些磚塊上。
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/dashboard-temporary-filter-add-tile-272b8237fca39deed799c9911dfead73.png"/>
+</Frame>
+
+您可以移除特定磚塊的過濾器，或者更改過濾器在該磚塊中對應的欄位。
+
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/dashboard-temporary-filter-add-tile-edit-5b99bc520ea2f5c75926a2dd374eafc4.png"/>
+</Frame>
+
+4. 搞定！您的過濾器會出現在儀表板頂部。
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/dashboard-temporary-filter-view-224e1eec6ee51e6a34496e07428fd51e.png"/>
+</Frame>
+
+<Info>
+進入儀表板編輯模式時，暫時性過濾器與被覆蓋的儲存過濾器數值將會恢復原狀。
+</Info>
+
+##### 透過磚塊中的數值進行「交叉過濾 (Cross filtering)」
+
+交叉過濾讓您可以與一個圖表互動，並將該互動內容作為過濾條件套用到儀表板的其他圖表中。操作步驟：
+
+1. 點擊圖表中的其中一個數值。
+2. 從下拉列表中選擇您想要據以過濾的數值。
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/dashboard-temporary-filter-filter-dashboard-by-e56b73a5925f04abc39cb588e4975a2a.png"/>
+</Frame>
+
+3. 現在，過濾器會出現在儀表板頂部。
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/dashboard-temporary-filter-view-new-filters-3f3fde3ebc4305416dc159fb2edd4254.png"/>
+</Frame>
+
+
+### 向儀表板添加儲存的過濾器 (Saved filters)
+
+如果您向儀表板添加儲存的過濾器，則任何開啟該儀表板的使用者都會看到該過濾器已套用。
+
+操作步驟：
+
+1. 開啟您的儀表板。
+2. 確保您處於 `Edit` (編輯) 模式（如果不是，應點擊 `Edit Dashboard` 按鈕）。
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/edit-dashboard-243a6491ee8a29a8c824195bbc31e2bf.png"/>
+</Frame>
+
+3. 點擊 `add filter`，指定您要過濾的維度或指標。
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/dashboard-temporary-filter-add-new-de0bc7bd337efb6669034882acf22249.png"/>
+</Frame>
+
+4. 您可以將數值留空，或者指定一個預設過濾值：
+
+如果您將數值留空，則儀表板磚塊不會被預先過濾。重要的是，這為查看者提供了在過濾器中定義數值的選項，使其能根據需求調整結果。
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/add-filter-dashboard-empty-value-a1f50ba890bd490b55a27c2e6f9e0398.png"/>
+</Frame>
+
+如果您想指定一個值，請確保開啟「Default value (預設值)」開關，以便將過濾條件套用到儀表板。
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/add-filter-dashboard-default-value-765a13d8e7bfc6e72418e845d1dedef2.png"/>
+</Frame>
+
+5. 如果需要，點擊 `Tiles` 標籤調整過濾器套用的範圍。
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/filter-tiles-tab-4e0da6245fbdaef681413eaede8c6a7a.png"/>
+</Frame>
+
+
+您可以從特定磚塊中移除過濾器，或更改過濾器在磚塊中對應的欄位。
+
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/dashboard-temporary-filter-add-tile-edit-5b99bc520ea2f5c75926a2dd374eafc4.png"/>
+</Frame>
+
+6. 點擊 `apply` (套用)，過濾器即出現在儀表板頂部。
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/dashboard-filters-ready-to-be-saved-361a01d7027a59f41c9422149fc92edf.png"/>
+</Frame>
+
+7. 設定好所有過濾器後，點擊 `save` 儲存您的過濾器設定。
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/save-new-filters-dashboard-2883937f3e63c018e926b12aa964ade6.png"/>
+</Frame>
+
+現在，每當有人開啟儀表板時，都會看到套用後的過濾器！
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/dashboard-filters-saved-517f21a3d5aebe75b0635e30955f342a.png"/>
+</Frame>
+
+如果他們想進一步深入研究數據，隨時可以點擊過濾器並調整數值。
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/dashboard-filters-view-mode-37a66c4f684eda3919d6023439d6215a.png"/>
+</Frame>
+
+<Info>
+若要向儀表板添加儲存的過濾器，您必須具備專案的 `editor` (編輯者) 或 `admin` (管理員) 權限。
+</Info>
+
+### 過濾在 SQL 執行器 (SQL Runner) 中建立的圖表
+
+儀表板過濾器同樣可以套用於基於 SQL 執行器的圖表以及來自探索器的圖表。有兩種不同的處理方式：
+
+- 在同時包含探索器和 SQL 執行器圖表的儀表板上，過濾器的建立方式如上所述 —— 選擇一個欄位並建立過濾器。  
+  接著在 **Chart tiles (圖表磚塊)** 標籤中，您可以將過濾器套用到 SQL 圖表磚塊，並選取您希望該過濾器套用的對應欄。
+
+- 在**僅包含** SQL 執行器磚塊的儀表板上，過濾器的建立方式略有不同，因為 SQL 圖表是基於「欄 (Columns)」而非語義欄位。
+
+#### 針對僅含 SQL 圖表的儀表板建立過濾器：
+
+1. 從所有圖表中可用的所有欄位列表中選取一欄。
+2. 設定過濾標籤 (Filter label) 以賦予過濾器一個易於識別的名稱。
+3. 像處理其他過濾器一樣選擇運算子與數值。
+
+預設情況下，新過濾器會套用到儀表板上所有與該過濾欄同名的欄位。 
+您也可以在過濾器下拉選單的 **Chart tiles** 標籤中，精確選擇要套用到哪些磚塊與欄位。
+
+請注意，與探索器圖表過濾器一樣，您只能將過濾器套用到維度（在此指非聚合欄位）。
+
+### 關於儀表板過濾器值得注意的事項
+
+##### 分享帶有覆蓋值的儀表板
+
+您可能想與某人分享套用了自定義過濾器的儀表板。為此，您必須處於「檢視模式 (view mode)」，然後您可以：
+
+1. 向儀表板添加暫時性過濾器並分享該連結。
+2. 對已儲存的過濾器進行數值修改（覆蓋）並分享該連結。
+
+分享套用過濾器的儀表板規則：
+
+* 在檢視模式添加暫時性過濾器時，您可以更改欄位、數值、運算子與套用的磚塊。但是，您不能更改過濾器類型（例如：將「暫時性過濾器」改為「儲存過濾器」）。
+* 在檢視模式覆蓋已儲存過濾器時，您只能更改數值和運算子，欄位與磚塊配置將維持不變。
+* 在編輯模式下更改已儲存過濾器時（若存在覆蓋值），一旦儲存變更（點擊 "Apply"），該過濾器的覆蓋值將被移除。
+
+同樣的行為也適用於匯出儀表板，或是在[定時交付](/guides/how-to-create-scheduled-deliveries_zh_TW)中將其發送到電子郵件或 Slack。
+
+##### 您可以輕鬆查看哪些磚塊套用了過濾器
+
+如果儀表板中的磚塊套用了過濾器，您會在磚塊上看到 `dashboard filter applied` (儀表板過濾器已套用) 的文字。
+
+您也可以將滑鼠懸停在上面，查看具體是**哪些**過濾器套用到了該磚塊。
+
+<Frame>
+  <img src="/images/guides/limiting-data-using-filters/dashboard-filter-applied-849b4b24b8ab77215ddb46bcd6735720.png"/>
+</Frame>
+
+
+##### 儀表板過濾器會覆蓋儲存圖表中針對相同欄位的過濾器
+
+例如：如果我有一個針對亞洲銷售的圖表，且過濾條件為 `country` **是** `China`, `India`, `Japan`。接著在儀表板上，我添加了一個過濾器 `country` **是** `India`。則儲存圖表的原始過濾器會被移除，改為套用儀表板的過濾器，因此該磚塊會被過濾為：`country` **是** `India`。
+
+另一個日期過濾器的例子：如果原始儲存圖表過濾為僅包含 2024 年 4 月 3 日或之後完成的訂單。但我向儀表板添加了一個日期過濾器，要求包含 2024 年 8 月 1 日或之後的訂單，則儀表板過濾器會覆蓋原圖表過濾器，最終圖表會過濾為 2024 年 8 月 1 日之後的數據。
+
+**圖表在此情境下的運作方式：**
+
+* 當您從儀表板點擊 **Explore from here (從此處探索)** 時，圖表會包含您在儀表板版本中看到的相同過濾條件。任何在儀表板中被覆蓋的過濾器在探索視圖中也會維持覆蓋狀態；未被覆蓋的過濾器則維持原圖表設定。
+* 如果您點擊「Edit」編輯圖表而非從此處探索，則會看到圖表原始的過濾條件。
+
+##### 儀表板過濾器自動完成 (Autocomplete)
+
+在確定儀表板過濾器的可選值時，系統會考量所有相關的過濾器，包括套用到關聯表 (Joined tables) 欄位的過濾條件。
+
+以 payments (支付) 和 orders (訂單) 模型為例：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    - name: customers
+    ---
+    - name: orders
+      meta:
+        joins:
+          - join: customers
+            sql_on: ${customers.customer_id} = ${orders.customer_id}
+    ---
+    - name: payments
+      meta:
+        joins:
+          - join: orders
+            sql_on: ${orders.order_id} = ${payments.order_id}
+          - join: customers
+            sql_on: ${customers.customer_id} = ${orders.customer_id}
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    - name: customers
+    ---
+    - name: orders
+      config:
+        meta:
+          joins:
+            - join: customers
+              sql_on: ${customers.customer_id} = ${orders.customer_id}
+    ---
+    - name: payments
+      config:
+        meta:
+          joins:
+            - join: orders
+              sql_on: ${orders.order_id} = ${payments.order_id}
+            - join: customers
+              sql_on: ${customers.customer_id} = ${orders.customer_id}
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    # customers.yml
+    type: model
+    name: customers
+    ---
+    # orders.yml
+    type: model
+    name: orders
+
+    joins:
+      - join: customers
+        sql_on: ${customers.customer_id} = ${orders.customer_id}
+    ---
+    # payments.yml
+    type: model
+    name: payments
+
+    joins:
+      - join: orders
+        sql_on: ${orders.order_id} = ${payments.order_id}
+      - join: customers
+        sql_on: ${customers.customer_id} = ${orders.customer_id}
+    ```
+  </Tab>
+</Tabs>
+
+在此範例下：
+
+* 當過濾 `payments` 模型中的欄位時，系統會考慮套用到 `payments`, `orders` 和 `customers` 模型欄位的過濾器。
+* 當過濾 `orders` 模型中的欄位時，系統會考慮套用到 `orders` 和 `customers` 模型欄位的過濾器。
+* 當過濾 `customers` 模型中的欄位時，系統會考慮套用到 `customers` 模型欄位的過濾器。

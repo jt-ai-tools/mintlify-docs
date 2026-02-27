@@ -1,0 +1,1073 @@
+---
+title: "格式化您的欄位"
+sidebarTitle: 格式化欄位
+---
+
+## 在 .yml 檔案中格式化您的欄位
+
+有時 dbt 專案中的格式與您希望在 Lightdash 中顯示的樣式不符。沒關係！我們構建了許多功能來幫助您格式化 dbt 專案中的欄位，使 Lightdash 專案中的數據看起來完全符合您的預期 🥸
+
+### [指標 (Metrics)](/references/metrics_zh_TW#metric-configuration) 與 [維度 (Dimensions)](/references/dimensions_zh_TW#dimension-configuration) 參考文件
+
+我們將在下方詳細介紹格式化欄位的細節，但您可以在 [維度參考文件](/references/dimensions_zh_TW#dimension-configuration) 和 [指標參考文件](/references/metrics_zh_TW#metric-configuration) 中查看這些配置以及您可以為欄位自定義的所有其他屬性列表。
+
+### 隱藏欄位 (Hiding fields)
+
+有時，YAML 檔案中會有一些我們不希望包含在 Lightdash 中的欄位。例如：包含 PII（個人識別資訊）的欄位，或是在不同日期粒度下的相同日期數據。
+
+在 Lightdash 中隱藏欄位非常簡單。您只需在欄位配置中加入 `hidden: true` 即可。
+
+在您的 dbt YAML 檔案中，它看起來會像這樣：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: users
+        columns:
+          - name: first_name
+            meta:
+              dimension:
+                hidden: true
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: users
+        columns:
+          - name: first_name
+            config:
+              meta:
+                dimension:
+                  hidden: true
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: users
+
+    dimensions:
+      - name: first_name
+        hidden: true
+    ```
+  </Tab>
+</Tabs>
+
+指標 (Metrics) 也是一樣的操作：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: users
+        columns:
+          - name: first_name
+            meta:
+              metrics:
+                count_unique_first_names:
+                  type: count_distinct
+                  hidden: true
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: users
+        columns:
+          - name: first_name
+            config:
+              meta:
+                metrics:
+                  count_unique_first_names:
+                    type: count_distinct
+                    hidden: true
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: users
+
+    dimensions:
+      - name: first_name
+
+    metrics:
+      count_unique_first_names:
+        type: count_distinct
+        sql: ${TABLE}.first_name
+        hidden: true
+    ```
+  </Tab>
+</Tabs>
+
+預設情況下，所有維度和指標都被設定為 `hidden: false`。
+
+### 在側邊欄中對欄位進行分組
+
+您可以使用模型元數據中的 `group_details` 塊，結合 .yaml 檔案中的 `groups` 屬性，將相關的指標與維度分組在一起。您還可以使用 `description` 屬性為群組添加描述，該描述將在懸停於群組標籤時顯示。
+
+<Info>
+  **最大分組層級。**
+
+  側邊欄中的分組最多支援 2 層。
+</Info>
+
+例如，您可能想將百分位數指標分為兩個子類別：一個是 40 百分位以上，另一個是 40 百分位以下。您可以像這樣為指標添加 `groups` 屬性：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: events
+        meta:
+          group_details:
+            events:
+              label: 事件
+              description: 事件相關欄位。
+            percentile:
+              label: 百分位數
+              description: 百分位數分組
+            sub:
+              label: 40 以下百分位數
+              description: 40 以下百分位數分組
+            over:
+              label: 40 以上百分位數
+              description: 40 以上百分位數分組
+        columns:
+          - name: event_id
+            description: ''
+            meta:
+              dimension:
+                type: number
+                groups: ['events']
+              metrics:
+                percentile_25:
+                  type: percentile
+                  percentile: 25
+                  groups: ['percentile', 'sub']
+                percentile_50:
+                  type: percentile
+                  percentile: 50
+                  groups: ['percentile', 'over']
+                percentile_75:
+                  type: percentile
+                  percentile: 75
+                  groups: ['percentile', 'over']
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: events
+        config:
+          meta:
+            group_details:
+              events:
+                label: 事件
+                description: 事件相關欄位。
+              percentile:
+                label: 百分位數
+                description: 百分位數分組
+              sub:
+                label: 40 以下百分位數
+                description: 40 以下百分位數分組
+              over:
+                label: 40 以上百分位數
+                description: 40 以上百分位數分組
+        columns:
+          - name: event_id
+            description: ''
+            config:
+              meta:
+                dimension:
+                  type: number
+                  groups: ['events']
+                metrics:
+                  percentile_25:
+                    type: percentile
+                    percentile: 25
+                    groups: ['percentile', 'sub']
+                  percentile_50:
+                    type: percentile
+                    percentile: 50
+                    groups: ['percentile', 'over']
+                  percentile_75:
+                    type: percentile
+                    percentile: 75
+                    groups: ['percentile', 'over']
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: events
+
+    group_details:
+      events:
+        label: 事件
+        description: 事件相關欄位。
+      percentile:
+        label: 百分位數
+        description: 百分位數分組
+      sub:
+        label: 40 以下百分位數
+        description: 40 以下百分位數分組
+      over:
+        label: 40 以上百分位數
+        description: 40 以上百分位數分組
+
+    dimensions:
+      - name: event_id
+        description: ''
+        type: number
+        groups: ['events']
+
+    metrics:
+      percentile_25:
+        type: percentile
+        percentile: 25
+        sql: ${TABLE}.event_id
+        groups: ['percentile', 'sub']
+      percentile_50:
+        type: percentile
+        percentile: 50
+        sql: ${TABLE}.event_id
+        groups: ['percentile', 'over']
+      percentile_75:
+        type: percentile
+        percentile: 75
+        sql: ${TABLE}.event_id
+        groups: ['percentile', 'over']
+    ```
+  </Tab>
+</Tabs>
+
+<Frame>
+  <img src="/images/guides/formatting-your-fields/sub-group-label.png" />
+</Frame>
+
+您可以在指標與維度中跨項目使用群組。在側邊欄中，您的指標將分組在 `metrics` 部分的標籤下，而維度則分組在 `dimensions` 部分的標籤下。
+
+
+### 添加自定義描述
+
+
+#### 維度 (Dimensions)
+
+預設情況下，Lightdash 會抓取您為維度包含的 dbt 描述。但您可以使用 `description` 屬性來覆蓋在 Lightdash 中看到的描述。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: users
+        columns:
+          - name: user_id
+            description: "由 Lightdash API 在使用者首次登入時生成的 ID。舊系統為 SHA64，2012 年起的新系統使用 FARM_FINGERPRINT()"
+            meta:
+              dimension:
+                description: '使用者的唯一識別碼'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: users
+        columns:
+          - name: user_id
+            description: "由 Lightdash API 在使用者首次登入時生成的 ID。舊系統為 SHA64，2012 年起的新系統使用 FARM_FINGERPRINT()"
+            config:
+              meta:
+                dimension:
+                  description: '使用者的唯一識別碼'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: users
+
+    dimensions:
+      - name: user_id
+        description: '使用者的唯一識別碼'
+    ```
+  </Tab>
+</Tabs>
+
+當您在 Lightdash 中將滑鼠懸停在欄位上時，即可看到維度的描述。
+
+<Frame>
+  <img src="/images/guides/formatting-your-fields/description-on-hover.png" />
+</Frame>
+
+#### 指標 (Metrics)
+
+如果您沒有為指標添加自定義描述，Lightdash 預設會顯示應用程式生成的描述。要覆蓋此預設描述，您可以使用 `description` 屬性。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: users
+        columns:
+          - name: user_id
+            description: "由 Lightdash API 在使用者首次登入時生成的 ID。舊系統為 SHA64，2012 年起的新系統使用 FARM_FINGERPRINT()"
+            meta:
+              metrics:
+                count_unique_users:
+                  type: count_distinct
+                  description: '計算不重複的使用者 ID 數量'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: users
+        columns:
+          - name: user_id
+            description: "由 Lightdash API 在使用者首次登入時生成的 ID。舊系統為 SHA64，2012 年起的新系統使用 FARM_FINGERPRINT()"
+            config:
+              meta:
+                metrics:
+                  count_unique_users:
+                    type: count_distinct
+                    description: '計算不重複的使用者 ID 數量'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: users
+
+    dimensions:
+      - name: user_id
+
+    metrics:
+      count_unique_users:
+        type: count_distinct
+        sql: ${TABLE}.user_id
+        description: '計算不重複的使用者 ID 數量'
+    ```
+  </Tab>
+</Tabs>
+
+參考[此文件](/references/metrics_zh_TW#metric-configuration)查看您可以為指標自定義的所有其他屬性。
+
+
+### 重新命名欄位
+
+有時，我們在 dbt 專案中使用的欄位標籤對使用者並不友善。我們可以在 Lightdash 中更改這些標籤！
+
+要更改您在 Lightdash 中看到的欄位名稱，只需使用 `label` 屬性。
+
+例如，如果我有個欄位叫 `user_id_sha64`，我可以將其重新標記為 `User ID`。
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: users
+        columns:
+          - name: user_id_sha64
+            meta:
+              dimension:
+                label: 'User ID'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: users
+        columns:
+          - name: user_id_sha64
+            config:
+              meta:
+                dimension:
+                  label: 'User ID'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: users
+
+    dimensions:
+      - name: user_id_sha64
+        label: 'User ID'
+    ```
+  </Tab>
+</Tabs>
+
+指標也是一樣的操作！
+
+<Info>
+  重新標記指標名稱不會破壞任何使用舊名稱的已儲存圖表。相反地，您的儲存圖表將直接在結果表格中使用新的指標名稱。
+</Info>
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: users
+        columns:
+          - name: user_id_sha64
+            meta:
+              metrics:
+                count_unique_user_ids:
+                  type: count_distinct
+                  label: '總使用者數'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: users
+        columns:
+          - name: user_id_sha64
+            config:
+              meta:
+                metrics:
+                  count_unique_user_ids:
+                    type: count_distinct
+                    label: '總使用者數'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: users
+
+    dimensions:
+      - name: user_id_sha64
+
+    metrics:
+      count_unique_user_ids:
+        type: count_distinct
+        sql: ${TABLE}.user_id_sha64
+        label: '總使用者數'
+    ```
+  </Tab>
+</Tabs>
+
+參考 [維度參考文件](/references/dimensions_zh_TW#dimension-configuration) 查看維度的自定義屬性，參考 [指標參考文件](/references/metrics_zh_TW#metric-configuration) 查看指標的自定義屬性。
+
+
+### 數值捨入 (Rounding)
+
+使用 YAML 檔案中的 `format` 屬性可以輕鬆設定指標的捨入規則。
+
+以下是不同捨入方式對數字顯示影響的範例：
+
+| 原始數字 | Format 值 | Lightdash 中的顯示方式 |
+|:-----------------|:-------------|:---------------------------------|
+| 121.854         | '0.00'        | 121.85                          |
+| 121.854         | '0.0'        | 121.9                           |
+| 121.854         | '0'           | 122                             |
+
+
+#### 維度的捨入設定
+
+操作如下：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            meta:
+              dimension:
+                format: '0.00'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            config:
+              meta:
+                dimension:
+                  format: '0.00'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: sales
+
+    dimensions:
+      - name: revenue
+        format: '0.00'
+    ```
+  </Tab>
+</Tabs>
+
+
+#### 指標的捨入設定
+
+操作如下：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            meta:
+              metrics:
+                total_revenue:
+                  type: sum
+                  format: '0.00'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            config:
+              meta:
+                metrics:
+                  total_revenue:
+                    type: sum
+                    format: '0.00'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: sales
+
+    dimensions:
+      - name: revenue
+
+    metrics:
+      total_revenue:
+        type: sum
+        sql: ${TABLE}.revenue
+        format: '0.00'
+    ```
+  </Tab>
+</Tabs>
+
+參考[指標參考文件](/references/metrics_zh_TW#metric-configuration)查看更多自定義屬性。
+
+
+### 大數字簡寫 (Compacting)
+
+以下是不同簡寫方式對數字顯示影響的範例：
+
+| 原始數字 | Format 值 | Lightdash 中的顯示方式 |
+|-----------------|--------------|---------------------------------|
+| 1000000000      | '0'            | 1000000000                      |
+| 1000000000      | '0," K"'      | 1000000K                      |
+| 1000000000      | '0,," M"'      | 1000M                      |
+
+
+#### 維度的簡寫設定
+
+操作如下：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            meta:
+              dimension:
+                format: '0," K"'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            config:
+              meta:
+                dimension:
+                  format: '0," K"'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: sales
+
+    dimensions:
+      - name: revenue
+        format: '0," K"'
+    ```
+  </Tab>
+</Tabs>
+
+舉例來說，此選項會將數值從 1,500 簡化顯示為 1.50K。
+
+參考 [維度格式化參考](/references/dimensions_zh_TW#format) 查看所有簡寫選項。
+
+#### 指標的簡寫設定
+
+操作如下：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            meta:
+              metrics:
+                total_revenue:
+                  type: sum
+                  format: '0.00,,," B"'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            config:
+              meta:
+                metrics:
+                  total_revenue:
+                    type: sum
+                    format: '0.00,,," B"'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: sales
+
+    dimensions:
+      - name: revenue
+
+    metrics:
+      total_revenue:
+        type: sum
+        sql: ${TABLE}.revenue
+        format: '0.00,,," B"'
+    ```
+  </Tab>
+</Tabs>
+
+舉例來說，此選項會將數值從 1,500,000,000 簡化顯示為 1.50B。
+
+參考 [指標格式化參考](/references/metrics_zh_TW#format) 查看所有格式化選項。
+
+### 為數值添加單位
+
+某些欄位需要特殊的格式來傳達單位。例如：如果您是一家全球化公司，有個 `revenue` (營收) 欄位，那是英鎊 (GBP) 還是美金 (USD)？
+
+在 Lightdash 中，您可以使用 `format` 標籤為欄位添加單位。
+
+以下是不同格式對數值顯示影響的範例：
+
+| 原始數值 | Format 值 | Lightdash 中的顯示方式 |
+|:----------------|:----------------|:---------------------------------|
+| 121.854        | '[$£]#,##0.00' | £121.85                         |
+| 121.854        | '$#,##0.00'    | $121.90                         |
+
+#### 為維度添加單位
+
+您可以像這樣為維度添加 `format`：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            meta:
+              dimension:
+                format: '[$£]#,##0.00'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            config:
+              meta:
+                dimension:
+                  format: '[$£]#,##0.00'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: sales
+
+    dimensions:
+      - name: revenue
+        format: '[$£]#,##0.00'
+    ```
+  </Tab>
+</Tabs>
+
+查看哪些格式類型可用於維度：[請點此參考](/references/dimensions_zh_TW#format)。
+
+#### 為指標添加單位
+
+您可以像這樣為指標添加 `format`：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            meta:
+              metrics:
+                total_revenue:
+                  type: sum
+                  format: '[$£]#,##0.00'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            config:
+              meta:
+                metrics:
+                  total_revenue:
+                    type: sum
+                    format: '[$£]#,##0.00'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: sales
+
+    dimensions:
+      - name: revenue
+
+    metrics:
+      total_revenue:
+        type: sum
+        sql: ${TABLE}.revenue
+        format: '[$£]#,##0.00'
+    ```
+  </Tab>
+</Tabs>
+
+查看哪些格式類型可用於指標：[請點此參考](/references/metrics_zh_TW#format)。
+
+
+### 使用參數進行條件格式化
+
+您可以透過在格式字串中使用[參數 (Parameters)](/guides/developer/using-parameters_zh_TW) 來實現動態欄位格式化。這允許格式根據使用者的選擇而變化，而無需重新配置圖表。
+
+#### 簡單的參數替換
+
+您可以使用語法 `${ld.parameters.parameterName}` 在格式字串中直接引用參數值。
+
+例如，如果您有一個名為 `currency_symbol` 的參數，可以像這樣在格式中使用它：
+
+**步驟 1：定義您的參數**
+
+在您的 `lightdash.config.yml` 檔案中：
+
+```yaml
+parameters:
+  currency_symbol:
+    label: "貨幣符號"
+    description: "貨幣符號的條件格式化"
+    default: "$"
+    options:
+      - "$"
+      - "€"
+```
+
+**步驟 2：在格式字串中使用參數**
+
+在您的模型 YAML 檔案中：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            meta:
+              metrics:
+                total_revenue:
+                  type: sum
+                  format: '${ld.parameters.currency_symbol}0,0.00'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            config:
+              meta:
+                metrics:
+                  total_revenue:
+                    type: sum
+                    format: '${ld.parameters.currency_symbol}0,0.00'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: sales
+
+    dimensions:
+      - name: revenue
+
+    metrics:
+      total_revenue:
+        type: sum
+        sql: ${TABLE}.revenue
+        format: '${ld.parameters.currency_symbol}0,0.00'
+    ```
+  </Tab>
+</Tabs>
+
+格式 `'${ld.parameters.currency_symbol}0,0.00'` 將會直接把選定的貨幣符號代入格式中。
+
+當使用者從參數下拉選單中選擇 `$` 時，數字會顯示為 `$1,234.56`；當選擇 `€` 時，數字會顯示為 `€1,234.56`。
+
+#### 使用三元運算式進行條件格式化
+
+對於更複雜的格式化邏輯，您可以在格式字串中使用三元運算式。語法如下：
+
+```
+${ld.parameters.parameterName=="值"?"正確時的格式":"錯誤時的格式"}
+```
+
+以下範例會根據 `currency` 參數顯示不同的貨幣符號：
+
+**步驟 1：定義您的參數**
+
+在 `lightdash.config.yml` 檔案中：
+
+```yaml
+parameters:
+  currency:
+    label: "貨幣"
+    description: "貨幣的條件格式化"
+    default: "usd"
+    options:
+      - "usd"
+      - "eur"
+      - "gbp"
+```
+
+**步驟 2：在包含條件邏輯的格式字串中使用參數**
+
+在您的模型 YAML 檔案中：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            meta:
+              metrics:
+                total_revenue:
+                  type: sum
+                  format: '${ld.parameters.currency=="usd"?"$":""}${ld.parameters.currency=="eur"?"€":""}${ld.parameters.currency=="gbp"?"£":""}0,0.00'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            config:
+              meta:
+                metrics:
+                  total_revenue:
+                    type: sum
+                    format: '${ld.parameters.currency=="usd"?"$":""}${ld.parameters.currency=="eur"?"€":""}${ld.parameters.currency=="gbp"?"£":""}0,0.00'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: sales
+
+    dimensions:
+      - name: revenue
+
+    metrics:
+      total_revenue:
+        type: sum
+        sql: ${TABLE}.revenue
+        format: '${ld.parameters.currency=="usd"?"$":""}${ld.parameters.currency=="eur"?"€":""}${ld.parameters.currency=="gbp"?"£":""}0,0.00'
+    ```
+  </Tab>
+</Tabs>
+
+該格式使用多個三元運算式來檢查參數值：
+- 當 `currency` 為 `"usd"` 時，顯示 `$1,234.56`
+- 當 `currency` 為 `"eur"` 時，顯示 `€1,234.56`
+- 當 `currency` 為 `"gbp"` 時，顯示 `£1,234.56`
+
+**另一個範例：控制小數位數**
+
+您可以使用條件格式化來切換不同的精確度。
+
+在 `lightdash.config.yml` 中定義參數：
+
+```yaml
+parameters:
+  decimals:
+    label: "小數"
+    description: "小數的條件格式化"
+    default: "true"
+    options:
+      - "true"
+      - "false"
+```
+
+然後在模型 YAML 檔案中使用它：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            meta:
+              metrics:
+                total_revenue:
+                  type: sum
+                  format: '0,0${ld.parameters.decimals=="true"?".00":""}'
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+ 與 Fusion">
+    ```yaml
+    models:
+      - name: sales
+        columns:
+          - name: revenue
+            config:
+              meta:
+                metrics:
+                  total_revenue:
+                    type: sum
+                    format: '0,0${ld.parameters.decimals=="true"?".00":""}'
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: sales
+
+    dimensions:
+      - name: revenue
+
+    metrics:
+      total_revenue:
+        type: sum
+        sql: ${TABLE}.revenue
+        format: '0,0${ld.parameters.decimals=="true"?".00":""}'
+    ```
+  </Tab>
+</Tabs>
+
+當 `decimals` 為 `"true"` 時，數字顯示為 `1,234.56`；當為 `"false"` 時，顯示為 `1,235`。
+
+## 在 Lightdash UI 中格式化您的欄位
+
+您也可以直接在 Lightdash UI 中格式化欄位。這對於快速調整格式而不想修改 YAML 檔案非常有用。
+
+目前您可以在 Lightdash UI 中格式化兩種類型的欄位：
+
+* 自定義指標 ([參考指南](/guides/custom-fields_zh_TW#自定義指標-custom-metrics))
+* 表格計算 ([參考指南](/guides/table-calculations_zh_TW))
+
+
+### 格式化指標
+
+<Info>
+  指標格式化目前僅適用於數值類型的指標。
+</Info>
+
+您可以從結果表格中調整預定義指標的格式。
+
+<Frame>
+  <img src="/images/guides/formatting-your-fields/yaml-metric-formatting.jpg"/>
+</Frame>
+
+您可以在建立自定義指標時對其進行格式化，或稍後在結果表格中進行調整。
+
+<Frame>
+  <img src="/images/guides/formatting-your-fields/custom-metric-format.png" />
+</Frame>
+
+可用的格式化選項包括：
+
+* `percent`：將指標格式化為百分比，包含以下選項：
+
+  * `round` (捨入)：將指標捨入到指定的小數位數。
+  * `separator` (分隔符號)：例如將 `.` 改為 `,`。
+
+* `currency`：將指標格式化為貨幣：
+
+  * `round` (捨入)：捨入到指定的小數位數。
+  * `separator` (分隔符號)：設定小數/千分位分隔符。
+  * `currency` (貨幣符號)：例如從 `$` 改為 `£`。
+  * `compact` (簡寫)：將指標簡寫為特定單位，例如將 `1,000,000` 顯示為 `1M`。
+
+* `number`：將指標格式化為數字：
+
+  * `round` (捨入)：捨入到指定的小數位數。
+  * `separator` (分隔符號)：設定分隔符。
+  * `compact` (簡寫)：設定數值簡寫。
+  * `prefix` (前綴)：在指標前添加文字，如 `+` 或 `-`。
+  * `suffix` (後綴)：在指標後添加文字，如 `%`。
+
+
+### 格式化表格計算 (Table calculations)
+
+在結果表格中，您可以點擊該區域右側的按鈕添加表格計算。
+
+<Frame>
+  <img src="/images/guides/formatting-your-fields/table-calculation-create.png" />
+</Frame>
+
+建立好表格計算後，您可以點擊 `Format (格式)` 標籤進行配置：
+
+<Frame>
+  <img src="/images/guides/formatting-your-fields/table-calculation-format.png" />
+</Frame>
+
+接著您可以選擇以下格式化類型：
+
+* `percent` (百分比)
+* `currency` (貨幣)
+* `number` (數字)
+
+每個類型都具備上述提到的捨入、分隔符、簡寫、前綴與後綴等選項。

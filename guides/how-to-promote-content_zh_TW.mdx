@@ -1,0 +1,68 @@
+---
+title: "如何推廣內容 (Promoting content)"
+sidebarTitle: 推廣內容
+description: 推廣功能允許您將內容從一個專案複製到另一個專案。這在處理預覽 (Preview) 或開發 (Development) 專案時特別有用。您可以將在開發專案中建立的圖表推廣到生產環境，這樣可以輕鬆地測試並進行變更，而無需擔心破壞生產環境中的內容。
+---
+
+
+## 推廣功能如何運作
+
+如果您將一個圖表從 `開發` 專案推廣到 `生產` 專案，將會發生以下情況：
+
+* 如果該圖表同時存在於 `開發` 和 `生產` 專案中，則 `生產` 中的圖表將根據 `開發` 中的變更進行更新。您隨時可以使用 [版本歷史 (Version History)](/guides/version-history_zh_TW) 將此圖表恢復到先前的版本。Lightdash 會根據您初次建立圖表時使用的名稱來匹配圖表。即使您後來更改了名稱，這兩個圖表仍會保持關聯。
+* 如果該圖表是新的，我們將在 `生產` 專案中建立該圖表的副本。如果同名的空間 (Space) 不存在，我們也會建立一個新空間。
+
+## 配置上游專案
+
+在開始推廣內容之前，您需要先配置上游 (Upstream) 專案。要執行此操作，請在您的 `開發` 專案中前往 Settings > Data ops。
+
+選擇您想要將內容複製過去的目標專案。
+
+<Frame>
+  <img src="/images/guides/how-to-promote-content/promote-select-project-e07e66d0992c66cd8a80aa622806b523.png" alt=""/>
+</Frame>
+
+
+## 推廣圖表
+
+<Info>
+**您必須是「開發者 (developer)」且具備對 `開發專案` 和 `上游專案` 中圖表及其所在空間的造訪權限。**
+  
+  如果圖表所在的空間在 `上游專案` 中不存在，則會以相同的使用者存取權限建立該空間，並將內容放入其中。如果空間已存在於 `上游專案` 中，則該空間的權限不會被更新。
+</Info>
+
+您可以從處於檢視模式的圖表，或從任何列表（如首頁或所有圖表列表）點擊 `...` 按鈕，然後選擇 `promote chart (推廣圖表)`。
+
+<Frame>
+  <img src="/images/guides/how-to-promote-content/promote-view-chart-ff272b8342757176cf677682227d3918.png" alt=""/>
+</Frame>
+<br/>
+<Frame>
+  <img src="/images/guides/how-to-promote-content/promote-list-chart-a7c351011bd6338d9b830465d69d133e.png"/>
+</Frame>
+
+圖表推廣成功後，您可以點擊 `success` 橫幅，在新的標籤頁中開啟該圖表於 `生產專案` 中的視圖。
+
+## 推廣儀表板
+
+<Info>
+**您必須是「開發者 (developer)」且具備對 `開發專案` 和 `上游專案` 中儀表板及其所在空間的造訪權限，同時也需具備對儀表板中所有圖表的造訪權限。**
+  
+如果儀表板所在的空間在 `上游專案` 中不存在，則會以相同的使用者存取權限建立該空間，並將內容放入其中。如果空間已存在於 `上游專案` 中，則該空間的權限不會被更新。
+</Info>
+
+您可以從處於檢視模式的儀表板，或從任何列表（如首頁或所有儀表板列表）點擊 `...` 按鈕，然後選擇 `promote dashboard (推廣儀表板)`。
+
+這會將儀表板以及該儀表板中包含的所有圖表（包括空間內的圖表和儀表板專屬圖表）以及所有非圖表磚塊（如 Markdown）推廣到 `上游` 專案。
+
+如果儀表板或圖表所在的空間在上游專案中不存在，則會建立這些空間並放入內容。
+
+<Frame>
+  <img src="/images/guides/how-to-promote-content/promote-view-dashboard-44e664c3f7633a87b468d99911290f11.png" alt=""/>
+</Frame>
+<br/>
+<Frame>
+  <img src="/images/guides/how-to-promote-content/promote-list-dashboard-6b6b69ab8ca0bae35b47307d316ecb36.png"/>
+</Frame>
+
+儀表板推廣成功後，您可以點擊 `success` 橫幅，在新的標籤頁中開啟該儀表板於 `生產專案` 中的視圖。

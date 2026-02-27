@@ -1,0 +1,189 @@
+---
+title: "時區 (Timezones)"
+description: "了解 Lightdash 在日期篩選器中如何處理時區、可用的設定，以及如何解決常見的時區問題。"
+sidebarTitle: "時區"
+---
+
+## Lightdash 如何使用時區
+
+當您套用相對日期篩選器（如「今天」、「過去 1 個完整天」或「本月」）時，Lightdash 需要確定「今天」的定義。預設情況下，Lightdash 使用 **UTC** 進行所有相對日期篩選器的計算。
+
+這意味著對於加州（太平洋時間，UTC-8）的使用者來說，「今天」會在**當地時間下午 4:00** 翻轉，因為那是 UTC 時間的午夜。這適用於所有相對日期篩選器——「昨天」、「本週」、「過去 7 個完整天」等。
+
+**絕對日期篩選器**（例如「等於 2026-01-15」或「介於 2026-01-01 和 2026-01-31 之間」）**不受**時區設定影響，因為您指定的是精確日期。
+
+### 底層運作機制
+
+當套用相對日期篩選器時，Lightdash 會：
+
+1. 獲取 UTC 時間（或配置的時區，如有更改 —— 見[下文](#更改預設查詢時區)）。
+2. 計算所請求期間的開始與結束（例如昨天的開始與結束）。
+3. 將這些邊界轉換為 UTC 時戳。
+4. 使用這些邊界生成 SQL `WHERE` 子句。
+
+例如，在 UTC 時間 2 月 13 日下午 3 點查詢「過去 1 個完整天」，會變為：
+
+```sql
+WHERE date >= '2026-02-12' AND date < '2026-02-13'
+```
+
+如需完整的日期篩選器類型及其 SQL 輸出列表，請參閱[日期/時戳篩選器參考指南](/guides/filters_zh_TW#日期時戳篩選器參考指南)。
+
+## Lightdash 中的時區設定
+
+### 定時交付 (Scheduled delivery) 時區
+
+專案管理員可以在 **Project Settings > Syncs & Scheduled Deliveries** 中為定時交付設定預設時區。使用者也可以針對個別交付覆蓋此時區設定。
+
+<Note>
+此設定僅控制**定時交付何時執行**。它**不會**改變查詢如何解讀日期 —— 無論此設定為何，相對日期篩選器仍使用 UTC（或伺服器層級的查詢時區）。
+</Note>
+
+### 更改預設查詢時區
+
+環境變數 `LIGHTDASH_QUERY_TIMEZONE` 可更改整個 Lightdash 執行體中所有相對日期篩選器計算所使用的預設時區。例如，將其設置為 `America/New_York` 意味著「今天」將按東部時間而非 UTC 計算。
+
+這是一個伺服器層級的設定 —— 適用於該執行體上的所有使用者和所有專案。
+
+- **自託管 (Self-hosted)：** 您可以直接在執行體上設置此環境變數。
+- **Lightdash Cloud (Pro/Enterprise)：** 請聯繫我們，我們可以為您的執行體進行配置。
+
+### 使用者層級查詢時區
+
+目前尚無法讓個別使用者為其查詢計算設定自己的時區。這是最受期待的時區功能之一 —— 如果這對您很重要，請在 GitHub 上投票或留言：
+
+- [我想啟用特定使用者的時區 (#5923)](https://github.com/lightdash/lightdash/issues/5923)
+- [我想以當地時區而非 UTC 查看時戳 (#2921)](https://github.com/lightdash/lightdash/issues/2921)
+
+### 圖表層級時區選取器
+
+目前在探索 (Explore) 視圖或儲存圖表建立查詢時，尚無可供選擇時區的 UI。如果您希望看到此功能，請在 GitHub 上投票或留言：
+
+- [我想更改儲存圖表或儀表板的時區 (#4086)](https://github.com/lightdash/lightdash/issues/4086)
+
+## 常見時區問題與變通方法
+
+### 「今天」或「昨天」顯示非預期的數據
+
+這是最常見的時區相關問題。如果您所在的時區晚於 UTC，則相對日期篩選器（如「今天」和「過去 1 個完整天」）會在您當地的午夜之前就翻轉。例如，一位在加州 (UTC-8) 的使用者在 2 月 13 日下午 3 點篩選「過去 1 個完整天」：
+
+- 在 UTC 時間，已經是 2 月 14 日了。
+- Lightdash 將「過去 1 個完整天」計算為 2 月 13 日 (UTC)。
+- 但使用者期望「昨天」是當地時間的 2 月 12 日。
+- 整個日期視窗偏移了 8 小時。
+
+這不只是幾行數據的位移 —— 篩選邊界與您的期望相差了整整一天。
+
+**變通方法：**
+
+- **設置 `LIGHTDASH_QUERY_TIMEZONE`：** 將 [`LIGHTDASH_QUERY_TIMEZONE`](#更改預設查詢時區) 環境變數設置為您偏好的時區。適用於自託管實例，或聯繫我們以獲取 Lightdash Cloud (Pro/Enterprise) 支援。
+- **在 dbt 中進行類型轉換 (Cast to date)：** 如果您只需要天數層級的精確度，請在 dbt 模型中將時戳欄位轉換為 `date` 類型。當欄位使用 `type: date` 時，沒有時間部分供 Lightdash 進行 UTC 轉換 —— 無論時區為何，`2026-02-12` 就是 `2026-02-12`。
+
+  ```sql
+  -- 在您的 dbt 模型中
+  select
+    created_at::date as created_date
+  from your_table
+  ```
+
+  接著在 Lightdash YAML 中，為此維度設置 `type: date`。
+
+  <Warning>
+  缺點是您會失去日內精確度 —— 您將無法按小時或分鐘對此維度進行分組。
+  </Warning>
+
+- **使用絕對日期篩選器：** 如果您知道確切的日期，請使用絕對篩選器（例如「介於 2026-02-12 和 2026-02-13 之間」）而非相對篩選器。這些不受時區影響。
+
+### 時戳儲存在特定時區，但不希望 Lightdash 更改它們
+
+如果您的時戳儲存在當地時區（例如美國太平洋時間）且不帶時區元數據，Lightdash 仍會套用基於 UTC 的篩選邏輯。這可能導致日期篩選邊界與您的數據不匹配。
+
+**變通方法：**
+
+- **在 dbt 中進行類型轉換 (Cast to date)：** 如果只需要天數精確度，請在 dbt 模型中轉換為 `date` 類型以完全移除時間部分（見上述範例）。
+- **設置 `LIGHTDASH_QUERY_TIMEZONE`：** 將 `LIGHTDASH_QUERY_TIMEZONE` 設置為與數據存儲時區相符。適用於自託管實例，或聯繫我們。
+
+我們正在追蹤對非 UTC 時戳的更好支援：[Handle `ntz` timestamps and timestamps with a non-UTC timezone correctly (#7010)](https://github.com/lightdash/lightdash/issues/7010) —— 如果這對您有影響，請投票。
+
+### 時戳儲存在 UTC，但想以當地時區查看
+
+如果您的數據儲存在 UTC，但想以特定時區（例如東部時間）顯示，您可以使用[額外維度 (Additional Dimensions)](/references/dimensions_zh_TW#額外維度) 來建立經過時區轉換的時戳版本：
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+  ```yaml
+  columns:
+    - name: created_at
+      description: 'UTC 時戳'
+      meta:
+        dimension:
+          label: '建立時間 (UTC)'
+          type: timestamp
+        additional_dimensions:
+          created_at_est:
+            type: timestamp
+            label: '建立時間 (EST)'
+            description: '轉換為東部時間的建立時戳'
+            sql: "convert_timezone('UTC', 'America/New_York', ${TABLE}.created_at)"
+  ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+  ```yaml
+  columns:
+    - name: created_at
+      description: 'UTC 時戳'
+      config:
+        meta:
+          dimension:
+            label: '建立時間 (UTC)'
+            type: timestamp
+          additional_dimensions:
+            created_at_est:
+              type: timestamp
+              label: '建立時間 (EST)'
+              description: '轉換為東部時間的建立時戳'
+              sql: "convert_timezone('UTC', 'America/New_York', ${TABLE}.created_at)"
+  ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+  ```yaml
+  dimensions:
+    - name: created_at
+      description: 'UTC 時戳'
+      label: '建立時間 (UTC)'
+      type: timestamp
+    - name: created_at_est
+      type: timestamp
+      label: '建立時間 (EST)'
+      description: '轉換為東部時間的建立時戳'
+      sql: "convert_timezone('UTC', 'America/New_York', ${TABLE}.created_at)"
+  ```
+  </Tab>
+</Tabs>
+
+<Warning>
+這會改變**數據顯示方式**，但**不會**影響相對日期篩選器如何計算「今天」。套用於轉換後維度的篩選器仍將使用 UTC 邊界。如果您需要正確的顯示與正確的篩選，請在 dbt 模型中轉換時戳，並在天數精確度足夠時使用 `type: date`。
+</Warning>
+
+如果您需要在非 UTC 時區進行時間層級分析（例如按小時分組），目前尚無內建的變通方法。您可以在 dbt 模型中進行時區轉換，但相對日期篩選器仍會在 UTC 中計算邊界。這是一個已知的限制。
+
+### 定時交付在錯誤的時間執行
+
+如果您的定時交付在非預期時間執行，請檢查：
+
+1. **專案層級預設時區** (Project Settings > Syncs & Scheduled Deliveries)。
+2. 個別定時交付中的 **個別時區覆蓋 (per-delivery timezone override)**。
+
+交付時區僅控制交付何時執行 —— 查詢結果本身在計算日期篩選器時仍使用 UTC（或伺服器層級的 `LIGHTDASH_QUERY_TIMEZONE`）。
+
+## 變通方法總結
+
+| 場景 | 變通方法 | 限制 |
+|:---------|:-----------|:-----------|
+| 「今天」顯示錯誤數據 | 設置 `LIGHTDASH_QUERY_TIMEZONE` (自託管或聯繫 Cloud 團隊) | 伺服器全域性，非個別使用者 |
+| 「今天」顯示錯誤數據 | 在 dbt 中轉換為 `date` 類型 | 失去日內精確度 |
+| 時戳在當地時區，不想要轉換 | 在 dbt 中轉換為 `date` 類型 | 失去日內精確度 |
+| 時戳在當地時區，不想要轉換 | 將 `LIGHTDASH_QUERY_TIMEZONE` 設置為與之相符 | 伺服器全域性，非個別使用者 |
+| 想以不同時區顯示數據 | 使用額外維度配合 `convert_timezone()` | 僅影響顯示 —— 不修復篩選邊界 |
+| 想要小時層級的正確時區篩選 | 無內建變通方法 | 已知限制 |
+| 定時交付在錯誤時間執行 | 檢查專案與個別交付的時區設定 | 僅影響交付時機，不影響查詢結果 |

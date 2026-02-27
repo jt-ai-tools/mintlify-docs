@@ -1,0 +1,150 @@
+---
+title: "如何嵌入內容"
+sidebarTitle: 嵌入快速入門
+description: Lightdash 允許您使用具備過期時間的 URL 和權杖 (Tokens) 來嵌入內容。這是在您自己的應用程式與平台中實作自助式分析的絕佳方式，利用 Lightdash 中的見解並將其提供給您的使用者。
+icon: "code"
+---
+
+
+import EmbedAvailability from '/snippets/embedding-availability_zh_TW.mdx';
+
+<EmbedAvailability />
+
+## 您可以嵌入什麼？
+
+Lightdash 支援嵌入兩種類型的內容，分別針對不同的使用場景：
+
+### 儀表板 (Dashboards)
+
+嵌入包含多個視覺化圖表、篩選器和分頁的完整儀表板。非常適合在您的應用程式中提供全面的分析視圖。
+
+**使用場景：**
+- 管理面板中的高層主管儀表板。
+- 面向客戶的分析門戶。
+- SaaS 應用程式的嵌入式報告。
+
+[進一步了解嵌入儀表板 →](/guides/embedding/dashboards_zh_TW)
+
+### 圖表 (Charts)
+
+嵌入單個儲存圖表，用於專注的單一指標顯示。圖表提供極簡的 UI，以便於乾淨的整合。
+
+**使用場景：**
+- 應用程式中的單一 KPI 小組件。
+- 行銷頁面中的嵌入指標。
+- 工作流程中的專注分析。
+
+<Info>
+圖表嵌入需要 React SDK。iframe 嵌入僅適用於儀表板。
+</Info>
+
+[進一步了解嵌入圖表 →](/guides/embedding/charts_zh_TW)
+
+## 如何嵌入內容？
+
+Lightdash 提供兩種嵌入方法：
+
+**[iframe 嵌入](/references/iframe-embedding_zh_TW)**：透過在 URL 中包含 JWT，使用簡單的 iframe 嵌入 Lightdash **儀表板**。無需特殊的開發整合。iframe 嵌入僅適用於儀表板，不支援圖表。
+
+**[React SDK](/references/react-sdk_zh_TW)**：使用 `@lightdash/sdk` 套件在 React 應用程式中進行無縫整合。React SDK 同時支援儀表板和圖表，並提供程式化篩選器和回呼等額外功能。
+
+這兩種方法都使用相同的基於 JWT 的身份驗證與安全模型。
+
+## 快速入門：嵌入一個儀表板
+
+本快速入門將帶領您使用 iframe 嵌入您的第一個儀表板。
+
+### 步驟 1：建立嵌入秘密 (Embed Secret)
+
+首先，您需要為每個專案生成一個秘密。這個秘密就像密碼一樣，用於對 URL 進行加密，以便我們確認造訪是有效的。
+
+<Frame>
+  <img src="/images/guides/embedding/embed-create-secret-fbb86d6bcb70f4d004c48adb3c107922.png"/>
+</Frame>
+
+您可以透過點擊 `Generate new secret` 按鈕來重新生成秘密。如果這樣做，使用舊 URL 的人將自動失去造訪先前分享的嵌入 URL 的權限。
+
+### 步驟 2：添加允許的儀表板
+
+只有被選取的儀表板才能透過嵌入 URL 造訪。將您想要嵌入的儀表板添加到允許清單中。
+
+<Frame>
+  <img src="/images/guides/embedding/embed-add-dashboard-cb6bef5fde69ba9d6eaeb693744d75cc.png"/>
+</Frame>
+
+### 步驟 3：配置與預覽
+
+在「Configure (配置)」部分，您可以：
+- 選擇要嵌入的儀表板。
+- 設定權杖過期時間。
+- 配置互動功能（篩選器、匯出等）。
+- 添加使用者屬性以實現行級安全。
+
+<Frame>
+  <img src="/images/guides/embedding/embed-preview-6add607fe9348ed49483ae487235bd50.png"/>
+</Frame>
+
+點擊 `Preview` 查看嵌入內容的效果，並點擊 `Generate & copy URL` 獲取一個用於測試的一次性嵌入 URL。
+
+### 步驟 4：以程式化方式生成權杖
+
+雖然您可以直接從 Lightdash 生成長效期的 URL，但建議在您的後端使用 `secret` 生成短效期的 JWT，以確保嵌入 URL 不會在您的 App 之外被濫用。
+
+Lightdash 提供了您可以複製到 App 中使用的代碼片段，用於生成有效的嵌入 URL：
+
+<Frame>
+  <img src="/images/guides/embedding/embed-developer-dcdab9d9082069f5ade377284254319c.png"/>
+</Frame>
+
+## 後續步驟
+
+<CardGroup cols={2}>
+  <Card title="嵌入儀表板" icon="grid-2" href="/guides/embedding/dashboards_zh_TW">
+    包含所有配置選項的完整儀表板嵌入指南
+  </Card>
+
+  <Card title="嵌入圖表" icon="chart-line" href="/guides/embedding/charts_zh_TW">
+    了解如何嵌入單個圖表以實現專注顯示
+  </Card>
+
+  <Card title="使用者屬性與行級安全" icon="shield-check" href="/references/workspace/user-attributes_zh_TW">
+    使用使用者屬性向不同使用者顯示不同數據
+  </Card>
+
+  <Card title="iframe 嵌入參考" icon="code" href="/references/iframe-embedding_zh_TW">
+    URL 模式與 HTML 嵌入細節
+  </Card>
+
+  <Card title="React SDK 參考" icon="react" href="/references/react-sdk_zh_TW">
+    具備進階功能的無縫 React 整合
+  </Card>
+
+  <Card title="嵌入 API 參考" icon="book" href="/references/embedding_zh_TW">
+    完整的 JWT 結構與配置選項文件
+  </Card>
+</CardGroup>
+
+## 常見問題
+
+### 我需要有 Lightdash 帳號才能查看嵌入內容嗎？
+
+不需要，嵌入的 Lightdash 內容對任何人都是可見的（不只限於擁有 Lightdash 登入帳號的人）。
+
+例如：您可以在您的產品中嵌入一個儀表板，任何有權造訪您產品的人都能看到該儀表板，無需登入 Lightdash。
+
+我們會確保連結是安全的，並具備您設定的過期時間。
+
+### 安全機制如何運作？
+
+嵌入內容使用 JWT (JSON Web Tokens) 進行保護，您需使用嵌入秘密對其進行簽名。權杖內容包括：
+
+- 要顯示的內容（儀表板或圖表）。
+- 過期時間。
+- 用於行級過濾的使用者屬性。
+- 互動功能的權限（篩選器、匯出等）。
+
+權杖應具備短效性，且應在伺服器端生成，以防止您的嵌入秘密外洩。
+
+### 我可以向不同使用者顯示不同的數據嗎？
+
+是的！您可以使用 [使用者屬性 (User Attributes)](/references/workspace/user-attributes_zh_TW) 在嵌入內容中實作行級安全。這允許您根據造訪使用者的屬性（如：租戶 ID、區域等）來過濾數據。

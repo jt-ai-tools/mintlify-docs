@@ -1,0 +1,82 @@
+---
+title: "重新命名模型、指標與維度"
+sidebarTitle: "重新命名模型與欄位"
+---
+
+本指南說明如何在整個專案中重新命名指標、維度或模型。所有對欄位或模型的引用將在圖表、儀表板和定時交付中同步更新。當您需要標準化命名規範、在修改模型後更新儀表板，或只是想快速修正拼寫錯誤時，此功能非常有用。
+
+<Warning>
+  **需要管理員權限：** 此功能僅限管理員使用者使用，因為它會更新整個專案的內容，包括使用者可能沒有修改權限的圖表和儀表板。
+</Warning>
+
+<Info>
+  內容也可以透過 [儀表板即代碼 (Dashboards as code)](/guides/developer/dashboards-as-code_zh_TW) 進行重新命名。然而，本文件中介紹的重新命名方法步驟較少，且會自動遵守不同欄位類型的正確語法。
+
+  圖表名稱和描述不會透過這些重新命名工作流程更新。如果您想批量更新這些內容，我們建議使用「儀表板即代碼」。
+</Info>
+
+## 在 Lightdash 中重新命名
+
+如果您在 dbt 中更改了正在 Lightdash 中使用的欄位或表格名稱，您將會收到驗證錯誤。您可以直接在驗證頁面上透過重新命名損壞圖表中的引用來修復這些錯誤。您可以點擊導覽列上的鈴鐺圖示輕鬆造訪驗證頁面。 [閱讀此處的驗證文件](/guides/developer/validating-your-content_zh_TW)。
+
+<img
+  src="/images/guides/developer/rename-validation-errors.png"
+  alt="重新命名驗證錯誤"
+  className="mx-auto"
+  style={{ width:"50%" }}
+/>
+
+在驗證頁面上，將滑鼠懸停在您想修復的圖表上，然後點擊 **Fix (修復)** 按鈕。
+
+![重新命名修復按鈕](/images/guides/developer/rename_fix_button.png)
+
+您現在可以從**現有**值的列表中選擇要重新命名的欄位或模型。
+
+<img
+  src="/images/guides/developer/rename_modal.png"
+  alt="重新命名彈窗"
+  className="mx-auto"
+  style={{ width:"50%" }}
+/>
+
+您也可以選擇 **Fix all occurrences (修復所有出現處)**，這允許您在所有受影響的內容（如其他圖表、儀表板和定時交付）中重新命名相同的欄位或表格。
+
+如果您對同一個圖表進行了多個欄位或表格更改（例如，您更改了兩個指標），您需要執行多次重新命名操作。
+
+重新命名後，您可以重新執行驗證，以確保一切正常運作。
+
+## 在 CLI 中重新命名
+
+Lightdash CLI 提供了一種更靈活的替代方法來重新命名整個專案的模型或欄位。這是一個比 UI 更進階的選項，會影響專案中的所有內容。CLI 還允許您在 dbt 發生變更之前就先重新命名內容。
+
+### 重要 CLI 提示
+
+- 預設情況下重新命名是全專案範圍的，但可以使用 `--model` 選項縮小到特定模型。
+- 務必先使用 `--dry-run` 來了解變更的影響。
+- 您可以在正式執行時使用 `--list` 來獲取所有已更新內容的完整列表。
+- 欄位和表格名稱中僅允許使用小寫字母 (a-z) 和底線 `_`。
+
+### CLI 工作流程範例
+
+以下是重新命名 dbt 專案內容時，如何發揮此功能最大效用的範例。
+
+1. 在您的 dbt 專案 YAML 檔案中重新命名一個欄位：`user_id` 變為 `customer_id`。
+2. 建立一個預覽環境來測試這些變更。
+3. 現有的圖表將會失敗，您可以進入驗證頁面確認哪些圖表受到影響。
+4. 執行 `lightdash rename --type field --from user_id --to customer_id -p <預覽專案 ID> --dry-run` 來列出受影響的圖表。
+5. 如果您對變更感到滿意，執行不帶 `--dry-run` 的指令。
+6. 確認所有圖表都引用了新欄位（如果尚未執行 dbt run 更新倉庫，它們可能仍會報錯）。
+7. 合併代碼，執行 dbt，然後在主專案上執行 `lightdash rename --type field --from user_id --to customer_id -p <生產專案 ID> --list`。
+8. 如果您的 dbt 專案中有 [圖表/儀表板即代碼](/guides/developer/dashboards-as-code_zh_TW)，請執行 `lightdash download` 以使用重新命名的欄位更新它們。
+
+- `--list` 選項會提供已更改內容的完整列表。
+
+CLI 將顯示哪些圖表、儀表板、告警和儀表板排程器將被更新，此外，我們還會生成一個 JSON 日誌，包含受影響的圖表與儀表板名稱及 UUID，您可以使用這些 UUID 手動將某些圖表還原到先前的版本。
+
+![重新命名 CLI 列表](/images/guides/developer/rename_cli_list.png)
+
+請[閱讀 CLI 參考文件](/references/lightdash-cli_zh_TW#lightdash-rename)了解所有參數與更多範例。
+
+## 還原變更
+
+重新命名時，會建立一個帶有新變更的圖表版本。如果您在重新命名過程中出錯，可以使用[版本歷史 (Version History)](/guides/version-history_zh_TW#圖表版本歷史) 還原個別圖表。

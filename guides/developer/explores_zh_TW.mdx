@@ -1,0 +1,272 @@
+---
+title: "從單個 dbt 模型建立定制化表格"
+sidebarTitle: 單個模型的複數表格
+description: 您可以使用 Lightdash 語義層中的 `explores` 配置，為不同的受眾策劃從同一張表進行查詢的多種方式。
+---
+
+
+## 本指南涵蓋的內容
+
+您將學習如何使用 Lightdash 中的 `explores` 配置，從單個 dbt 模型定義**多種策劃好的表格體驗**。
+
+每個探索 (Explore) 都會作為獨立的表格出現在 Lightdash 的 **Query from tables (從表格查詢)** 列表中。
+
+---
+
+## 何時使用探索 (Explores)
+
+當您想為不同的團隊或使用場景建立同一張表的定制版本時，請使用探索配置。例如：
+
+- 根據受眾顯示不同的欄位或關聯 (Joins)（例如：銷售團隊看到「使用者 + CRM」，產品經理看到「使用者 + 產品使用情況」）。
+- 定制每個版本的表格，以匹配特定的工作流程或部門。
+- 使用使用者屬性 (User Attributes) 限制對某些版本或欄位的存取（例如：僅限主管查看的視圖、基於區域的過濾，或隱藏 PII 敏感資訊）。
+
+---
+
+## 快速入門
+
+
+<Steps>
+  <Step title="從您的基礎模型開始">
+    這是您的一般 dbt 模型，例如：`deals`。
+
+    <Tabs>
+      <Tab title="dbt v1.9 及更早版本">
+        ```yaml
+        models:
+          - name: deals
+            meta:
+              primary_key: deal_id
+        ```
+      </Tab>
+      <Tab title="dbt v1.10+">
+        ```yaml
+        models:
+          - name: deals
+            config:
+              meta:
+                primary_key: deal_id
+        ```
+      </Tab>
+      <Tab title="Lightdash YAML">
+        ```yaml
+        type: model
+        name: deals
+
+        primary_key: deal_id
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  <Step title="在 meta 下添加探索 (explores) 區塊">
+
+    使用 `explores` 配置來定義表格的多個版本。每個探索都有自己的 `label`、`joins`、關聯欄位和存取規則。
+
+    <Tabs>
+      <Tab title="dbt v1.9 及更早版本">
+        ```yaml
+        models:
+          - name: deals
+            meta:
+              primary_key: deal_id
+              label: 成交資料 (基礎版)
+              description: 不含關聯的基礎成交資料表
+              explores:
+                deals_accounts:
+                  label: 成交資料 (含帳戶)
+                  description: 關聯了帳戶資訊的成交資料表，僅包含部分帳戶欄位
+                  joins:
+                    - join: accounts
+                      relationship: many-to-one
+                      sql_on: ${deals.account_id} = ${accounts.account_id}
+                      fields: [industry, segment, count_accounts]
+                deals_exec_view:
+                  label: 成交資料 (主管視圖)
+                  description: 包含帳戶資訊的成交資料表，僅供主管使用，包含所有帳戶欄位
+                  required_attributes:
+                    is_exec: "true"
+                  joins:
+                    - join: accounts
+                      relationship: many-to-one
+                      sql_on: ${deals.account_id} = ${accounts.account_id}
+        ```
+      </Tab>
+      <Tab title="dbt v1.10+">
+        ```yaml
+        models:
+          - name: deals
+            config:
+              meta:
+                primary_key: deal_id
+                label: 成交資料 (基礎版)
+                description: 不含關聯的基礎成交資料表
+                explores:
+                  deals_accounts:
+                    label: 成交資料 (含帳戶)
+                    description: 關聯了帳戶資訊的成交資料表，僅包含部分帳戶欄位
+                    joins:
+                      - join: accounts
+                        relationship: many-to-one
+                        sql_on: ${deals.account_id} = ${accounts.account_id}
+                        fields: [industry, segment, count_accounts]
+                  deals_exec_view:
+                    label: 成交資料 (主管視圖)
+                    description: 包含帳戶資訊的成交資料表，僅供主管使用，包含所有帳戶欄位
+                    required_attributes:
+                      is_exec: "true"
+                    joins:
+                      - join: accounts
+                        relationship: many-to-one
+                        sql_on: ${deals.account_id} = ${accounts.account_id}
+        ```
+      </Tab>
+      <Tab title="Lightdash YAML">
+        ```yaml
+        type: model
+        name: deals
+
+        primary_key: deal_id
+        label: 成交資料 (基礎版)
+        description: 不含關聯的基礎成交資料表
+
+        explores:
+          deals_accounts:
+            label: 成交資料 (含帳戶)
+            description: 關聯了帳戶資訊的成交資料表，僅包含部分帳戶欄位
+            joins:
+              - join: accounts
+                relationship: many-to-one
+                sql_on: ${deals.account_id} = ${accounts.account_id}
+                fields: [industry, segment, count_accounts]
+          deals_exec_view:
+            label: 成交資料 (主管視圖)
+            description: 包含帳戶資訊的成交資料表，僅供主管使用，包含所有帳戶欄位
+            required_attributes:
+              is_exec: "true"
+            joins:
+              - join: accounts
+                relationship: many-to-one
+                sql_on: ${deals.account_id} = ${accounts.account_id}
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  <Step title="在 Lightdash 中預覽結果">
+    一旦您提交並部署了 dbt 變更：
+
+    - 前往 Lightdash 的「從表格查詢」
+    - 您現在將看到：
+      - **成交資料 (基礎版)**
+      - **成交資料 (含帳戶)**
+      - **成交資料 (主管視圖)**（僅具備所需屬性的使用者可見）
+
+    在 UI 中，每個探索都顯示為獨立的表格，但它們都使用同一個 `deals` 模型。
+  </Step>
+</Steps>
+
+
+## 可使用的表格配置選項
+
+在每個探索定義內部，您可以使用任何現有的表格配置選項，包括：
+
+- `label` (標籤)
+- `joins` (關聯)
+- `sql_filter` (SQL 篩選)
+- `description` (描述)
+- `default_filters` (預設篩選器)
+- `required_attributes` (所需屬性)
+- `additional_dimensions` (額外維度)
+
+[📚 閱讀表格參考文件了解所有配置選項](/references/tables_zh_TW#table-properties)
+
+---
+
+## 向探索添加自定義維度
+
+使用 `additional_dimensions` 來定義僅限於特定探索範圍內的維度。當您需要引用關聯表（這在模型層級沒有意義）的自定義維度時，這非常有用。
+
+### 何時使用探索範圍 (Explore-scoped) 的維度
+
+- 同一個模型有多個具有不同關聯的探索。
+- 您需要的維度結合了基礎模型和關聯表的欄位。
+- 您希望將特定於探索的邏輯排除在基礎模型之外。
+
+### 範例
+
+<Tabs>
+  <Tab title="dbt v1.9 及更早版本">
+    ```yaml
+    models:
+      - name: orders
+        meta:
+          primary_key: order_id
+          explores:
+            orders_with_custom_dims:
+              label: 帶有自定義維度的訂單
+              joins:
+                - join: customers
+                  sql_on: ${orders.customer_id} = ${customers.customer_id}
+              additional_dimensions:
+                full_name:
+                  type: string
+                  sql: "CONCAT(${customers.first_name}, ' ', ${customers.last_name})"
+                  label: 客戶全名
+    ```
+  </Tab>
+  <Tab title="dbt v1.10+">
+    ```yaml
+    models:
+      - name: orders
+        config:
+          meta:
+            primary_key: order_id
+            explores:
+              orders_with_custom_dims:
+                label: 帶有自定義維度的訂單
+                joins:
+                  - join: customers
+                    sql_on: ${orders.customer_id} = ${customers.customer_id}
+                additional_dimensions:
+                  full_name:
+                    type: string
+                    sql: "CONCAT(${customers.first_name}, ' ', ${customers.last_name})"
+                    label: 客戶全名
+    ```
+  </Tab>
+  <Tab title="Lightdash YAML">
+    ```yaml
+    type: model
+    name: orders
+
+    primary_key: order_id
+
+    explores:
+      orders_with_custom_dims:
+        label: 帶有自定義維度的訂單
+        joins:
+          - join: customers
+            sql_on: ${orders.customer_id} = ${customers.customer_id}
+        additional_dimensions:
+          full_name:
+            type: string
+            sql: "CONCAT(${customers.first_name}, ' ', ${customers.last_name})"
+            label: 客戶全名
+    ```
+  </Tab>
+</Tabs>
+
+### 可用屬性
+
+探索範圍的 `additional_dimensions` 支援與[欄位層級額外維度](/references/dimensions_zh_TW#額外維度)相同的屬性：
+
+| 屬性 | 必填 | 描述 |
+| :------- | :------- | :---------- |
+| type | 是 | 維度類型：`string`, `number`, `date`, `timestamp`, 或 `boolean` |
+| sql | 是 | 維度的 SQL 表達式。可以使用 `${table.field}` 語法引用基礎模型和關聯表的欄位 |
+| label | 否 | 在 Lightdash 中顯示的名稱 |
+| description | 否 | 懸停時顯示的描述 |
+| hidden | 否 | 設置為 `true` 以在 UI 中隱藏 |
+| format | 否 | 試算表風格的格式表達式 |
+| time_intervals | 否 | 針對日期/時戳類型，指定要生成的間隔 |
+| groups | 否 | 在側邊欄中對維度進行分組 |
+| required_attributes | 否 | 基於使用者屬性限制存取 |

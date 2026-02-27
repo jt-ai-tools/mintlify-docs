@@ -1,0 +1,121 @@
+---
+title: "表格計算 (Table calculations)"
+description: "表格計算讓您可以輕鬆地即時建立指標（例如：在某個視窗內聚合表格數據，或獲取某一欄的累計總額）。"
+---
+
+您可以在探索 (Explore) 視圖中添加表格計算，它們會以綠色欄位的形式出現在結果表格中（請記住，[維度](/references/dimensions_zh_TW) 是藍色的，[指標](/references/metrics_zh_TW) 是橘色的）。
+
+<Frame>
+  <img src="/images/guides/table-calculations/table-calculations-add-a932fb32af1dc604d4ef709886f9a833.jpg"/>
+</Frame>
+
+表格計算是使用原始 SQL 構建的。這意味著您可以使用表格計算來構建數學運算、真/假判斷、文字處理以及基於日期的計算（基本上，任何您能在 SQL 中執行的操作，都可以在表格計算中實現）。
+
+## 何時使用表格計算
+
+Lightdash 語義層允許您定義可在整個組織內重用的指標和維度。這透過建立每個人都能依賴的標準定義來維持一致性並節省時間。有時預定義的指標和維度並不足夠，您可能需要為特定視覺化執行額外的計算、為特定分析建立專門的指標，或構建自定義邏輯以更好地傳達您的見解。
+
+### 表格計算如何提供協助
+
+表格計算作為一個額外的計算層，構建於以下各層之上：
+
+- 語義層指標與維度（您的標準定義）
+- 自定義指標與維度（在 BI 層建立）
+- 其他表格計算（您甚至可以疊加使用它們）
+
+<Warning>
+表格計算適用於專門、臨時的需求，但如果您發現自己反覆重用某個表格計算，這是一個信號，表示應將其添加到 dbt 中，以便在語義層中進行追蹤。這能讓您組織的指標保持集中管理且定義一致。您可以[在此了解更多關於向 dbt 專案添加指標的資訊](/references/metrics_zh_TW)。
+</Warning>
+
+## 建立表格計算
+
+在建立表格計算之前，您需要先向結果表格中添加一些維度及/或指標。
+
+表格計算作用於您已抓取到結果表格中的數據 —— 它們可以引用您選取的維度、指標，以及您從這些底層欄位構建的其他表格計算。將其想像成堆積木：您從基礎維度和指標開始，然後可以在其上疊加表格計算，甚至構建引用已建立計算的新計算。
+
+### 使用快速計算 (Quick calculations)
+
+快速計算是常用表格計算的快捷方式，僅適用於結果表格中指標的內容選單。
+
+<Frame>
+![](/images/guides/table-calculations/quick-table-calculation-b1e76d3e54d84ca3c5066ffdf989514b.png)
+</Frame>
+
+欲了解更多關於這些計算的作用，請參考[此處的文件](/guides/table-calculations/sql-templates_zh_TW)。生成表格計算後，您可以編輯它以修改 SQL 查詢或更新格式。
+
+### 使用自定義表格計算
+
+當結果表格中有了數據後，您可以點擊探索視圖中 `Results` 標籤下的 `+ Table calculation` 來建立表格計算：
+
+<Frame>
+  ![](/images/guides/table-calculations/create-new-table-calc-772add6d063a5122c0a25accf798fbb3.jpg)
+</Frame>
+
+##### 在彈出視窗中編寫表格計算的 SQL
+
+您的表格計算是透過在彈出框中編寫原始 SQL 來定義的。如果您不確定該寫什麼，可以[參考我們的一些表格計算 SQL 範本](#表格計算函數與-sql-範本)。
+
+要引用結果表格中的指標和維度，您可以使用自動完成功能，或者手動以 `${table_name.field_name}` 的格式編寫完整欄位名稱。
+
+<Frame>
+ ![](/images/guides/table-calculations/add-table-calc-sql-20de5398dc117ef3d4087cf3b6d9939b.jpg)
+</Frame>
+
+
+### 使用表格計算函數
+
+除了編寫原始 SQL 外，您還可以使用簡化常見計算模式的內建函數：
+
+- **[行函數 (Row functions)](/references/table-calculation-functions/row-functions_zh_TW)** — 造訪其他行的值（例如：前一行、特定行號、查找）。
+- **[樞紐函數 (Pivot functions)](/references/table-calculation-functions/pivot-functions_zh_TW)** — 跨樞紐欄位造訪數值。
+
+這些函數會自動編譯為 SQL 視窗函數 (Window functions)，因此您無需手動編寫 `LAG`, `LEAD` 或 `ROW_NUMBER`。
+
+##### 更新表格計算的格式（選填）
+
+如果需要，您可以透過 `format` 標籤更新表格計算的格式，例如百分比格式。
+
+<Frame>
+  ![](/images/guides/table-calculations/format-table-calc-c0e3828b6681db084b4ddd6799ff2c96.jpg)
+</Frame>
+
+| 格式類型 | 描述 | 原始值 | 在 Lightdash 中的樣子 |
+| :------------ | :----------------------------------------------- | :--------- | :----------------------------------- |
+| Default (預設) | 表格計算結果的預設格式 | 0.75 | 0.75 |
+| Percent (百分比) | 將數字轉換為百分比 | 0.75 | 75% |
+| Currency (貨幣) | 添加貨幣符號與當地語系格式 | 1234.1234 | $ 1234.12 |
+| Number (數字) | 帶有前綴與後綴的數字格式 | 123.1234 | Speed: 123.12 km/h |
+
+##### 點擊欄位名稱旁的齒輪圖示即可編輯或刪除
+
+如果您需要編輯或刪除表格計算，只需點擊欄位旁邊的切換開關並執行所需操作即可！
+
+<Frame>
+  ![](/images/guides/table-calculations/edit-delete-table-calc-520776c8631697527bf3760000dce88e.jpg)
+</Frame>
+
+
+## 表格計算的執行與限制
+
+處理順序如下：
+
+1. **原始數據過濾最先發生** - 維度與指標過濾器套用於您的基礎數據。
+
+2. **所有表格計算執行** - 使用經過過濾後的數據集執行所有計算。
+
+3. **表格計算過濾最後套用** - 僅在此時根據計算出的數值隱藏行。
+
+### 關鍵限制
+由於所有計算都在過濾前執行，因此表格計算過濾器僅隱藏行，而不影響底層計算。
+
+例如：您使用表格計算來計算 `percentage_of_shipping_method_amount`，然後設定過濾器隱藏低於 30% 的行。被過濾掉的行（顯示為紫色）會消失，但 `percentage_total` 計算仍顯示為 100%，即使 `percentage_of_shipping_method_amount` 欄位中可見的百分比加總起來已不再是 100%。
+
+<Frame>
+![](/images/guides/table-calculations/table_calculation_filter_example.jpg)
+</Frame>
+
+## 表格計算函數與 SQL 範本
+
+如果您偏好不編寫原始 SQL，請參考內建的[行函數](/references/table-calculation-functions/row-functions_zh_TW)與[樞紐函數](/references/table-calculation-functions/pivot-functions_zh_TW) —— 它們處理了常見模式，如造訪前一行、行編號以及跨樞紐欄位工作。
+
+對於更進階或自定義的 SQL，我們也提供可複製貼上的 SQL 範本，協助您快速開始使用常見的表格計算。您可以在[此處查看我們的表格計算 SQL 範本](/guides/table-calculations/sql-templates_zh_TW)。

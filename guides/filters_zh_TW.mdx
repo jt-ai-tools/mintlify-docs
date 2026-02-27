@@ -1,0 +1,260 @@
+---
+title: "過濾器參考指南 (Filters reference)"
+description: "過濾器出現在探索 (Explore) 視圖的頂部，允許使用者更改抓取的數據。"
+---
+
+## 使用過濾器
+
+要了解更多關於如何使用過濾器的資訊，請參閱我們的[限制數據使用過濾器](/guides/limiting-data-using-filters_zh_TW)文件。
+
+## 過濾器類型
+
+### 數值過濾器 (Numeric filters)
+
+| 過濾器 | 邏輯 |
+| :--------------- | :----------------------------------------------------------------------------------------------------- |
+| is null (為空) | 僅抓取所選欄位值為 null 的行。 |
+| is not null (不為空) | 僅抓取所選欄位值不為 null 的行。 |
+| is (等於) | 僅抓取值等於所列數值的行。 |
+| is not (不等於) | 僅抓取值不等於所列數值的行。 |
+| is less than (小於) | 僅抓取所選欄位值嚴格小於所列數值的行。 |
+| is greater than (大於) | 僅抓取所選欄位值嚴格大於所列數值的行。 |
+
+### 字串過濾器 (String filters)
+
+| 過濾器 | 邏輯 |
+| :----------- | :-------------------------------------------------------------------------------------------------- |
+| is null (為空) | 僅抓取所選欄位值為 null 的行。 |
+| is not null (不為空) | 僅抓取所選欄位值不為 null 的行。 |
+| is (等於) | 僅抓取值等於所列文字的行。 |
+| is not (不等於) | 僅抓取值不等於所列文字的行。此過濾器明確包含 NULL 值。要排除 NULL，請添加獨立的 `is not null` 過濾器。 |
+| starts with (開頭為) | 僅抓取所選欄位值以您輸入的字元開頭的行。 |
+| includes (包含) | 僅抓取所選欄位值包含您輸入的字元的行。 |
+| ends with (結尾為) | 僅抓取所選欄位值以您輸入的字元結尾的行。 |
+
+### 布林過濾器 (Boolean filters)
+
+| 過濾器 | 邏輯 |
+| :----------- | :------------------------------------------------------------------------ |
+| is null (為空) | 僅抓取所選欄位值為 null 的行。 |
+| is not null (不為空) | 僅抓取所選欄位值不為 null 的行。 |
+| is (等於) | 僅抓取值等於所列布林值的行。 |
+
+### 日期過濾器 (Date filters)
+
+| 過濾器 | 邏輯 |
+| :------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| is null (為空) | 僅抓取所選欄位值為 null 的行。 |
+| is not null (不為空) | 僅抓取所選欄位值不為 null 的行。 |
+| is (等於) | 僅抓取值等於所列日期的行。 |
+| is not (不等於) | 僅抓取值不等於所列日期的行。 |
+| in the last (在過去) | 僅抓取日期在您輸入的過去時段內的行：例如「過去 3 天」、「過去 2 個完整週」、「過去 3 個季度」等。 |
+| not in the last (不在過去) | 僅抓取日期不在您輸入的過去時段內的行。 |
+| in the next (在未來) | 僅抓取日期在您輸入的未來時段內的行：例如「未來 3 天」、「未來 2 個完整週」、「未來 3 個季度」等。 |
+| not in the next (不在未來) | 僅抓取日期不在您輸入的未來時段內的行。 |
+| in the current (在目前) | 僅抓取日期在您輸入的目前時段內的行：例如「今天」、「本週」、「本季度」等。 |
+| not in the current (不在目前) | 僅抓取日期不在您輸入的目前時段內的行。 |
+| is before (在...之前) | 僅抓取日期嚴格早於您輸入日期的行。 |
+| is on or before (在...或之前) | 僅抓取日期等於或早於您輸入日期的行。 |
+| is after (在...之後) | 僅抓取日期嚴格晚於您輸入日期的行。 |
+| is on or after (在...或之後) | 僅抓取日期等於或晚於您輸入日期的行。 |
+| is between (介於) | 僅抓取日期在您輸入範圍內的行：例如「介於 2001-12-23 和 2003-01-02 之間」。 |
+
+## 日期/時戳過濾器參考指南
+
+以下範例展示了可能的日期/時戳過濾器組合及其對應的 SQL 輸出。所有範例皆使用 BigQuery 語法，並假設：
+- 當前時戳：`2025-10-24 15:30:00`
+- 範例欄位：`orders.created_at`
+- 時區：UTC
+- 週起始日：週一
+
+### 時戳過濾器範例 (Timestamp filter examples)
+
+#### 目前期間過濾器 (Current Period Filters)
+
+##### 在目前期間 (In The Current)
+
+| 過濾器 | SQL 輸出 |
+|--------|------------|
+| Current minute (目前分鐘) | `orders.created_at >= TIMESTAMP('2025-10-24 15:30:00') AND orders.created_at < TIMESTAMP('2025-10-24 15:31:00')` |
+| Current hour (目前小時) | `orders.created_at >= TIMESTAMP('2025-10-24 15:00:00') AND orders.created_at < TIMESTAMP('2025-10-24 16:00:00')` |
+| Current day (今天) | `orders.created_at >= TIMESTAMP('2025-10-24 00:00:00') AND orders.created_at < TIMESTAMP('2025-10-25 00:00:00')` |
+| Current week (本週) | `orders.created_at >= TIMESTAMP('2025-10-21 00:00:00') AND orders.created_at < TIMESTAMP('2025-10-28 00:00:00')` |
+| Current month (本月) | `orders.created_at >= TIMESTAMP('2025-10-01 00:00:00') AND orders.created_at < TIMESTAMP('2025-11-01 00:00:00')` |
+| Current quarter (本季) | `orders.created_at >= TIMESTAMP('2025-10-01 00:00:00') AND orders.created_at < TIMESTAMP('2026-01-01 00:00:00')` |
+| Current year (今年) | `orders.created_at >= TIMESTAMP('2025-01-01 00:00:00') AND orders.created_at < TIMESTAMP('2026-01-01 00:00:00')` |
+
+#### 過去期間過濾器 (Past Period Filters)
+
+##### 過去 N 個期間 (in the last)
+
+| 過濾器 | SQL 輸出 |
+|--------|------------|
+| Last 1 minute (過去 1 分鐘) | `orders.created_at >= TIMESTAMP('2025-10-24 15:29:00') AND orders.created_at <= TIMESTAMP('2025-10-24 15:30:00')` |
+| Last 1 hour (過去 1 小時) | `orders.created_at >= TIMESTAMP('2025-10-24 14:30:00') AND orders.created_at <= TIMESTAMP('2025-10-24 15:30:00')` |
+| Last 1 day (過去 1 天) | `orders.created_at >= TIMESTAMP('2025-10-23 15:30:00') AND orders.created_at <= TIMESTAMP('2025-10-24 15:30:00')` |
+| Last 1 week (過去 1 週) | `orders.created_at >= TIMESTAMP('2025-10-17 15:30:00') AND orders.created_at <= TIMESTAMP('2025-10-24 15:30:00')` |
+| Last 1 month (過去 1 個月) | `orders.created_at >= TIMESTAMP('2025-09-24 15:30:00') AND orders.created_at <= TIMESTAMP('2025-10-24 15:30:00')` |
+| Last 1 quarter (過去 1 季) | `orders.created_at >= TIMESTAMP('2025-07-24 15:30:00') AND orders.created_at <= TIMESTAMP('2025-10-24 15:30:00')` |
+| Last 1 year (過去 1 年) | `orders.created_at >= TIMESTAMP('2024-10-24 15:30:00') AND orders.created_at <= TIMESTAMP('2025-10-24 15:30:00')` |
+
+##### 過去 N 個完整期間 (in the last, Completed)
+
+| 過濾器 | SQL 輸出 |
+|--------|------------|
+| Last 1 completed minute (過去 1 個完整分鐘) | `orders.created_at >= TIMESTAMP('2025-10-24 15:29:00') AND orders.created_at < TIMESTAMP('2025-10-24 15:30:00')` |
+| Last 1 completed hour (過去 1 個完整小時) | `orders.created_at >= TIMESTAMP('2025-10-24 14:00:00') AND orders.created_at < TIMESTAMP('2025-10-24 15:00:00')` |
+| Last 1 completed day (昨天) | `orders.created_at >= TIMESTAMP('2025-10-23 00:00:00') AND orders.created_at < TIMESTAMP('2025-10-24 00:00:00')` |
+| Last 1 completed week (上週) | `orders.created_at >= TIMESTAMP('2025-10-13 00:00:00') AND orders.created_at < TIMESTAMP('2025-10-20 00:00:00')` |
+| Last 1 completed month (上個月) | `orders.created_at >= TIMESTAMP('2025-09-01 00:00:00') AND orders.created_at < TIMESTAMP('2025-10-01 00:00:00')` |
+| Last 1 completed quarter (上季) | `orders.created_at >= TIMESTAMP('2025-07-01 00:00:00') AND orders.created_at < TIMESTAMP('2025-10-01 00:00:00')` |
+| Last 1 completed year (去年) | `orders.created_at >= TIMESTAMP('2024-01-01 00:00:00') AND orders.created_at < TIMESTAMP('2025-01-01 00:00:00')` |
+
+#### 未來期間過濾器 (Future Period Filters)
+
+##### 未來 N 個期間 (In The Next)
+
+| 過濾器 | SQL 輸出 |
+|--------|------------|
+| Next 1 minute (未來 1 分鐘) | `orders.created_at >= TIMESTAMP('2025-10-24 15:30:00') AND orders.created_at <= TIMESTAMP('2025-10-24 15:31:00')` |
+| Next 1 hour (未來 1 小時) | `orders.created_at >= TIMESTAMP('2025-10-24 15:30:00') AND orders.created_at <= TIMESTAMP('2025-10-24 16:30:00')` |
+| Next 1 day (未來 1 天) | `orders.created_at >= TIMESTAMP('2025-10-24 15:30:00') AND orders.created_at <= TIMESTAMP('2025-10-25 15:30:00')` |
+| Next 1 week (未來 1 週) | `orders.created_at >= TIMESTAMP('2025-10-24 15:30:00') AND orders.created_at <= TIMESTAMP('2025-10-31 15:30:00')` |
+| Next 1 month (未來 1 個月) | `orders.created_at >= TIMESTAMP('2025-10-24 15:30:00') AND orders.created_at <= TIMESTAMP('2025-11-24 15:30:00')` |
+| Next 1 quarter (未來 1 季) | `orders.created_at >= TIMESTAMP('2025-10-24 15:30:00') AND orders.created_at <= TIMESTAMP('2026-01-24 15:30:00')` |
+| Next 1 year (未來 1 年) | `orders.created_at >= TIMESTAMP('2025-10-24 15:30:00') AND orders.created_at <= TIMESTAMP('2026-10-24 15:30:00')` |
+
+##### 未來 N 個完整期間 (In The Next, Completed)
+
+| 過濾器 | SQL 輸出 |
+|--------|------------|
+| Next 1 completed minute | `orders.created_at >= TIMESTAMP('2025-10-24 15:31:00') AND orders.created_at < TIMESTAMP('2025-10-24 15:32:00')` |
+| Next 1 completed hour | `orders.created_at >= TIMESTAMP('2025-10-24 16:00:00') AND orders.created_at < TIMESTAMP('2025-10-24 17:00:00')` |
+| Next 1 completed day | `orders.created_at >= TIMESTAMP('2025-10-25 00:00:00') AND orders.created_at < TIMESTAMP('2025-10-26 00:00:00')` |
+| Next 1 completed week | `orders.created_at >= TIMESTAMP('2025-10-27 00:00:00') AND orders.created_at < TIMESTAMP('2025-11-03 00:00:00')` |
+| Next 1 completed month | `orders.created_at >= TIMESTAMP('2025-11-01 00:00:00') AND orders.created_at < TIMESTAMP('2025-12-01 00:00:00')` |
+| Next 1 completed quarter | `orders.created_at >= TIMESTAMP('2026-01-01 00:00:00') AND orders.created_at < TIMESTAMP('2026-04-01 00:00:00')` |
+| Next 1 completed year | `orders.created_at >= TIMESTAMP('2026-01-01 00:00:00') AND orders.created_at < TIMESTAMP('2027-01-01 00:00:00')` |
+
+##### 自定義範圍內 (Within Custom Range)
+
+| 過濾器 | SQL 輸出 |
+|--------|------------|
+| Between 2 dates (介於兩日期) | `orders.created_at >= TIMESTAMP('2025-10-01 00:00:00') AND orders.created_at <= TIMESTAMP('2025-10-31 23:59:59')` |
+| On exact date (精確日期) | `orders.created_at >= TIMESTAMP('2025-10-24 00:00:00') AND orders.created_at < TIMESTAMP('2025-10-25 00:00:00')` |
+
+#### 注意事項
+
+1. **完整期間 (Completed periods)** 始終：
+   - 從期間的開始 (00:00:00) 開始。
+   - 在下一個期間的開始結束。
+   - 不包含不完整的期間。
+
+2. **滾動期間 (Rolling periods)** (非完整)：
+   - 以當前時間作為參考點。
+   - 向前/向後查看指定的量。
+   - 包含不完整的期間。
+
+3. **目前期間 (Current periods)**：
+   - 始終從目前期間的開始。
+   - 在下一個期間的開始結束。
+   - 範例：目前月份從該月 1 號開始。
+
+4. **週的處理**：
+   - 預設情況下，週起始日取決於資料庫配置。
+   - 您可以在資料庫連接設置中對此進行自定義。
+   - 週的邊界始終在午夜 (00:00:00)。
+
+
+## 日期過濾器範例 (Date filter examples)
+
+#### 目前期間過濾器 (Current Period Filters)
+
+##### 在目前期間 (In The Current)
+
+| 過濾器 | SQL 輸出 |
+|--------|------------|
+| Current day (今天) | `orders.created_date = DATE('2025-10-24')` |
+| Current week (本週) | `orders.created_date >= DATE('2025-10-21') AND orders.created_date < DATE('2025-10-28')` |
+| Current month (本月) | `orders.created_date >= DATE('2025-10-01') AND orders.created_date < DATE('2025-11-01')` |
+| Current quarter (本季) | `orders.created_date >= DATE('2025-10-01') AND orders.created_date < DATE('2026-01-01')` |
+| Current year (今年) | `orders.created_date >= DATE('2025-01-01') AND orders.created_date < DATE('2026-01-01')` |
+
+#### 過去期間過濾器 (Past Period Filters)
+
+##### 過去 N 個期間 (in the last)
+
+| 過濾器 | SQL 輸出 |
+|--------|------------|
+| Last 1 day (過去 1 天) | `orders.created_date >= DATE('2025-10-23') AND orders.created_date <= DATE('2025-10-24')` |
+| Last 7 days (過去 7 天) | `orders.created_date >= DATE('2025-10-17') AND orders.created_date <= DATE('2025-10-24')` |
+| Last 30 days (過去 30 天) | `orders.created_date >= DATE('2025-09-24') AND orders.created_date <= DATE('2025-10-24')` |
+| Last 90 days (過去 90 天) | `orders.created_date >= DATE('2025-07-26') AND orders.created_date <= DATE('2025-10-24')` |
+| Last 365 days (過去 365 天) | `orders.created_date >= DATE('2024-10-24') AND orders.created_date <= DATE('2025-10-24')` |
+
+##### 過去 N 個完整期間 (in the last, Completed)
+
+| 過濾器 | SQL 輸出 |
+|--------|------------|
+| Last 1 completed day (昨天) | `orders.created_date = DATE('2025-10-23')` |
+| Last 1 completed week (上週) | `orders.created_date >= DATE('2025-10-13') AND orders.created_date < DATE('2025-10-20')` |
+| Last 1 completed month (上個月) | `orders.created_date >= DATE('2025-09-01') AND orders.created_date < DATE('2025-10-01')` |
+| Last 1 completed quarter (上季) | `orders.created_date >= DATE('2025-07-01') AND orders.created_date < DATE('2025-10-01')` |
+| Last 1 completed year (去年) | `orders.created_date >= DATE('2024-01-01') AND orders.created_date < DATE('2025-01-01')` |
+
+#### 未來期間過濾器 (Future Period Filters)
+
+##### 未來 N 個期間 (In The Next)
+
+| 過濾器 | SQL 輸出 |
+|--------|------------|
+| Next 1 day (未來 1 天) | `orders.created_date >= DATE('2025-10-24') AND orders.created_date <= DATE('2025-10-25')` |
+| Next 7 days (未來 7 天) | `orders.created_date >= DATE('2025-10-24') AND orders.created_date <= DATE('2025-10-31')` |
+| Next 30 days (未來 30 天) | `orders.created_date >= DATE('2025-10-24') AND orders.created_date <= DATE('2025-11-23')` |
+| Next 90 days (未來 90 天) | `orders.created_date >= DATE('2025-10-24') AND orders.created_date <= DATE('2026-01-22')` |
+| Next 365 days (未來 365 天) | `orders.created_date >= DATE('2025-10-24') AND orders.created_date <= DATE('2026-10-24')` |
+
+##### 未來 N 個完整期間 (In The Next, Completed)
+
+| 過濾器 | SQL 輸出 |
+|--------|------------|
+| Next 1 completed day | `orders.created_date = DATE('2025-10-25')` |
+| Next 1 completed week | `orders.created_date >= DATE('2025-10-27') AND orders.created_date < DATE('2025-11-03')` |
+| Next 1 completed month | `orders.created_date >= DATE('2025-11-01') AND orders.created_date < DATE('2025-12-01')` |
+| Next 1 completed quarter | `orders.created_date >= DATE('2026-01-01') AND orders.created_date < DATE('2026-04-01')` |
+| Next 1 completed year | `orders.created_date >= DATE('2026-01-01') AND orders.created_date < DATE('2027-01-01')` |
+
+##### 自定義範圍內 (Within Custom Range)
+
+| 過濾器 | SQL 輸出 |
+|--------|------------|
+| Between 2 dates (介於兩日期) | `orders.created_date >= DATE('2025-10-01') AND orders.created_date <= DATE('2025-10-31')` |
+| On exact date (精確日期) | `orders.created_date = DATE('2025-10-24')` |
+
+#### 注意事項
+
+1. **與時戳過濾器的主要區別**：
+   - 所有過濾器中皆不含時間組件。
+   - 單日比較使用等號 (`=`) 而非範圍。
+   - 使用 `DATE()` 函數而非 `TIMESTAMP()`。
+
+2. **完整期間 (Completed periods)** 始終：
+   - 從期間的開始。
+   - 在下一個期間的開始結束。
+   - 不包含不完整的期間。
+   - 對於單日，使用等號而非範圍。
+
+3. **滾動期間 (Rolling periods)**：
+   - 以當前日期作為參考點。
+   - 按整天計算（向前/向後 N 天）。
+   - 範圍內包含當前日期。
+
+4. **目前期間 (Current periods)**：
+   - 單日：使用等號。
+   - 較長期間：使用標準範圍。
+   - 範例：目前月份是從該月 1 號到最後一天的所有天數。
+
+5. **週的處理**：
+   - 預設情況下，週起始日為週一。
+   - 可配置為週日開始。
+   - 僅計算整天，不含時間組件。

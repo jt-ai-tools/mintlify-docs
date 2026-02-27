@@ -1,0 +1,242 @@
+---
+title: "定時交付 (Scheduled deliveries)"
+description: "定時交付讓您可以將儀表板或儲存圖表及其結果，透過電子郵件或 Slack 發送給其他人 —— 甚至發送給沒有 Lightdash 帳號的人。"
+---
+
+如果您的 Lightdash 組織已設定好 [Slack](/references/workspace/adding-slack-integration_zh_TW)，您可以建立新圖表/儀表板或選擇現有的，為其添加定時交付，並告訴 Lightdash 您想在何時發送更新。您可以為同一個圖表/儀表板設定任意數量的定時交付；如果您修改了內容，Lightdash 會在下次發送時自動更新內容。
+
+<Info>
+  **基於安全考量，傳送的檔案預設會在 3 天後過期。**
+
+這意味著舊電子郵件或 Slack 分享內容中的圖片將會損壞且無法找回。如果您想保留這些檔案，建議直接從定時交付郵件中下載。
+
+自託管 (Self-hosted) 實例可以針對每個頻道[配置下載連結的過期時間](#配置下載連結的過期時間)。
+
+</Info>
+
+## 啟用定時交付
+
+所有 Lightdash Cloud 方案皆支援電子郵件定時交付。
+
+若要設定 Slack 交付，組織管理員必須先[加入 Slack 整合](/references/workspace/adding-slack-integration_zh_TW)。
+
+## 建立定時交付
+
+<Info>
+  **僅具備** [管理員、開發者、編輯者或互動檢視者角色 (admin, developer, editor or interactive viewer roles)](/references/workspace/roles_zh_TW) **的使用者可以建立與編輯定時交付。**
+
+請注意，「互動檢視者」角色只能建立與編輯其「自身」的定時交付。其他角色則具備所有定時交付的編輯權限。
+
+</Info>
+
+要建立定時交付，請點擊圖表或儀表板右上角的三點選單，然後點擊 `scheduled deliveries`。
+
+<Frame>
+  ![](/images/guides/how-to-create-scheduled-deliveries/scheduled-deliveries-three-dot-menu-922af4a879c906642fe00d5660fc0b9b.png)
+</Frame>
+
+隨後會彈出一個視窗，顯示該儲存圖表或儀表表现有的定時交付列表，並提供 `create new (建立新交付)` 的選項。
+
+<Frame>
+  ![](/images/guides/how-to-create-scheduled-deliveries/scheduled-deliveries-create-new-modal-27e285f1ea9a5aa7118e713175758a7c.png)
+</Frame>
+
+### 設定
+
+點擊 `create new` 後，您將進入新定時交付的配置介面。
+
+<Frame>
+  ![](/images/guides/how-to-create-scheduled-deliveries/configure-scheduled-delivery-39a01495ad991f4e977d57ba31f37271.png)
+</Frame>
+
+##### 交付名稱 (Delivery name)
+
+這是定時交付的名稱。此名稱將作為交付訊息的標題顯示。
+
+##### 交付頻率 (Delivery frequency)
+
+這是發送定時交付的頻率。您可以選擇每小時、每天、每週、每月或自定義 —— 每種頻率都有其對應的詳細選項。
+
+**自定義 (custom)** 頻率允許您編寫 Cron 表達式，以滿足比標準選項更精確的需求。
+
+您也可以自定義定時交付的**時區**。預設情況下，交付會使用專案的預設時區。如果您更新了專案預設時區，則未經自定義時區的定時交付將自動同步更新。
+
+##### 格式 (Format)
+
+可選擇 `Image` (圖片) 或 `CSV`。
+
+- `Image`：將內容（圖表或儀表板）的圖片發送到目的地。如果您選擇透過電子郵件發送，還可以選擇將圖片作為 PDF 附件發送。
+- `CSV`：發送圖表結果表格的 .csv 檔案。如果是發送儀表板，則會在一條訊息中包含多個 .csv 檔案（每個圖表一個）。您可以將 `values` (數值) 設定為 `raw` (原始：移除 Lightdash 套用的日期、數字或其他格式) 或 `formatted` (格式化：與 Lightdash 表格顯示一致)。您還可以調整 `limit` (限制) 指定 .csv 中的行數。`Results in table` 會傳送當前表格顯示的行數；您也可以使用 `custom` 自定義行數，或使用 `all results` 傳送所有結果（不設行數上限）。
+  - **CSV 格式限制**：我們預設將 CSV 下載限制在 100,000 個單元格內，如果您嘗試下載更多，檔案將被截斷。
+
+##### 發送至 (Send to)
+
+您可以選擇將定時交付發送到 Slack、電子郵件或兩者。您可以添加多個 Slack 頻道與電子郵件位址。可以使用 `@使用者名稱` 發送給特定的人，或使用 `#頻道名稱` 發送到特定頻道。
+
+### 篩選器 (Filters)
+
+<Info>篩選器僅適用於「儀表板」定時交付。</Info>
+
+您可以在 `Filters` 標籤中自定義套用於儀表板的**已儲存**篩選器（欲了解更多，請參考[如何儲存儀表板篩選器](/guides/limiting-data-using-filters_zh_TW#向儀表板添加儲存的篩選器)）。這讓您可以向不同的人發送不同版本的儀表板，而無需建立多個儀表板。
+
+<Frame>
+  ![](/images/guides/how-to-create-scheduled-deliveries/scheduled-delivery-dashboard-filters-e608febd4f3d0edf3108cb8e43f937ad.png)
+</Frame>
+
+在此，您可以：
+
+1. 更新篩選運算子（例如從「is」改為「is not」）。
+2. 更新篩選值（例如從「USD」改為「GBP」）。
+3. 將篩選器恢復為原始狀態（即套用於儀表板的預設值）。
+
+### 自定義 (Customization)
+
+最後，您可以在 `Customization` 標籤中自定義隨定時交付發送的訊息內容。
+
+<Frame>
+  ![](/images/guides/how-to-create-scheduled-deliveries/scheduled-delivery-customization-bff8b45b37d11ead29b064e1bdf4e6b9.png)
+</Frame>
+
+## 編輯與刪除定時交付
+
+要編輯定時交付，請點擊交付旁的鉛筆圖示。這會帶您回到配置介面進行修改。若要刪除，請點擊垃圾桶圖示。
+
+<Frame>
+  ![](/images/guides/how-to-create-scheduled-deliveries/edit-delete-scheduled-delivery-0cf24006486d5038ba242f37cd682187.png)
+</Frame>
+
+## 定時交付概覽
+
+具備管理員角色的使用者可以在專案設置中造訪定時交付概覽。
+
+在概覽頁面中，您可以看到所有定時交付的列表、最近的發送狀態，以及專案中所有的歷史發送記錄。
+
+要 造訪概覽頁面，只需前往專案設置中的 `Syncs & Scheduled Deliveries` 標籤即可。
+
+<Frame>
+  ![](/images/guides/how-to-create-scheduled-deliveries/scheduled-deliveries-overview.png)
+</Frame>
+
+### 交付狀態
+
+每個定時交付都有明確的狀態指示器：
+
+- **Completed successfully** (成功完成)：交付中的所有作業皆無誤執行完畢。
+- **Failed** (失敗)：交付遇到錯誤且未完成。
+- **Partial failure** (部分失敗)：部分作業成功，部分失敗。
+- **Running** (執行中)：交付正在進行中。
+- **Scheduled** (已排程)：交付已進入隊列，等待執行。
+
+### 執行詳情
+
+點擊任何一項定時交付記錄即可開啟 **Run Details (執行詳情)** 視窗。內容包含：
+
+- 作業配置（包含交付目標與時程）。
+- 所有子作業的列表及其各自狀態、時間與錯誤詳情。
+- 對於失敗的作業，提供詳細的錯誤資訊以協助排除故障。
+
+<Frame>
+  ![](/images/guides/how-to-create-scheduled-deliveries/run-details-modal.png)
+</Frame>
+
+### 重新分配定時交付擁有者
+
+您可以將定時交付的擁有權轉移給組織中的其他使用者。當團隊成員更換職位或離職時，此功能非常有用。
+
+#### 重新分配單個交付
+
+1. 在定時交付概覽中，找到您想轉移的交付。
+2. 點擊該交付旁邊的三點選單。
+3. 選擇 **Reassign owner (重新分配擁有者)**。
+4. 從下拉選單中搜尋並選擇新的擁有者。
+5. 點擊 **Reassign** 確認。
+
+<Frame>
+  ![](/images/guides/how-to-create-scheduled-deliveries/reassign-owner-single.png)
+</Frame>
+
+#### 批量重新分配
+
+若要一次重新分配多個定時交付：
+
+1. 使用核取方塊選取要轉移的交付。
+2. 工具列會出現選取計數器。
+3. 點擊工具列中的 **Reassign owner** 按鈕。
+4. 選擇新擁有者並確認。
+
+<Frame>
+  ![](/images/guides/how-to-create-scheduled-deliveries/reassign-owner-bulk.png)
+</Frame>
+
+<Info>
+  新的擁有者必須具備在該專案中建立定時交付的權限。具備「檢視者 (viewer)」角色的使用者無法被分配為擁有者。
+</Info>
+
+## 發送到私有 Slack 頻道
+
+<Info>
+  您必須將 Lightdash Slack 機器人加入該私有頻道，它才能在其中發佈定時交付結果。
+</Info>
+
+您也可以將定時交付發送到私有 Slack 頻道。只需在輸入框中輸入與 Slack 中完全一致的頻道名稱，然後點擊確認並儲存即可。
+
+## 發送到 Microsoft Teams
+
+您可以使用傳入的 Webhook 將 Lightdash 定時交付直接發送到 Microsoft Teams。
+
+<Warning>
+  舊版的 Office 365 Connector Webhook 已棄用。微軟現在建議使用 **Power Automate 工作流程** 來建立 Teams 的傳入 Webhook。
+</Warning>
+
+### 使用 Power Automate 工作流程建立 Webhook (推薦)
+
+1. 前往 [Power Automate](https://make.powerautomate.com/)。
+2. 選擇 **Templates (範本)**。
+3. 搜尋「webhook」。
+4. 選擇 **Post to a channel when a webhook request is received (接收到 webhook 請求時發佈至頻道)** 範本。
+
+<Frame>
+  ![](/images/guides/how-to-create-scheduled-deliveries/msteams-select-template.png)
+</Frame>
+
+5. 選擇您的微軟帳戶與目標 Teams 頻道。
+6. 加入後，點擊工作流程上的 **Edit (編輯)**。
+7. 選擇 **When a Teams webhook request is received** 觸發器。
+8. 複製 **HTTP URL**。
+
+<Frame>
+  ![](/images/guides/how-to-create-scheduled-deliveries/msteams-template-flow.png)
+</Frame>
+
+9. 將該 HTTP URL 填入 Lightdash 的 Webhook 欄位中。
+
+欲了解更多詳情，請參考 [微軟官方文件](https://support.microsoft.com/zh-tw/office/使用工作流程為-microsoft-teams-建立傳入-webhook-8ae491c7-0394-4861-ba59-055e33f75498)。
+
+取得 Webhook 後，將其添加到定時交付表單的發送目的地列表中。您也可以透過點擊 `send now` 測試在 Teams 中的顯示效果。
+
+
+## 配置預設時區
+
+專案管理員可以在 `Project settings` --\> `Syncs & Scheduled deliveries` 中設定整個專案定時交付使用的預設時區。
+
+<Frame>
+  ![](/images/guides/how-to-create-scheduled-deliveries/project-default-time-zone-6934eca82e7b3a4e03ee345cf461d782.jpg)
+</Frame>
+
+定時交付將套用於您在此選取的專案預設時區。
+
+<Info>
+  如果您更新了專案預設時區，則那些未曾自定義過時區的定時交付將自動換算並使用新的預設時區。
+</Info>
+
+使用者也可以在定時交付中自定義時區，這將會覆蓋該特定交付的專案預設值。
+
+例如：
+- 我的專案預設時區設為 UTC。
+- 我有一個定時交付設為 `每週一 15:00`。
+- 我將專案預設時區改為 `(UTC -5:00) America/New York`。
+- 該定時交付現在會變為 `每週一 10:00`。
+
+## 配置下載連結的過期時間
+
+預設情況下，定時交付中的下載連結會在 3 天後過期。自託管 (Self-hosted) 實例可以透過 [持久化下載 URL 環境變數](/self-host/customize-deployment/environment-variables_zh_TW#持久化下載-url) 進行全域或按頻道（Email, Slack, MS Teams）的調整。

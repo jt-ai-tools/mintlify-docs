@@ -1,0 +1,98 @@
+---
+title: "告警 (Alerts)"
+description: 告警讓您能在儲存圖表的數值符合特定條件時，透過電子郵件或 Slack 接收通知。
+---
+
+在預定時間，Lightdash 會執行查詢並檢查結果。如果結果集中的第一個值符合告警條件，系統將發送告警。只要條件持續成立，通知就會持續發送，直到手動停用或刪除為止。
+
+您可以建立新的儲存圖表或選擇現有的，為其添加告警，並設定 Lightdash 發送更新的時間。您可以為同一個儲存圖表設定多個告警；如果您修改了內容，Lightdash 會在下次發送時自動更新告警內容。告警可以發送到電子郵件位址或 Slack（前提是您的組織已[加入 Slack 整合](/references/workspace/adding-slack-integration_zh_TW)）。
+
+
+<Info>
+**出於安全考量，傳送的檔案將在 3 天後過期。**
+  
+  這意味著舊的電子郵件或 Slack 分享內容中的圖片將無法顯示，且無法找回。如果您想保留這些檔案，建議直接從告警中下載。
+</Info>
+
+## 啟用告警
+
+所有 Lightdash Cloud 方案皆支援電子郵件告警。
+
+若要設定 Slack 告警，組織管理員必須先[加入 Slack 整合](/references/workspace/adding-slack-integration_zh_TW)。
+
+## 建立告警
+
+僅具備 [管理員、開發者或編輯存取權限 (admin, developer or edit access)](/references/workspace/roles_zh_TW) 的使用者可以建立告警。要建立告警，請點擊圖表右上角的三點選單，然後點擊 `Alerts`。
+
+<Frame>
+  <img src="/images/guides/how-to-create-alerts/alert-three-dot-menu.png"/>
+</Frame>
+
+隨後會彈出一個視窗，顯示該儲存圖表现有的告警列表，並提供 `Create new (建立新告警)` 的選項。
+
+<Frame>
+  <img src="/images/guides/how-to-create-alerts/alert-create-new-modal.png"/>
+</Frame>
+
+點擊 `Create new` 後，您將進入新告警的配置介面。
+
+<Frame>
+  <img src="/images/guides/how-to-create-alerts/configure-alert.png"/>
+</Frame>
+
+您可以在此配置您的告警，選項包括：
+
+* **Alert name (告警名稱)**：告警的名稱。
+* **Conditions (條件)**：配置針對第一個結果進行評估的條件。
+   * `Alert field` (告警欄位)：要進行評估的數值欄位。
+   * `Condition` (條件)：用於評估數值的運算子。
+         * **is greater/less than (大於/小於)**：檢查結果中的「第一個」數值是否大於/小於您的門檻值。
+         * **increased/decreased by (增加/減少百分比)**：驗證第一個值相對於第二個值的百分比變化是否超過指定門檻。
+* **Run frequency (執行頻率)**：Lightdash 執行查詢以檢查數據變化的頻率（如果最新值符合條件，您將收到通知）。所有排程時間皆以 UTC 為準。
+* **Send to (發送至)**：在此您可以選擇將告警發送到 Slack、電子郵件或兩者。您可以添加多個 Slack 頻道與電子郵件位址。可以使用 `@使用者名稱` 發送給特定的人，或使用 `#頻道名稱` 發送到特定頻道。
+
+## 編輯與刪除告警
+
+要編輯告警，請點擊告警旁的鉛筆圖示。這會帶您回到配置介面進行修改。若要刪除告警，請點擊垃圾桶圖示。
+
+<Frame>
+  <img src="/images/guides/how-to-create-alerts/edit-delete-alert.png" alt=""/>
+</Frame>
+
+您也可以透過告警列表中的切換按鈕來暫停告警。
+
+## 發送到私有 Slack 頻道
+
+您也可以將告警發送到私有 Slack 頻道。只需在輸入框中輸入與 Slack 中完全一致的頻道名稱，然後點擊確認並儲存告警即可。
+
+<Info>
+您必須將 Lightdash Slack 機器人加入該私有頻道，它才能在其中發佈告警結果。
+</Info>
+
+<Frame>
+  <img src="/images/guides/how-to-create-alerts/private-slack-channel.png" alt=""/>
+</Frame>
+
+## 發送到 Microsoft Teams
+
+您可以使用傳入的 Webhook (Incoming Webhooks) 將 Lightdash 告警直接發送到 Microsoft Teams。這讓您能在 Teams 頻道中隨時掌握關鍵指標與報告。
+
+### 🔗 如何在 Teams 中建立 Webhook
+
+- 在 Microsoft Teams 中，前往您想要接收告警的頻道。
+- 點擊頻道名稱旁的 `...` (更多選項)，然後選擇「連接器 (Connectors)」。
+- 找到並點擊「傳入的 Webhook (Incoming Webhook)」，然後點擊「新增 (Add)」。
+- 為您的 Webhook 命名（例如：「Lightdash 報告」），並可選擇上傳圖片。
+- 點擊「建立 (Create)」，然後「複製 Webhook URL」。您在 Lightdash 中會用到這個網址。
+
+欲了解更多關於如何建立 Webhook 的資訊，請參考 [Microsoft Teams 官方文件](https://learn.microsoft.com/zh-tw/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=newteams%2Cdotnet)。
+
+取得 Webhook URL 後，將其添加到告警表單的發送目的地列表中。
+
+<Frame>
+  <img src="../images/guides/how-to-create-alerts/msteams-scheduler.png"/>
+</Frame>
+
+<Frame>
+  <img src="../images/guides/how-to-create-alerts/msteams-chart.png"/>
+</Frame>

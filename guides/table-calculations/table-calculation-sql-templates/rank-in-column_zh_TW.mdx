@@ -1,0 +1,39 @@
+---
+title: "欄位內排名"
+description: 對欄位中的數值進行排名，是指根據數值相對於其他數值的高低來設定一個序號。最小的序號（排名 = 1）代表該組數值中的第一名。
+---
+
+
+[直接給我代碼！ <Icon icon="bug" iconType="solid"/>](#這裡是可以複製貼上用來計算欄位內排名的-sql)
+
+以下是排名計算的範例：
+
+<Frame>
+  <img src="/images/guides/table-calculations/table-calculation-sql-templates/rank-in-column-a1dfa61a36fcf3a7fd1b7906bc7abeb1.jpg"/>
+</Frame>
+
+
+以及用於生成該結果的 SQL：
+
+```sql
+ROW_NUMBER() OVER (
+  PARTITION BY
+    ${orders.order_date_month}
+  ORDER BY
+    ${orders.total_order_amount} DESC
+)
+```
+
+一般來說，計算欄位排名的 SQL 包含一個關鍵欄位與一個重要的排序參數：
+
+* `column_i_want_to_rank` (我想排名的欄位) \- 這是您想進行排名的欄位。
+* `ASC` (遞增) 與 `DESC` (遞減) \- 如果您希望**最大的數值**排名為 1，請在 `ORDER BY` 子句中添加 `DESC`。如果您希望**最小的數值**排名為 1，則可以添加 `ASC`（這不是必須的，因為預設即為 `ASC`）。
+
+### 這裡是可以複製貼上用來計算欄位內排名的 SQL
+
+```sql
+ROW_NUMBER() OVER (
+  ORDER BY
+    ${table.column_i_want_to_rank} DESC
+)
+```

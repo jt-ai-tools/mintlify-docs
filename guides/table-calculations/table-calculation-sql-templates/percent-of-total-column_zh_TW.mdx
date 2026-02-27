@@ -1,0 +1,38 @@
+---
+title: "佔整欄總額的百分比"
+description: 佔整欄總額的百分比會顯示欄位內各個數值佔該欄位總和的比例。
+---
+
+[直接給我代碼！ <Icon icon="bug" iconType="solid"/>](#這裡是可以複製貼上用來計算佔整欄總額百分比的-sql)
+
+以下是佔整欄總額百分比的範例：
+
+<Frame>
+  <img src="/images/guides/table-calculations/table-calculation-sql-templates/percent-of-total-b8c053a0eb7fad3061bc54438ef495de.jpg"/>
+</Frame>
+
+
+以及用於該表格計算的 SQL：
+
+```sql
+${orders.total_order_amount} / SUM(${orders.total_order_amount}) OVER()
+```
+
+一般來說，計算佔總額百分比的 SQL 僅包含一個關鍵欄位：
+
+* `column_i_want_to_see_the_percent_of_total` (我想查看百分比的欄位) \- 這是您想查看其佔該欄總額比例的欄位。
+
+### 這裡是可以複製貼上用來計算佔整欄總額百分比的 SQL
+
+```sql
+${table.column_i_want_to_see_the_percent_of_total} /
+  SUM(${table.column_i_want_to_see_the_percent_of_total}) OVER()
+```
+
+### 請確保為您的計算添加「百分比」格式
+
+在 `Format` (格式) 標籤中，請務必將格式更新為 `Percent` (百分比)，以便您的表格計算以百分比值（而非數字）顯示。
+
+<Frame>
+  <img src="/images/guides/table-calculations/table-calculation-sql-templates/format-percent-6d905aa48e29631b298dd27a38a8b183.jpg"/>
+</Frame>

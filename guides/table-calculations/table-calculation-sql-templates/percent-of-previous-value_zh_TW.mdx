@@ -1,0 +1,49 @@
+---
+title: "佔前一值的百分比"
+description: 佔前一值的百分比顯示了某個值與其上一行值相比的百分比比例。
+---
+
+[直接給我代碼！ <Icon icon="bug" iconType="solid"/>](#這裡是可以複製貼上用來計算佔前一值百分比的-sql)
+
+以下是佔前一值百分比計算的範例：
+
+<Frame>
+  <img src="/images/guides/table-calculations/table-calculation-sql-templates/percent-of-previous-7645a735af163757bc2b34a1886c486d.jpg"/>
+</Frame>
+
+
+以及用於生成該結果的 SQL：
+
+```sql
+${orders.total_order_amount} /
+  LAG(${orders.total_order_amount}) OVER (
+    ORDER BY
+      ${orders.order_date_week},
+      ${orders.status}
+  )
+```
+
+一般來說，計算佔前一值百分比的 SQL 包含兩個部分（以及一個可選的第三部分）：
+
+* `column_I_want_to_compare` (我想比較的欄位) \- 這是包含您想比較數值的欄位。
+* `column_I_want_to_order_by` (我想據以排序的欄位) \- 這是您想用來對比較值進行排序的欄位。
+* `optional_other_column_I_want_to_order_by` (其他選填的排序欄位) \- 此欄位是選填的，您可以根據需要添加更多排序欄位。通常，您需要將結果表格中的每個維度都添加到 SQL 的 `ORDER BY` 部分。而且，這些欄位的順序應與您在結果表格中設定的排序順序一致。
+
+### 這裡是可以複製貼上用來計算佔前一值百分比的 SQL
+
+```sql
+${table.column_i_want_to_compare} /
+  LAG(${table.column_i_want_to_compare}) OVER (
+    ORDER BY
+      ${table.column_I_want_to_order_by},
+      ${table.optional_other_column_I_want_to_order_by}
+  )
+```
+
+### 請確保為您的計算添加「百分比」格式
+
+在 `Format` (格式) 標籤中，請務必將格式更新為 `Percent` (百分比)，以便您的表格計算以百分比值（而非數字）顯示。
+
+<Frame>
+  <img src="/images/guides/table-calculations/table-calculation-sql-templates/format-percent-6d905aa48e29631b298dd27a38a8b183.jpg"/>
+</Frame>

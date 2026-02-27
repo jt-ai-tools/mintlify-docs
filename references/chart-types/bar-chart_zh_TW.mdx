@@ -1,0 +1,47 @@
+---
+title: "長條圖 (Bar chart)"
+description: "使用長條圖來比較不同群組之間的項目，或追蹤某個數值隨時間的變化。"
+icon: "chart-column"
+---
+
+<Frame>
+  ![](/images/references/chart-types/bar-chart.png)
+</Frame>
+
+長條圖有助於：
+
+- 比較不同群組之間的項目（例如：按產品類型劃分的訂單數量）。
+- 在 X 軸數值較少的情況下，追蹤數值隨時間的變化（例如：一年中每個月的新使用者人數）。
+
+查看更多關於長條圖配置的詳情：[請點此](/guides/configure-charts_zh_TW)。
+
+## 堆疊長條圖 (Stacked bar chart)
+
+<Frame>
+  ![](/images/references/chart-types/stacked-bar-chart.png)
+</Frame>
+
+您也可以使用堆疊長條圖來比較不同群組間的比例。
+
+堆疊長條圖最適合用於：
+
+- **圖表的重點在於比較「總額」以及總額中的「某個部分」。** 如果長條不是從同一個基準線開始，就很難進行比較。因此，如果您想建立一個用來比較總額中多個部分的圖表，請考慮維持長條圖不堆疊！
+- **您想展示多個總額的組成部分。** 如果您只想展示單一總額的組成部分，請考慮使用非堆疊長條圖。如果您只想傳達單一總額中的某個部分，請考慮是否應該改用大數據指標圖 (Big Value Chart)。
+
+## 100% 堆疊長條圖
+
+<Frame>
+  ![](/images/references/chart-types/hundred-stacked-bar-chart.png)
+</Frame>
+
+您只需在圖表配置中選取 `100%` 堆疊選項，即可輕鬆建立 100% 堆疊長條圖。啟用此選項後，我們將自動轉換數據與軸線以顯示 100% 堆疊效果。
+
+![配置截圖](/images/references/chart-types/hundred-stacked-bar-chart-config.png)
+
+<Expandable title="如何透過表格計算建立 100% 長條圖">
+  
+
+  您也可以透過設定[佔群組總額百分比的表格計算](/guides/table-calculations/table-calculation-sql-templates/percent-of-group-pivot-total_zh_TW)來建立 100% 堆疊長條圖。將您的 X 軸維度作為 `column_i_want_to_group_by`，然後在圖表配置中，選擇 X 軸、分組維度，並將新的表格計算作為 Y 軸。
+</Expandable>
+
+當您需要視覺化指標組成隨時間的變化，或不同群組間組成的差異時，100% 堆疊長條圖非常有用。
