@@ -1,0 +1,95 @@
+---
+title: Deploy changes to production
+sidebarTitle: Deploy changes
+description: Deploy local models or refresh your project from its connected Git repository
+doc-type: tutorial
+---
+
+import StrictCompilationFlags from '/snippets/strict-compilation-flags.mdx';
+
+`lightdash deploy` pushes your local dbt or native Lightdash YAML models to Lightdash.
+
+Use it to publish local changes, or use `lightdash refresh` to compile the files already committed to your connected repository. For native models, follow the [Lightdash YAML deployment steps](/semantic-layer/yaml#step-4-deploy-your-project); the profiles and targets in the CLI examples below apply to dbt.
+
+## Before you deploy: A quick word of caution
+
+<Warning>
+**`lightdash deploy` pushes directly to your production project.**
+
+For dbt projects, this command uses your local dbt profile (from your `profiles.yml`). If your default target points to a dev or staging environment, `lightdash deploy` will overwrite your production semantic layer with that configuration, breaking dashboards for all users.
+
+If you're working locally, **use [`lightdash preview`](/workflow/preview-projects) instead**. It creates a temporary, isolated project that won't affect production.
+</Warning>
+
+For a safer, scalable approach to deploying and previewing changes, use CI/CD. This allows you to:
+
+* Spin up Lightdash preview environments for each PR
+
+* Deploy production changes consistently using shared, secure credentials
+
+* Avoid accidentally pointing to the wrong target in your local profile
+
+Check out our [**guide to setting up CI/CD workflow**](/workflow/set-up-ci-cd)
+
+## Option 1: Deploy via the CLI
+
+Basic usage:
+```bash
+git checkout main # checkout main or master - or whatever your production branch name is where you've merged your changes
+git pull
+lightdash deploy # --target prod. If you use developer profiles in your dbt project, you might need this flag. See below.
+```
+
+By default, this will:
+
+* Use your local dbt profile for the connection
+
+* Push the current state of your local dbt project files (including uncommitted changes or code from your active branch) to the authenticated Lightdash project
+
+* Trigger a re-compile and refresh of your Lightdash project
+
+If your dbt project uses different profiles or targets for dev and prod, you can specify which profile to use:
+
+```bash
+lightdash deploy --profile prod
+```
+<Warning>
+Be careful. If your local prod profile isn't properly pointing to your production database,
+this can result in incorrect connections (e.g. accidentally deploying to a dev dataset).
+</Warning>
+
+### Use strict compilation
+
+<StrictCompilationFlags />
+
+For the strictest deploy, combine both flags:
+
+```bash
+lightdash deploy --no-partial-compilation --validate-warehouse-columns
+```
+
+Do not combine `--ignore-errors` with this strict CI pattern — `--ignore-errors` lets a deployment continue after compilation errors, which defeats the check.
+
+## Option 2: Safely refresh metadata using `lightdash refresh`
+
+To pull committed changes from the configured branch of your project's Git repository, run:
+
+```bash
+lightdash refresh
+```
+
+Unlike deploy, this:
+
+* Uses the connection saved in Lightdash
+
+* Compiles the repository using the project's selected semantic layer format
+
+* Leaves your local files and dbt profile out of the refresh
+
+You can also do this directly from the Lightdash UI:
+
+Click **Refresh dbt** for a dbt project or **Refresh models** for a native YAML project. This gives the same result as running `lightdash refresh`.
+
+<Frame>
+  <img src="/images/workflow/cli/deploy/refresh-dbt.png" alt="The Refresh dbt button highlighted at the top of the explore view, above the filters bar" />
+</Frame>

@@ -1,59 +1,209 @@
 ---
 title: "Environment variables"
+description: "Complete reference of the environment variables that configure a Lightdash deployment"
 mode: "wide"
+boost: 0.001
+doc-type: reference
 ---
+
+import SmtpEnv from '/snippets/self-host/smtp-env.mdx';
+import LoggingEnv from '/snippets/self-host/logging-env.mdx';
+import PrometheusEnv from '/snippets/self-host/prometheus-env.mdx';
+import OtelEnv from '/snippets/self-host/otel-env.mdx';
+import HeadlessBrowserEnv from '/snippets/self-host/headless-browser-env.mdx';
+import McpEnv from '/snippets/self-host/mcp-env.mdx';
+
+<Note>
+🛠 This page is for engineering teams self-hosting their own Lightdash instance. If you want to configure any of these settings, please speak to the Lightdash team or your Lightdash administrators.
+</Note>
 
 This is a reference to all environment variables that can be used to configure a Lightdash deployment.
 
-| Variable                                     | Description                                                                                                                                                                                                                                                                                                                 |
-| :------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PGHOST`                                     | **(Required)** Hostname of postgres server to store Lightdash data                                                                                                                                                                                                                                                          |
-| `PGPORT`                                     | **(Required)** Port of postgres server to store Lightdash data                                                                                                                                                                                                                                                              |
-| `PGUSER`                                     | **(Required)** Username of postgres user to access postgres server to store Lightdash data                                                                                                                                                                                                                                  |
-| `PGPASSWORD`                                 | **(Required)** Password for PGUSER                                                                                                                                                                                                                                                                                          |
-| `PGDATABASE`                                 | **(Required)** Database name inside postgres server to store Lightdash data                                                                                                                                                                                                                                                 |
-| `PGCONNECTIONURI`                            | Connection URI for postgres server to store Lightdash data in the format postgresql://user:password@host:port/db?params. This is an alternative to providing the previous PG variables.                                                                                                                                     |
-| `PGMAXCONNECTIONS`                           | Maximum number of connections to the database                                                                                                                                                                                                                                                                               |
-| `PGMINCONNECTIONS`                           | Minimum number of connections to the database                                                                                                                                                                                                                                                                               |
-| `LIGHTDASH_SECRET`                           | **(Required)** Secret key used to secure various tokens in Lightdash. This **must** be fixed between deployments. If the secret changes, you won't have access to Lightdash data.                                                                                                                                           |
-| `SECURE_COOKIES`                             | Only allows cookies to be stored over a https connection. We use cookies to keep you logged in. This is recommended to be set to true in production. (default=false)                                                                                                                                                        |
-| `COOKIES_MAX_AGE_HOURS`                      | How many hours a user session exists before the user is automatically signed out. For example if 24, then the user will be automatically after 24 hours of inactivity.                                                                                                                                                      |
-| `TRUST_PROXY`                                | This tells the Lightdash server that it can trust the X-Forwarded-Proto header it receives in requests. This is useful if you use `SECURE_COOKIES=true` behind a HTTPS terminated proxy that you can trust. (default=false)                                                                                                 |
-| `SITE_URL`                                   | Site url where Lightdash is being hosted. It should include the protocol. E.g https://lightdash.mycompany.com (default=http://localhost:8080)                                                                                                                                                                               |
-| `INTERNAL_LIGHTDASH_HOST`                    | Internal Lightdash host for the Headless browser to send requests when your Lightdash instance is not accessible from the Internet. Needs to support `https` if `SECURE_COOKIES=true` (default=Same as `SITE_URL`)                                                                                                          |
-| `STATIC_IP`                                  | Server static IP so users can add the IP to their warehouse allow-list. (default=http://localhost:8080)                                                                                                                                                                                                                     |
-| `LIGHTDASH_QUERY_MAX_LIMIT`                  | Query max rows limit (default=5000)                                                                                                                                                                                                                                                                                         |
-| `LIGHTDASH_QUERY_DEFAULT_LIMIT`              | Default number of rows to return in a query (default=500)                                                                                                                                                                                                                                                                   |
-| `LIGHTDASH_QUERY_MAX_PAGE_SIZE`              | Maximum page size for paginated queries (default=2500)                                                                                                                                                                                                                                                                      |
-| `SCHEDULER_ENABLED`                          | Enables/Disables the scheduler worker that triggers the scheduled deliveries. (default=true)                                                                                                                                                                                                                                |
-| `SCHEDULER_CONCURRENCY`                      | How many scheduled delivery jobs can be processed concurrently. (default=3)                                                                                                                                                                                                                                                 |
-| `SCHEDULER_JOB_TIMEOUT`                      | After how many milliseconds the job should be timeout so the scheduler worker can pick other jobs. (default=600000, 10 minutes)                                                                                                                                                                                             |
-| `SCHEDULER_SCREENSHOT_TIMEOUT`               | Timeout in milliseconds for taking screenshots                                                                                                                                                                                                                                                                              |
-| `SCHEDULER_INCLUDE_TASKS`                    | Comma-separated list of scheduler tasks to include                                                                                                                                                                                                                                                                          |
-| `SCHEDULER_EXCLUDE_TASKS`                    | Comma-separated list of scheduler tasks to exclude                                                                                                                                                                                                                                                                          |
-| `LIGHTDASH_CSV_CELLS_LIMIT`                  | Max cells on CSV file exports (default=100000)                                                                                                                                                                                                                                                                              |
-| `LIGHTDASH_CHART_VERSION_HISTORY_DAYS_LIMIT` | Configure how far back the chart versions history goes in days (default=3)                                                                                                                                                                                                                                                  |
-| `LIGHTDASH_PIVOT_TABLE_MAX_COLUMN_LIMIT`     | Configure maximum number of columns in pivot table (default=200)                                                                                                                                                                                                                                                            |
-| `GROUPS_ENABLED`                             | Enables/Disables groups functionality (default=false)                                                                                                                                                                                                                                                                       |
-| `CUSTOM_VISUALIZATIONS_ENABLED`              | Enables/Disables custom chart functionality (default=false)                                                                                                                                                                                                                                                                 |
-| `LIGHTDASH_MAX_PAYLOAD`                      | Maximum HTTP request body size (default=5mb)                                                                                                                                                                                                                                                                                |
-| `LIGHTDASH_LICENSE_KEY`                      | License key for Lightdash Enterprise Edition. See [Enterprise License Keys](/self-host/customize-deployment/enterprise-license-keys) for details. [Get your license key](https://calendly.com/lightdash-cloud/enterprise?utm_source=docs&utm_medium=referral&utm_campaign=enterprise_licensing&utm_content=license_key_cta) |
-| `HEADLESS_BROWSER_HOST`                      | Hostname for the headless browser                                                                                                                                                                                                                                                                                           |
-| `HEADLESS_BROWSER_PORT`                      | Port for the headless browser (default=3001)                                                                                                                                                                                                                                                                                |
-| `ALLOW_MULTIPLE_ORGS`                        | If set to `true`, new users registering on Lightdash will have their own organization, separated from others (default=false)                                                                                                                                                                                                |
-| `LIGHTDASH_MODE`                             | Mode for Lightdash (default, demo, pr, etc.) (default=default)                                                                                                                                                                                                                                                              |
-| `DISABLE_PAT`                                | Disables Personal Access Tokens (default=false)                                                                                                                                                                                                                                                                             |
-| `PAT_ALLOWED_ORG_ROLES`                      | Comma-separated list of organization roles allowed to use Personal Access Tokens (default=All roles)                                                                                                                                                                                                                        |
-| `PAT_MAX_EXPIRATION_TIME_IN_DAYS`            | Maximum expiration time in days for Personal Access Tokens                                                                                                                                                                                                                                                                  |
-| `MAX_DOWNLOADS_AS_CODE`                      | Maximum number of downloads as code (default=100)                                                                                                                                                                                                                                                                           |
-| `EXTENDED_USAGE_ANALYTICS`                   | Enables extended usage analytics (default=false)                                                                                                                                                                                                                                                                            |
-| `USE_SECURE_BROWSER`                         | Use secure WebSocket connections for headless browser (default=false)                                                                                                                                                                                                                                                       |
-| `DISABLE_DASHBOARD_COMMENTS`                 | Disables dashboard comments (default=false)                                                                                                                                                                                                                                                                                 |
-| `ORGANIZATION_WAREHOUSE_CREDENTIALS_ENABLED` | Enables organization warehouse settings (default=false)                                                                                                                                                                                                                                                                     |
-| `HEADWAY_ENABLED`                            | Enables the Headway changelogs widget in the Lightdash menu (default=true)                                                                                                                                                                                                                                                  |
-| `SAVED_METRICS_TREE_ENABLED`                 | Enables [Saved Trees](https://docs.lightdash.com/guides/metrics-catalog/canvas#saved-trees) in the Metrics Canvas view (default=false)                                                                                                                                                                                      |
+## Postgres database
 
-Lightdash also accepts all [standard postgres environment variables](https://www.postgresql.org/docs/9.3/libpq-envars.html)
+These variables configure the Postgres database Lightdash uses to store its own application data (not your warehouse).
+
+| Variable            | Description                                                                                                                                                                             |
+| :------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PGHOST`            | **(Required)** Hostname of postgres server to store Lightdash data                                                                                                                      |
+| `PGPORT`            | **(Required)** Port of postgres server to store Lightdash data                                                                                                                          |
+| `PGUSER`            | **(Required)** Username of postgres user to access postgres server to store Lightdash data                                                                                              |
+| `PGPASSWORD`        | **(Required)** Password for PGUSER                                                                                                                                                      |
+| `PGDATABASE`        | **(Required)** Database name inside postgres server to store Lightdash data                                                                                                             |
+| `PGCONNECTIONURI`   | Connection URI for postgres server to store Lightdash data in the format postgresql://user:password@host:port/db?params. This is an alternative to providing the previous PG variables. |
+| `PGMAXCONNECTIONS`  | Maximum number of connections to the database                                                                                                                                           |
+| `PGMINCONNECTIONS`  | Minimum number of connections to the database                                                                                                                                           |
+| `ALLOW_MISSING_MIGRATIONS` | When `true`, disables Knex's migration list validation so Lightdash can start against a database that has migrations applied which don't exist as files on disk. Use this during rollbacks (e.g. v2 → v1) when the database stays on the newer version. Pending migrations (code ahead of DB) are still detected. (default=false) |
+
+Lightdash also accepts all [standard postgres environment variables](https://www.postgresql.org/docs/9.3/libpq-envars.html).
+
+## Server and networking
+
+Core variables that control how the Lightdash server runs, how it's reached, and how sessions and cookies behave.
+
+| Variable                                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| :-------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`                                        | Port the Lightdash backend listens on (default=8080)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `SITE_URL`                                    | Site url where Lightdash is being hosted. It should include the protocol. E.g https://lightdash.mycompany.com (default=http://localhost:8080)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `INTERNAL_LIGHTDASH_HOST`                     | Internal Lightdash host for the Headless browser to send requests when your Lightdash instance is not accessible from the Internet. Needs to support `https` if `SECURE_COOKIES=true` (default=Same as `SITE_URL`)                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `INTERNAL_LIGHTDASH_HOST_IGNORE_HTTPS_ERRORS` | When `true`, skips TLS certificate validation on screenshot traffic going to `INTERNAL_LIGHTDASH_HOST`. Use this if you need to terminate TLS in front of Lightdash on a fully internal hostname with a self-signed or otherwise untrusted certificate. Opt-in, default `false`. **Security trade-off:** disables TLS validation for that traffic, so only enable it when the network path is trusted (e.g. cluster-internal). See [Run Lightdash on a fully internal HTTPS network](/self-host/customize-deployment/enable-headless-browser-for-lightdash#run-lightdash-on-a-fully-internal-https-network).                                            |
+| `STATIC_IP`                                   | Server static IP so users can add the IP to their warehouse allow-list. (default=http://localhost:8080)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `LIGHTDASH_SECRET`                            | **(Required)** Secret key used to secure various tokens in Lightdash. This **must** be fixed between deployments. If the secret changes, you won't have access to Lightdash data.                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `SECURE_COOKIES`                              | Only allows cookies to be stored over a https connection. We use cookies to keep you logged in. This is recommended to be set to true in production. (default=false)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `COOKIES_MAX_AGE_HOURS`                       | How many hours a user session exists before the user is automatically signed out. For example if 24, then the user will be automatically after 24 hours of inactivity.                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `TRUST_PROXY`                                 | This tells the Lightdash server that it can trust the X-Forwarded-Proto header it receives in requests. This is useful if you use `SECURE_COOKIES=true` behind a HTTPS terminated proxy that you can trust. (default=false)                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `LIGHTDASH_MAX_PAYLOAD`                       | Maximum HTTP request body size (default=5mb)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `LIGHTDASH_MODE`                              | Mode for Lightdash (default, demo, pr, etc.) (default=default)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `ALLOW_MULTIPLE_ORGS`                         | If set to `true`, new users registering on Lightdash will have their own organization, separated from others (default=false)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+
+## Licensing
+
+| Variable                | Description                                                                                                                                                                                                                                                                                                              |
+| :---------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LIGHTDASH_LICENSE_KEY` | License key for Lightdash Enterprise Edition. See [enterprise features](/self-host/enterprise-features) for details. [Get your license key](https://calendly.com/lightdash-cloud/enterprise?utm_source=docs&utm_medium=referral&utm_campaign=enterprise_licensing&utm_content=license_key_cta) |
+
+## Query limits and behavior
+
+Control how many rows a query can return, page sizes, exports, and chart-version retention.
+
+| Variable                                     | Description                                                                                                                                                                                                                                                                                                                                      |
+| :------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LIGHTDASH_QUERY_MAX_LIMIT`                  | Query max rows limit (default=5000)                                                                                                                                                                                                                                                                                                              |
+| `LIGHTDASH_QUERY_DEFAULT_LIMIT`              | Default number of rows to return in a query (default=500)                                                                                                                                                                                                                                                                                        |
+| `LIGHTDASH_QUERY_MAX_PAGE_SIZE`              | Maximum page size for paginated queries (default=2500)                                                                                                                                                                                                                                                                                           |
+| `LIGHTDASH_QUERY_RETRY_ON_TRANSIENT_ERRORS`  | When `true`, the frontend automatically retries failed queries on transient errors (5xx server responses and network errors) up to 3 times with exponential backoff (1s, 2s, 4s). 4xx client errors are never retried. Useful for instances where warehouse connections occasionally drop or the backend is briefly overwhelmed. (default=false) |
+| `LIGHTDASH_PIVOT_TABLE_MAX_COLUMN_LIMIT`     | Configure maximum number of columns in pivot table (default=200)                                                                                                                                                                                                                                                                                 |
+| `LIGHTDASH_CSV_CELLS_LIMIT`                  | Max cells on CSV file exports (default=100000)                                                                                                                                                                                                                                                                                                   |
+| `LIGHTDASH_DASHBOARD_MAX_TILES_PER_TAB`      | Maximum number of tiles allowed per tab on a dashboard (default=50)                                                                                                                                                                                                                                                                              |
+| `LIGHTDASH_DASHBOARD_MAX_TABS_PER_DASHBOARD` | Maximum number of tabs allowed per dashboard (default=20)                                                                                                                                                                                                                                                                                        |
+| `MAX_DOWNLOADS_AS_CODE`                      | Maximum number of downloads as code (default=100)                                                                                                                                                                                                                                                                                                |
+
+## Scheduler
+
+Variables that control the scheduler worker and background cleanup jobs.
+
+| Variable                         | Description                                                                                                                     |
+| :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
+| `SCHEDULER_ENABLED`              | Enables/Disables the scheduler worker that triggers the scheduled deliveries. (default=true)                                    |
+| `SCHEDULER_CONCURRENCY`          | How many scheduled delivery jobs can be processed concurrently. (default=3)                                                     |
+| `SCHEDULER_JOB_TIMEOUT`          | After how many milliseconds the job should be timeout so the scheduler worker can pick other jobs. (default=600000, 10 minutes) |
+| `SCHEDULER_SCREENSHOT_TIMEOUT`   | Timeout in milliseconds for taking screenshots                                                                                  |
+| `SCHEDULER_SHUTDOWN_TIMEOUT`     | How many milliseconds a stopping scheduler worker waits for in-flight jobs to finish before releasing them for retry. Keep it below your pod's termination grace period. (default=60000, 1 minute) |
+| `SCHEDULER_INCLUDE_TASKS`        | Comma-separated list of scheduler tasks to include                                                                              |
+| `SCHEDULER_EXCLUDE_TASKS`        | Comma-separated list of scheduler tasks to exclude                                                                              |
+| `SCHEDULER_POLL_INTERVAL`        | Polling interval in milliseconds for the scheduler worker to check for new jobs.                                                |
+| `QUERY_HISTORY_CLEANUP_ENABLED`  | Enables the background job that periodically deletes old query-history rows. (default=true)                                     |
+| `QUERY_HISTORY_CLEANUP_SCHEDULE` | Cron expression controlling how often query history is cleaned up.                                                              |
+
+## Headless browser
+
+Configure the headless browser used for screenshots and PDF exports.
+
+<HeadlessBrowserEnv />
+
+<Note>
+  The headless-browser container has its own session timeout (for example, browserless v2's `TIMEOUT`, which defaults to 30 seconds). That value must be greater than or equal to `HEADLESS_BROWSER_SCREENSHOT_TIMEOUT_MS`, otherwise the browser will terminate the session before Lightdash's readiness wait expires and the screenshot will fail. If you raise `HEADLESS_BROWSER_SCREENSHOT_TIMEOUT_MS` for dashboards that legitimately take longer than three minutes to render, raise the browser container's session timeout to match.
+</Note>
+
+## Personal access tokens
+
+Variables that control PAT availability and lifetime.
+
+| Variable                          | Description                                                                                          |
+| :-------------------------------- | :--------------------------------------------------------------------------------------------------- |
+| `DISABLE_PAT`                     | Disables Personal Access Tokens (default=false)                                                      |
+| `PAT_ALLOWED_ORG_ROLES`           | Comma-separated list of organization roles allowed to use Personal Access Tokens (default=All roles) |
+| `PAT_MAX_EXPIRATION_TIME_IN_DAYS` | Maximum expiration time in days for Personal Access Tokens                                           |
+
+## Timezone and localization
+
+| Variable                                | Description                                                                                       |
+| :-------------------------------------- | :------------------------------------------------------------------------------------------------ |
+| `LIGHTDASH_QUERY_TIMEZONE`              | Instance-wide default timezone applied to queries when a user/project has no override.            |
+| `LIGHTDASH_ENABLE_TIMEZONE_SUPPORT`     | Enables per-query timezone support. On by default; set to `false` to turn it off instance-wide.   |
+| `LIGHTDASH_ENABLE_IMPROVED_EXCEL_DATES` | When `true`, exports timestamps to Excel as native date cells instead of strings. (default=false) |
+
+## Soft delete
+
+Configure whether deletions are soft (recoverable) and for how long.
+
+| Variable                     | Description                                                                                                                                                                                                                              |
+| :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SOFT_DELETE_ENABLED`        | When `true`, deleting charts, dashboards, spaces, saved SQL, schedulers, and data apps marks them as soft-deleted instead of removing them immediately. Soft-deleted items can be restored or permanently deleted later. (default=false) |
+| `SOFT_DELETE_RETENTION_DAYS` | Number of days soft-deleted items are retained before becoming eligible for permanent cleanup. Only applies when `SOFT_DELETE_ENABLED=true`. (default=30)                                                                                |
+
+## Custom metrics
+
+| Variable                               | Description                                                                                                                                                                                                                                  |
+| :------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LIGHTDASH_CUSTOM_METRICS_CONFIG_PATH` | Filesystem path to a JSON config file defining Prometheus counter metrics driven by application events. See [Custom event metrics](/self-host/customize-deployment/configure-prometheus-metrics-for-self-hosted-lightdash#custom-event-metrics). Also accepted as `CUSTOM_METRICS_CONFIG_PATH`. |
+
+## UI customization
+
+Replace default URLs and tweak in-product UI surfaces.
+
+| Variable                                      | Description                                                                                                             |
+| :-------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------- |
+| `SIGNUP_URL`                                  | Overrides the URL the login page links to for new sign-ups. Useful on instances that gate sign-up behind a custom flow. |
+| `HELP_MENU_URL`                               | Replaces the default help-menu link in the Lightdash UI with your own support/runbook URL.                              |
+| `HEADWAY_ENABLED`                             | Enables the Headway changelogs widget in the Lightdash menu (default=true)                                              |
+| `LIGHTDASH_DASHBOARD_DISABLE_SENTRY_TRACKING` | When `true`, suppresses Sentry tracking on the embedded dashboard frame. (default=false)                                |
+
+## Map basemaps
+
+[Map charts](/visualizations/map) use CARTO for the Light, Dark, and Voyager backgrounds, including the Voyager fallback when OpenStreetMap tiles fail. Lightdash requests these tiles through its backend and keeps the API key out of the browser. OpenStreetMap and Satellite backgrounds do not use this key.
+
+| Variable | Description |
+| :--- | :--- |
+| `CARTO_API_KEY` | CARTO **Basemaps** API key. Optional; unset by default. Without a key, Lightdash still requests anonymous tiles, which can display CARTO's "API key required" watermark. |
+
+To configure a key:
+
+1. [Request a free CARTO Basemaps API key](https://carto.com/basemaps/apikey/). Complete the form with your email and project details; CARTO emails the key to you. Review the usage limits and terms linked on that page.
+2. Set `CARTO_API_KEY` in the environment of every Lightdash backend replica using your deployment's secret management. For example, `CARTO_API_KEY=your-carto-basemaps-api-key`. If you restrict the key, allow your backend's outbound public IP addresses: tile requests originate from the server, so website-only restrictions do not authorize these requests.
+3. Restart or roll out the backend, then open a map with a Light, Dark, or Voyager background. The map should render without the watermark. If an old watermark remains, force-refresh the browser to discard cached tiles.
+
+For Helm deployments, you can reference an existing Kubernetes Secret. Create a Secret named `lightdash-carto` in the release's namespace with a `CARTO_API_KEY` entry, then add this to your Helm values:
+
+```yaml
+extraEnv:
+  - name: CARTO_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: lightdash-carto
+        key: CARTO_API_KEY
+```
+
+Allow outbound HTTPS from the backend to `basemaps.cartocdn.com`. CARTO's usage limits still apply; the backend proxy does not remove provider quotas.
+
+## Feature toggles
+
+Enable or disable individual product features across the instance.
+
+| Variable                                     | Description                                                                                                                                                                                                                          |
+| :------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GROUPS_ENABLED`                             | Enables/Disables groups functionality (default=false)                                                                                                                                                                                |
+| `CUSTOM_VISUALIZATIONS_ENABLED`              | Enables/Disables custom chart functionality (default=false)                                                                                                                                                                          |
+| `EXTENDED_USAGE_ANALYTICS`                   | When `true`, adds "Dashboard views (top 20)" and "Chart views (top 20)" tables to the [User Activity dashboard](/workspace-admin/usage-analytics#user-activity-dashboard) in Project Settings > Usage Analytics. (default=false) |
+| `DISABLE_DASHBOARD_COMMENTS`                 | Disables dashboard comments (default=false)                                                                                                                                                                                          |
+| `ORGANIZATION_WAREHOUSE_CREDENTIALS_ENABLED` | Enables organization warehouse settings (default=false)                                                                                                                                                                              |
+| `EDIT_YAML_IN_UI_ENABLED`                    | Enables the in-UI YAML editor for tables and metrics. (default=false)                                                                                                                                                                |
+| `ECHARTS_V6_ENABLED`                         | Opt into the ECharts v6 renderer. (default=false)                                                                                                                                                                                    |
+| `FUNNEL_BUILDER_ENABLED`                     | Enables the funnel chart builder. (default=false)                                                                                                                                                                                    |
+| `SAVE_CREDENTIALS_FORM_ENABLED`              | Enables the "save credentials" form so warehouse credentials can be stored per-user. (default=false)                                                                                                                                 |
+
+<Note>
+  `PARTIAL_COMPILATION_ENABLED` has been removed and no longer controls server or CLI behavior. Project create, update, and refresh paths use partial compilation, and CLI compilation uses it by default. To report failures normally handled by partial compilation as errors in a supported CLI command, use [`--no-partial-compilation`](/workflow/cli/reference#partial-compilation) for that run.
+</Note>
+
+## Feature flags
+
+Use these to force feature flags on or off across your deployment regardless of cloud-side targeting or per-organization overrides. Both variables accept a comma-separated list of feature-flag IDs (kebab-case strings — the flag IDs themselves, not env-var names). Useful for local dev flows where you want to toggle flags without touching targeting rules.
+
+| Variable                          | Description                                                                                                                                          |
+| :-------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LIGHTDASH_ENABLE_FEATURE_FLAGS`  | Comma-separated list of feature-flag IDs to force-enable for everyone in your instance. Example: `embedding,user-impersonation,scim-token-management` |
+| `LIGHTDASH_DISABLE_FEATURE_FLAGS` | Comma-separated list of feature-flag IDs to force-disable for everyone. Takes precedence over per-org overrides. Example: `dashboard-comments-enabled` |
 
 ## Athena
 
@@ -65,26 +215,14 @@ Lightdash also accepts all [standard postgres environment variables](https://www
 
 | Variable                               | Description                                                                                                                                                                                                                                                                                                                |
 | :------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SNOWFLAKE_WAREHOUSE_ERROR_MESSAGE`    | Custom error message displayed when users encounter Snowflake warehouse access errors. Use `{warehouseName}` as a placeholder for the actual warehouse name. Example: `You don't have access to warehouse {warehouseName}. Please reach out to your admin.`                                                                |
-| `SNOWFLAKE_UNAUTHORIZED_ERROR_MESSAGE` | Custom error message displayed when users encounter Snowflake authorization errors (e.g., "Object does not exist or not authorized"). Use `{snowflakeTable}` and `{snowflakeSchema}` as placeholders. Example: `You don't have access to the {snowflakeTable} table. Please go to '{snowflakeSchema}' and request access.` |
+| `SNOWFLAKE_WAREHOUSE_ERROR_MESSAGE`    | Custom error message displayed when users encounter Snowflake warehouse access errors. Use `{warehouseName}` as a placeholder for the actual warehouse name. Include `\n` in the value to insert line breaks in the rendered error. Example: `You don't have access to warehouse {warehouseName}.\nPlease reach out to your admin.`                                                                |
+| `SNOWFLAKE_UNAUTHORIZED_ERROR_MESSAGE` | Custom error message displayed when users encounter Snowflake authorization errors (e.g., "Object does not exist or not authorized"). Use `{snowflakeTable}` and `{snowflakeSchema}` as placeholders. Include `\n` in the value to insert line breaks in the rendered error. Example: `You don't have access to the {snowflakeTable} table.\nPlease go to '{snowflakeSchema}' and request access.` |
 
 ## SMTP
 
 This is a reference to all the SMTP environment variables that can be used to configure a Lightdash email client.
 
-| Variable                        | Description                                                                                |
-| :------------------------------ | :----------------------------------------------------------------------------------------- |
-| `EMAIL_SMTP_HOST`               | **(Required)** Hostname of email server                                                    |
-| `EMAIL_SMTP_PORT`               | Port of email server (default=587)                                                         |
-| `EMAIL_SMTP_SECURE`             | Secure connection (default=true)                                                           |
-| `EMAIL_SMTP_USER`               | **(Required)** Auth user                                                                   |
-| `EMAIL_SMTP_PASSWORD`           | Auth password [1]                                                                          |
-| `EMAIL_SMTP_ACCESS_TOKEN`       | Auth access token for Oauth2 authentication [1]                                            |
-| `EMAIL_SMTP_ALLOW_INVALID_CERT` | Allow connection to TLS server with self-signed or invalid TLS certificate (default=false) |
-| `EMAIL_SMTP_SENDER_EMAIL`       | **(Required)** The email address that sends emails                                         |
-| `EMAIL_SMTP_SENDER_NAME`        | The name of the email address that sends emails (default=Lightdash)                        |
-
-[1] `EMAIL_SMTP_PASSWORD` or `EMAIL_SMTP_ACCESS_TOKEN` needs to be provided
+<SmtpEnv />
 
 ## SSO
 
@@ -95,7 +233,7 @@ These variables enable you to control Single Sign On (SSO) functionality.
 | `AUTH_DISABLE_PASSWORD_AUTHENTICATION`    | If "true" disables signing in with plain passwords (default=false)                                                                                      |
 | `AUTH_ENABLE_GROUP_SYNC`                  | If "true" enables assigning SSO groups to Lightdash groups (default=false)                                                                              |
 | `AUTH_ENABLE_OIDC_LINKING`                | Enables linking a new OIDC identity to an existing user if they already have another OIDC with the same email (default=false)                           |
-| `AUTH_ENABLE_OIDC_TO_EMAIL_LINKING`       | Enables linking OIDC identity to an existing user by email. Required when using [SCIM](/references/workspace/scim-integration) with SSO (default=false) |
+| `AUTH_ENABLE_OIDC_TO_EMAIL_LINKING`       | Enables linking OIDC identity to an existing user by matching their full email address. Required when using [SCIM](/workspace-admin/sso/scim) with SSO (default=false) |
 | `AUTH_GOOGLE_OAUTH2_CLIENT_ID`            | Required for Google SSO                                                                                                                                 |
 | `AUTH_GOOGLE_OAUTH2_CLIENT_SECRET`        | Required for Google SSO                                                                                                                                 |
 | `AUTH_OKTA_OAUTH_CLIENT_ID`               | Required for Okta SSO                                                                                                                                   |
@@ -119,6 +257,20 @@ These variables enable you to control Single Sign On (SSO) functionality.
 | `DATABRICKS_OAUTH_CLIENT_SECRET`          | Client secret for Databricks OAuth (optional)                                                                                                           |
 | `DATABRICKS_OAUTH_AUTHORIZATION_ENDPOINT` | Authorization endpoint URL for Databricks OAuth                                                                                                         |
 | `DATABRICKS_OAUTH_TOKEN_ENDPOINT`         | Token endpoint URL for Databricks OAuth                                                                                                                 |
+| `AUTH_OIDC_CLIENT_ID`                     | Required for the generic OIDC provider                                                                                                                  |
+| `AUTH_OIDC_CLIENT_SECRET`                 | Required for the generic OIDC provider                                                                                                                  |
+| `AUTH_OIDC_METADATA_DOCUMENT_URL`         | OIDC discovery (`.well-known/openid-configuration`) URL for the generic OIDC provider                                                                  |
+| `AUTH_OIDC_X509_CERT`                     | Optional X.509 public key certificate (PEM contents) for generic OIDC                                                                                   |
+| `AUTH_OIDC_X509_CERT_PATH`                | Optional filesystem path to an X.509 public key certificate (PEM) for generic OIDC                                                                      |
+| `AUTH_OIDC_PRIVATE_KEY`                   | Optional private key (PEM contents) for generic OIDC `private_key_jwt`                                                                                  |
+| `AUTH_OIDC_PRIVATE_KEY_PATH`              | Optional filesystem path to a private key (PEM) for generic OIDC `private_key_jwt`                                                                      |
+| `AUTH_OIDC_AUTH_METHOD`                   | OIDC client auth method (e.g. `client_secret_basic`, `client_secret_post`, `private_key_jwt`) (default=`client_secret_basic`)                          |
+| `AUTH_OIDC_AUTH_SIGNING_ALG`              | Signing algorithm used for `private_key_jwt` (default=`RS256`)                                                                                          |
+| `AUTH_OIDC_SCOPES`                        | Space-separated list of additional scopes to request from the OIDC provider                                                                             |
+| `SNOWFLAKE_OAUTH_CLIENT_ID`               | Client ID for Snowflake OAuth (warehouse connection sign-in)                                                                                            |
+| `SNOWFLAKE_OAUTH_CLIENT_SECRET`           | Client secret for Snowflake OAuth                                                                                                                       |
+| `SNOWFLAKE_OAUTH_AUTHORIZATION_ENDPOINT`  | Authorization endpoint URL for Snowflake OAuth                                                                                                          |
+| `SNOWFLAKE_OAUTH_TOKEN_ENDPOINT`          | Token endpoint URL for Snowflake OAuth                                                                                                                  |
 
 ## S3
 
@@ -127,21 +279,31 @@ These variables allow you to configure [S3 Object Storage](/self-host/customize-
 | Variable                  | Description                                                                                                                                                                                                                                                                                                                                                                   |
 | :------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `S3_ENDPOINT`             | **(Required)** S3 endpoint for storing results                                                                                                                                                                                                                                                                                                                                |
+| `S3_PUBLIC_ENDPOINT`      | Public-facing S3 endpoint used when generating signed download URLs returned to users. Defaults to `S3_ENDPOINT`. Set this when the bucket is reached internally on a different hostname than from the user's browser (e.g. a MinIO/cluster setup).                                                                                                                          |
 | `S3_BUCKET`               | **(Required)** Name of the S3 bucket for storing files                                                                                                                                                                                                                                                                                                                        |
 | `S3_REGION`               | **(Required)** Region where the S3 bucket is located                                                                                                                                                                                                                                                                                                                          |
 | `S3_ACCESS_KEY`           | Access key for authenticating with the S3 bucket                                                                                                                                                                                                                                                                                                                              |
 | `S3_SECRET_KEY`           | Secret key for authenticating with the S3 bucket                                                                                                                                                                                                                                                                                                                              |
-| `S3_USE_CREDENTIALS_FROM` | Configures the credential provider chain for AWS S3 authentication if access key and secret is not provided. Supports: `env` (environment variables), `token_file` (token file credentials), `ini` (initialization file credentials), `ecs` (container metadata credentials), `ec2` (instance metadata credentials). Multiple values can be specified in order of preference. |
+| `S3_AUTH_MODE`            | How Lightdash authenticates requests to the bucket. `default` (the default value) signs requests with SigV4 and AWS credentials; use it for AWS S3, MinIO, and Google Cloud Storage HMAC keys. `gcp_oauth` sends a Google OAuth bearer token instead, which lets Lightdash reach Google Cloud Storage from a GKE workload identity service account with no static keys. See [external storage](/self-host/customize-deployment/configure-lightdash-to-use-external-object-storage#option-b-workload-identity-with-no-keys). One value applies to every storage bucket. |
+| `S3_USE_CREDENTIALS_FROM` | Configures the credential provider chain for **AWS** authentication when you do not set an access key and secret. Accepts `env` (environment variables), `token_file` (token file credentials), `ini` (initialization file credentials), `ecs` (container metadata credentials), and `ec2` (instance metadata credentials). List several values in order of preference. Every source is an AWS credential provider, so none of them works on Google Cloud. To authenticate to Google Cloud Storage without keys, set `S3_AUTH_MODE` instead. |
 | `S3_EXPIRATION_TIME`      | Expiration time for scheduled deliveries files (default=259200, 3d)                                                                                                                                                                                                                                                                                                           |
 | `S3_FORCE_PATH_STYLE`     | Force path style addressing, needed for MinIO setup e.g. `http://your.s3.domain/BUCKET/KEY` instead of `http://BUCKET.your.s3.domain/KEY` (default=false)                                                                                                                                                                                                                     |
+| `RESULTS_S3_ENDPOINT`     | S3 endpoint for the query results bucket (default=S3_ENDPOINT)                                                                                                                                                                                                                                                                                                                |
 | `RESULTS_S3_BUCKET`       | Name of the S3 bucket used for storing query results (default=S3_BUCKET)                                                                                                                                                                                                                                                                                                      |
 | `RESULTS_S3_REGION`       | Region where the S3 query storage bucket is located (default=S3_REGION)                                                                                                                                                                                                                                                                                                       |
 | `RESULTS_S3_ACCESS_KEY`   | Access key for authenticating with the S3 query storage bucket (default=S3_ACCESS_KEY)                                                                                                                                                                                                                                                                                        |
 | `RESULTS_S3_SECRET_KEY`   | Secret key for authenticating with the S3 query storage bucket (default=S3_SECRET_KEY)                                                                                                                                                                                                                                                                                        |
+| `RESULTS_S3_FORCE_PATH_STYLE` | Force path style addressing for the query results bucket (default=S3_FORCE_PATH_STYLE)                                                                                                                                                                                                                                                                                    |
 
 ## Persistent download URLs
 
 When enabled, CSV and dashboard ZIP exports return a stable Lightdash-hosted URL (e.g. `https://lightdash.example.com/api/v1/file/{id}`) instead of a direct S3 signed URL. Each time this URL is accessed, Lightdash generates a short-lived S3 signed URL and redirects to it — so the underlying URL never goes stale and download links survive IAM credential rotation.
+
+The variables below act as instance-wide defaults. Organization admins can override them per organization (and per channel) from **Settings → Organization → Exporting**. See [Configuring download link expiration](/explore/create-scheduled-deliveries#configuring-download-link-expiration).
+
+<Info>
+  Scheduled-delivery links longer than 7 days automatically switch to a persistent URL, even if `PERSISTENT_DOWNLOAD_URLS_ENABLED` is `false`. AWS presigned S3 URLs cannot live past 7 days, so this prevents links from silently breaking.
+</Info>
 
 | Variable                                             | Description                                                                                                                                                                                                       |
 | :--------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -176,28 +338,17 @@ When enabled, CSV and dashboard ZIP exports return a stable Lightdash-hosted URL
 
 ## Logging
 
-| Variable                       | Description                                                                                                                  |
-| :----------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
-| `LIGHTDASH_LOG_LEVEL`          | The minimum level of log messages to show. `DEBUG`, `AUDIT`, `HTTP`, `INFO`, `WARN` `ERROR` (default=INFO)                   |
-| `LIGHTDASH_LOG_FORMAT`         | The format of log messages. `PLAIN`, `PRETTY`, `JSON` (default=pretty)                                                       |
-| `LIGHTDASH_LOG_OUTPUTS`        | The outputs to send log messages to (default=console)                                                                        |
-| `LIGHTDASH_LOG_CONSOLE_LEVEL`  | The minimum level of log messages to display on the console (default=LIGHTDASH_LOG_LEVEL)                                    |
-| `LIGHTDASH_LOG_CONSOLE_FORMAT` | The format of log messages on the console (default=LIGHTDASH_LOG_FORMAT)                                                     |
-| `LIGHTDASH_LOG_FILE_LEVEL`     | The minimum level of log messages to write to the log file (default=LIGHTDASH_LOG_LEVEL)                                     |
-| `LIGHTDASH_LOG_FILE_FORMAT`    | The format of log messages in the log file (default=LIGHTDASH_LOG_FORMAT)                                                    |
-| `LIGHTDASH_LOG_FILE_PATH`      | The path to the log file. Requires `LIGHTDASH_LOG_OUTPUTS` to include `file` to enable file output. (default=./logs/all.log) |
+<LoggingEnv />
 
 ## Prometheus
 
-| Variable                                    | Description                                                                                  |
-| :------------------------------------------ | :------------------------------------------------------------------------------------------- |
-| `LIGHTDASH_PROMETHEUS_ENABLED`              | Enables/Disables Prometheus metrics endpoint (default=false)                                 |
-| `LIGHTDASH_PROMETHEUS_PORT`                 | Port for Prometheus metrics endpoint (default=9090)                                          |
-| `LIGHTDASH_PROMETHEUS_PATH`                 | Path for Prometheus metrics endpoint (default=/metrics)                                      |
-| `LIGHTDASH_PROMETHEUS_PREFIX`               | Prefix for metric names.                                                                     |
-| `LIGHTDASH_GC_DURATION_BUCKETS`             | Buckets for duration histogram in seconds. (default=0.001, 0.01, 0.1, 1, 2, 5)               |
-| `LIGHTDASH_EVENT_LOOP_MONITORING_PRECISION` | Precision for event loop monitoring in milliseconds. Must be greater than zero. (default=10) |
-| `LIGHTDASH_PROMETHEUS_LABELS`               | Labels to add to all metrics. Must be valid JSON                                             |
+<PrometheusEnv />
+
+## OpenTelemetry tracing
+
+See [Configure OpenTelemetry tracing](/self-host/customize-deployment/configure-opentelemetry-tracing-for-self-hosted-lightdash) for setup, exporter selection, and sampling behaviour.
+
+<OtelEnv />
 
 ## Security
 
@@ -206,75 +357,117 @@ When enabled, CSV and dashboard ZIP exports return a stable Lightdash-hosted URL
 | `LIGHTDASH_CSP_REPORT_ONLY`      | Enables Content Security Policy (CSP) reporting only mode. This is recommended to be set to false in production. (default=true) |
 | `LIGHTDASH_CSP_ALLOWED_DOMAINS`  | List of domains that are allowed to load resources from. Values must be separated by commas.                                    |
 | `LIGHTDASH_CSP_REPORT_URI`       | URI to send CSP violation reports to.                                                                                           |
-| `LIGHTDASH_CORS_ENABLED`         | Enables Cross-Origin Resource Sharing (CORS) (default=false)                                                                    |
-| `LIGHTDASH_CORS_ALLOWED_DOMAINS` | List of domains that are allowed to make cross-origin requests. Values must be separated by commas.                             |
+| `LIGHTDASH_CORS_ENABLED`         | Enables Cross-Origin Resource Sharing (CORS). Set to `false` to disable CORS for the instance. (default=true)                  |
+| `LIGHTDASH_CORS_ALLOWED_DOMAINS` | Instance-level list of domains that are allowed to make cross-origin requests. Values must be separated by commas.              |
+
+<a id="analytics--event-tracking" />
 
 ## Analytics & Event Tracking
 
+RudderStack product telemetry is enabled by default on self-hosted deployments and points at `https://analytics.lightdash.com`. For the full payload, disable and redirect options, and the security-review checklist, see [Data flows and telemetry](/self-host/data-flows-and-telemetry).
+
 | Variable                         | Description                                                                                        |
 | :------------------------------- | :------------------------------------------------------------------------------------------------- |
-| `RUDDERSTACK_WRITE_KEY`          | RudderStack key used to track events (by default Lightdash's key is used)                          |
+| `RUDDERSTACK_WRITE_KEY`          | RudderStack key used to track events (by default Lightdash's key is used). See [redirect telemetry to your own RudderStack](/self-host/data-flows-and-telemetry#configuration-3-send-telemetry-to-your-own-rudderstack). |
 | `RUDDERSTACK_DATA_PLANE_URL`     | RudderStack data plane URL to which events are tracked (by default Lightdash's data plane is used) |
-| `RUDDERSTACK_ANALYTICS_DISABLED` | Set to true to disable RudderStack analytics                                                       |
-| `POSTHOG_PROJECT_API_KEY`        | API key for Posthog (by default Lightdash's key is used)                                           |
-| `POSTHOG_FE_API_HOST`            | Hostname for Posthog's front-end API                                                               |
-| `POSTHOG_BE_API_HOST`            | Hostname for Posthog's back-end API                                                                |
+| `RUDDERSTACK_ANALYTICS_DISABLED` | Set to `true` to stop the backend and browser from sending any RudderStack events. Takes precedence over `RUDDERSTACK_WRITE_KEY` and `RUDDERSTACK_DATA_PLANE_URL`. See [disable outbound telemetry](/self-host/data-flows-and-telemetry#configuration-2-disable-outbound-rudderstack-telemetry). |
+
+### Usage analytics storage
+
+These settings configure storage for the [usage analytics project](/workspace-admin/usage-analytics-project). Follow the [self-hosted setup](/self-host/enterprise-features/usage-analytics) to enable collection. The base [S3 configuration](#s3) is required even when overriding the usage bucket. Authentication mode, credential providers and path-style addressing are inherited from that configuration.
+
+| Variable | Description |
+| --- | --- |
+| `USAGE_EVENTS_S3_ENDPOINT` | Usage storage endpoint. Defaults to `S3_ENDPOINT`. |
+| `USAGE_EVENTS_S3_BUCKET` | Usage storage bucket. Defaults to `S3_BUCKET`. |
+| `USAGE_EVENTS_S3_REGION` | Usage storage region. Defaults to `S3_REGION`. |
+| `USAGE_EVENTS_S3_ACCESS_KEY` | Usage storage access key. Defaults to `S3_ACCESS_KEY`. |
+| `USAGE_EVENTS_S3_SECRET_KEY` | Usage storage secret key. Defaults to `S3_SECRET_KEY`. |
+| `USAGE_EVENTS_FLUSH_INTERVAL_MS` | Buffered event flush interval in milliseconds. Default: `60000`. This is not the analytics data refresh interval. |
+| `USAGE_EVENTS_FLUSH_BATCH_SIZE` | Event count that triggers a buffered flush. Default: `1000`. |
+| `USAGE_EVENTS_BUFFER_MAX_SIZE` | Maximum buffered event count per writer. Default: `10000`. |
 
 ## AI Analyst
 
-These variables enable you to configure the [AI Analyst functionality](/guides/ai-agents). Note that you will need an **Enterprise Licence Key** for this functionality.
+Enterprise-only. For setup steps (which provider to pick, how to point at an LLM gateway, how to enable verified answers), see [AI agents](/self-host/enterprise-features/ai-agents). The tables below cover AI provider and runtime settings.
 
 | Variable                                  | Description                                                                                                                                              |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `AI_COPILOT_ENABLED`                      | Enables/Disables AI Analyst functionality (default=false)                                                                                                |
-| `ASK_AI_BUTTON_ENABLED`                   | Enables the "Ask AI" button in the interface for direct access to AI agents, when disabled agents can be acessed from `/ai-agents` route (default=false) |
+| `ASK_AI_BUTTON_ENABLED`                   | Enables the "Ask AI" button in the interface for direct access to AI agents, when disabled agents can be accessed from `/ai-agents` route (default=false) |
 | `AI_EMBEDDING_ENABLED`                    | Enables AI embedding functionality for verified answers similarity matching (default=false)                                                              |
-| `AI_DEFAULT_PROVIDER`                     | Default AI provider to use (`openai`, `azure`, `anthropic`, `openrouter`, `bedrock`) (default=openai)                                                    |
+| `AI_DEFAULT_PROVIDER`                     | Default AI provider to use (`openai`, `azure`, `anthropic`, `google`, `vertex`, `openrouter`, `bedrock`) (default=openai)                                                    |
 | `AI_DEFAULT_EMBEDDING_PROVIDER`           | Default AI provider for embeddings (`openai`, `bedrock`, `azure`) (default=openai)                                                                       |
 | `AI_COPILOT_DEBUG_LOGGING_ENABLED`        | Enables debug logging for AI Copilot (default=false)                                                                                                     |
 | `AI_COPILOT_TELEMETRY_ENABLED`            | Enables telemetry for AI Copilot (default=false)                                                                                                         |
+| `AI_COPILOT_THREAD_DUMP_ENABLED`          | Enables the [AI thread debug dump](/support/ai-thread-debug-dump) download action for organization AI admins (default=false)                             |
 | `AI_COPILOT_REQUIRES_FEATURE_FLAG`        | Requires a feature flag to use AI Copilot (default=false)                                                                                                |
-| `AI_COPILOT_MAX_QUERY_LIMIT`              | Maximum number of rows returned in AI-generated queries (default=500)                                                                                    |
+| `AI_COPILOT_MAX_QUERY_LIMIT`              | Maximum number of rows returned in AI-generated queries (default=1000)                                                                                    |
+| `AI_COPILOT_RUN_SQL_MAX_LIMIT`            | Maximum number of rows the AI Analyst `run_sql` tool can return. Falls back to `AI_COPILOT_MAX_QUERY_LIMIT`, then to 1000.                                |
 | `AI_VERIFIED_ANSWER_SIMILARITY_THRESHOLD` | Similarity threshold (0-1) for verified answer matching (default=0.6)                                                                                    |
+| `AI_COPILOT_ALLOWED_PROJECT_UUID`         | Comma-separated list of project UUIDs allowed to use AI Copilot. When set, AI Copilot is disabled for all other projects.                               |
+| `AI_COPILOT_MCP_TIMEOUT_MS` | Timeout in milliseconds when connecting to an external MCP server (default=20000). |
+| `AI_TOOL_DESCRIPTION_MAX_CHARS` | Maximum tool-result description length sent to the AI agent (default=600). |
+| `AI_ANALYTICS_PROJECT_UUID`               | UUID of the project used to render the internal AI usage analytics dashboard.                                                                            |
+| `AI_ANALYTICS_DASHBOARD_UUID`             | UUID of the dashboard used to render the internal AI usage analytics dashboard.                                                                          |
+| `AI_AGENT_MCP_ALLOW_PRIVATE_ADDRESSES`    | When `true`, allows AI agent [MCP server](/agents/connect-external-mcp-servers) URLs to point at private/internal network addresses (e.g. `127.0.0.1`, RFC1918 ranges). Useful for self-hosted deployments where MCP servers run inside the same private network. Leave unset or `false` to enforce public-address-only validation (default=false). |
 
-The AI Analyst supports multiple providers for flexibility. Choose one of the provider configurations below based on your preferred AI service. **OpenAI integration is the recommended option as it is the most tested and stable implementation.**
+The AI Analyst supports multiple providers. Provide credentials for the provider set in `AI_DEFAULT_PROVIDER`. OpenAI and Anthropic are the most tested. For which provider to pick and end-to-end setup, see [AI agents](/self-host/enterprise-features/ai-agents).
 
-#### Minimum Required Setup
+#### Data app gateway overrides
 
-To enable AI Analyst, set `AI_COPILOT_ENABLED=true` and provide an API key for `AI_DEFAULT_PROVIDER` (e.g., `OPENAI_API_KEY` for OpenAI, `ANTHROPIC_API_KEY` for Anthropic).
+Optional HTTP(S) base URLs for the Data app coding agent using instance-managed credentials. For scope, authentication, URL conventions, and an example, see [Separate gateway routes for Data apps](/self-host/enterprise-features/ai-agents#separate-gateway-routes-for-data-apps).
+
+| Variable | Coding agent | Fallback when unset or empty |
+| --- | --- | --- |
+| `DATA_APPS_ANTHROPIC_BASE_URL` | Claude using Anthropic | `ANTHROPIC_BASE_URL` |
+| `DATA_APPS_BEDROCK_BASE_URL` | Claude or Codex using Bedrock | `BEDROCK_BASE_URL` |
+| `DATA_APPS_OPENAI_BASE_URL` | Codex using OpenAI | `OPENAI_BASE_URL` |
 
 #### OpenAI Configuration
 
 | Variable                  | Description                                                                                 |
 | ------------------------- | ------------------------------------------------------------------------------------------- |
 | `OPENAI_API_KEY`          | (Required when using OpenAI) API key for OpenAI                                             |
-| `OPENAI_MODEL_NAME`       | OpenAI model name to use (default=gpt-5.2)                                                  |
+| `OPENAI_MODEL_NAME`       | OpenAI model name to use (default=gpt-6-sol)                                                |
 | `OPENAI_EMBEDDING_MODEL`  | OpenAI embedding model for verified answers (default=text-embedding-3-small)                |
 | `OPENAI_BASE_URL`         | Optional base URL for OpenAI compatible API                                                 |
 | `OPENAI_AVAILABLE_MODELS` | Comma-separated list of models available in the model picker (default=All supported models) |
-
-<Tip>
-**Using an OpenAI-compatible proxy (e.g. LiteLLM)**
-
-If your organization uses an OpenAI-compatible proxy like [LiteLLM](https://www.litellm.ai/), you can connect it to Lightdash by setting `AI_DEFAULT_PROVIDER=openai` and pointing `OPENAI_BASE_URL` to your proxy URL. For example:
-
-- `AI_DEFAULT_PROVIDER=openai`
-- `OPENAI_API_KEY=<your-proxy-api-key>`
-- `OPENAI_BASE_URL=<your-proxy-url>`
-- `OPENAI_MODEL_NAME=<model-name-configured-in-your-proxy>`
-
-Make sure your proxy has the model names correctly mapped. For example, if you set `OPENAI_MODEL_NAME=gpt-4o`, your proxy needs to have that model routed to whatever underlying provider you're using. The same applies for the embedding model.
-
-If you want to expose multiple models through the proxy, use `OPENAI_AVAILABLE_MODELS` with a comma-separated list of model names.
-</Tip>
+| `OPENAI_ZERO_DATA_RETENTION` | Set to `true` if your OpenAI account or LLM gateway enforces Zero Data Retention (ZDR). (default=false) |
+| `OPENAI_CUSTOM_HEADERS`  | JSON object of extra HTTP headers to send with every OpenAI request                          |
+| `OPENAI_SUPPORTS_STREAMING` | Set to `false` if the endpoint behind `OPENAI_BASE_URL` (e.g. an LLM gateway) doesn't support streaming (SSE) completions — Lightdash will make non-streaming requests instead (default=true) |
 
 #### Anthropic Configuration
 
 | Variable                     | Description                                                                                 |
 | ---------------------------- | ------------------------------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY`          | (Required when using Anthropic) API key for Anthropic                                       |
-| `ANTHROPIC_MODEL_NAME`       | Anthropic model name to use (default=claude-sonnet-4-5)                                     |
-| `ANTHROPIC_AVAILABLE_MODELS` | Comma-separated list of models available in the model picker (default=All supported models) |
+| `ANTHROPIC_API_KEY`              | (Required when using Anthropic) API key for Anthropic                                       |
+| `ANTHROPIC_MODEL_NAME`           | Anthropic model name to use (default=claude-sonnet-5-5)                                       |
+| `ANTHROPIC_BASE_URL`             | Optional HTTP(S) base URL for an Anthropic-compatible gateway. Configure the base before `/v1`; the configured `ANTHROPIC_API_KEY` is sent as a bearer token. |
+| `ANTHROPIC_AVAILABLE_MODELS`     | Comma-separated list of models available in the model picker (default=All supported models) |
+| `ANTHROPIC_CUSTOM_HEADERS`       | JSON object of extra HTTP headers to send with every Anthropic request                       |
+| `ANTHROPIC_SUPPORTS_STREAMING`   | Set to `false` if your Anthropic endpoint or gateway doesn't support streaming (SSE) completions — Lightdash will make non-streaming requests instead (default=true) |
+
+#### Google Gemini Configuration
+
+| Variable | Description |
+| :--- | :--- |
+| `GEMINI_API_KEY` | Required when using Google Gemini. |
+| `GEMINI_MODEL_NAME` | Default Gemini model (default=gemini-3.8-flash). |
+| `GEMINI_BASE_URL` | Optional HTTP(S) base URL for a Gemini-compatible gateway. |
+| `GEMINI_AVAILABLE_MODELS` | Comma-separated list of supported models available in the model picker (default=all supported models). |
+| `GEMINI_SUPPORTS_STREAMING` | Set to `false` for an endpoint without streaming support (default=true). |
+
+#### Google Vertex AI Configuration
+
+| Variable | Description |
+| :--- | :--- |
+| `GOOGLE_VERTEX_API_KEY` | Vertex AI API key. Takes precedence over Application Default Credentials. |
+| `GOOGLE_VERTEX_PROJECT` | Google Cloud project ID. Required when using Application Default Credentials instead of an API key. |
+| `GOOGLE_VERTEX_LOCATION` | Location for Application Default Credentials (default=global). |
+| `GOOGLE_VERTEX_MODEL_NAME` | Default Vertex model (default=gemini-3.8-flash). |
+| `GOOGLE_VERTEX_FAST_MODEL_NAME` | Model for lightweight tasks (default=GOOGLE_VERTEX_MODEL_NAME). Both configured models appear in the model picker. |
+| `GOOGLE_VERTEX_SUPPORTS_STREAMING` | Set to `false` for an endpoint without streaming support (default=true). |
 
 #### Azure AI Configuration
 
@@ -286,15 +479,22 @@ If you want to expose multiple models through the proxy, use `OPENAI_AVAILABLE_M
 | `AZURE_AI_DEPLOYMENT_NAME`        | (Required when using Azure AI) Deployment name for Azure AI                |
 | `AZURE_EMBEDDING_DEPLOYMENT_NAME` | Deployment name for Azure embedding model (default=text-embedding-3-small) |
 | `AZURE_USE_DEPLOYMENT_BASED_URLS` | Use deployment-based URLs for Azure OpenAI API calls (default=true)        |
+| `AZURE_AI_DEPLOYMENT_SUPPORTS_REASONING` | Set to `true` if your Azure deployment exposes a reasoning-capable model (e.g. `o3`). Enables reasoning-mode prompts. (default=false) |
+| `AZURE_AI_CUSTOM_HEADERS`        | JSON object of extra HTTP headers to send with every Azure AI request                       |
+| `AZURE_AI_SUPPORTS_STREAMING`    | Set to `false` if your Azure AI endpoint or gateway doesn't support streaming (SSE) completions — Lightdash will make non-streaming requests instead (default=true) |
 
 #### OpenRouter Configuration
 
 | Variable                       | Description                                                                                  |
 | ------------------------------ | -------------------------------------------------------------------------------------------- |
 | `OPENROUTER_API_KEY`           | (Required when using OpenRouter) API key for OpenRouter                                      |
-| `OPENROUTER_MODEL_NAME`        | OpenRouter model name to use (default=openai/gpt-4.1-2025-04-14)                             |
-| `OPENROUTER_SORT_ORDER`        | Provider sorting method (`price`, `throughput`, `latency`) (default=latency)                 |
-| `OPENROUTER_ALLOWED_PROVIDERS` | Comma-separated list of allowed providers (`anthropic`, `openai`, `google`) (default=openai) |
+| `OPENROUTER_MODEL_NAME`        | OpenRouter model name to use (default=openai/gpt-5.2-2025-12-11)                             |
+| `OPENROUTER_AVAILABLE_MODELS` | Comma-separated list of additional model IDs available in the model picker. The configured default model is always included. |
+| `OPENROUTER_PROVIDER_ORDER` | Comma-separated ordered list of upstream providers to prefer (default=unset). |
+| `OPENROUTER_SORT_ORDER`        | Provider sorting method (`price`, `throughput`, `latency`) (default=unset)                 |
+| `OPENROUTER_ALLOWED_PROVIDERS` | Comma-separated list of allowed providers (default=unrestricted) |
+| `OPENROUTER_CUSTOM_HEADERS`    | JSON object of extra HTTP headers to send with every OpenRouter request                      |
+| `OPENROUTER_SUPPORTS_STREAMING` | Set to `false` if your OpenRouter endpoint or gateway doesn't support streaming (SSE) completions — Lightdash will make non-streaming requests instead (default=true) |
 
 #### AWS Bedrock Configuration
 
@@ -304,30 +504,26 @@ If you want to expose multiple models through the proxy, use `OPENAI_AVAILABLE_M
 | `BEDROCK_ACCESS_KEY_ID`     | (Required if not using API key) AWS access key ID for Bedrock                                |
 | `BEDROCK_SECRET_ACCESS_KEY` | (Required if using access key ID) AWS secret access key for Bedrock                          |
 | `BEDROCK_SESSION_TOKEN`     | AWS session token (for temporary credentials)                                                |
+| `BEDROCK_USE_DEFAULT_CREDENTIALS` | Set to `true` to use the standard AWS credential chain instead of an API key or static credentials. |
 | `BEDROCK_REGION`            | **(Required)** AWS region for Bedrock                                                        |
 | `BEDROCK_MODEL_NAME`        | Bedrock model name to use (default=claude-sonnet-4-5)                                        |
 | `BEDROCK_EMBEDDING_MODEL`   | Bedrock embedding model for verified answers (default=cohere.embed-english-v3)               |
+| `BEDROCK_BASE_URL`          | Optional HTTP(S) base URL for a Bedrock-compatible gateway. Routes backend Bedrock calls and Bedrock-backed Data app coding agents through the gateway. |
+| `CLAUDE_CODE_SKIP_BEDROCK_AUTH` | Set to `true` or `1` to omit AWS authentication from Claude Code when `BEDROCK_BASE_URL` points to a gateway that performs upstream authentication. The backend still requires a supported Bedrock credential mode. |
 | `BEDROCK_AVAILABLE_MODELS`  | Comma-separated list of models available in the model picker (default=All supported models)  |
+| `BEDROCK_INFERENCE_PROFILE_PREFIX` | Optional prefix prepended to Bedrock model IDs to target a cross-region inference profile (e.g. `us`, `eu`). Overrides the default region-based prefix derived from `BEDROCK_REGION`. |
+| `BEDROCK_CUSTOM_HEADERS`    | JSON object of extra HTTP headers to send with every Bedrock request                         |
+| `BEDROCK_SUPPORTS_STREAMING` | Set to `false` if your Bedrock endpoint or gateway doesn't support streaming (SSE) completions — Lightdash will make non-streaming requests instead (default=true) |
 
 #### Supported Models
 
-**OpenAI:** `gpt-5.1`, `gpt-5.2` (default)
+The model picker shows the current supported catalog for each configured provider. Use `*_AVAILABLE_MODELS` to limit selection where supported. OpenAI-compatible gateways can also expose custom model IDs; OpenRouter uses your configured default and additional model IDs, and Vertex uses its configured default and fast model.
 
-**Anthropic:** `claude-sonnet-4-5`, `claude-haiku-4-5`, `claude-sonnet-4`
-
-**AWS Bedrock:** `claude-sonnet-4-5`, `claude-haiku-4-5`, `claude-sonnet-4`
-
-<Note>
-  Exact model snapshots are automatically assigned (e.g., `gpt-5.1` → `gpt-5.1-2025-11-13`).
-</Note>
-
-<Note>
-  For Bedrock, the region prefix is also added based on `BEDROCK_REGION` (e.g., `claude-sonnet-4-5` → `us.anthropic.claude-sonnet-4-5-20250929-v1:0`).
-</Note>
+Model names can resolve to exact snapshots. Bedrock also adds an inference-profile prefix based on `BEDROCK_REGION` or `BEDROCK_INFERENCE_PROFILE_PREFIX`. Autopilot cleanup qualification applies to the resolved provider/model pair; see [model qualification](/self-host/enterprise-features/ai-agents#model-qualification-and-cleanup).
 
 ## Slack Integration
 
-These variables enable you to configure the [Slack integration](/guides/using-slack-integration).
+These variables enable you to configure the [Slack integration](/integrations/slack).
 
 | Variable                     | Description                                                               |
 | :--------------------------- | :------------------------------------------------------------------------ |
@@ -340,6 +536,16 @@ These variables enable you to configure the [Slack integration](/guides/using-sl
 | `SLACK_SOCKET_MODE`          | Enable socket mode for Slack (default=false)                              |
 | `SLACK_CHANNELS_CACHED_TIME` | Time in milliseconds to cache Slack channels (default=600000, 10 minutes) |
 | `SLACK_SUPPORT_URL`          | URL for Slack support                                                     |
+| `SLACK_MULTI_AGENT_CHANNEL_ENABLED` | Enables [multi-agent Slack channels](/self-host/enterprise-features#multi-agent-slack-channels) for the whole instance (default=false) |
+| `SLACK_LINK_SHARE_IMAGE_PREVIEW_ENABLED` | Enables image previews when Lightdash links are unfurled in Slack. (default=true)                                                                              |
+
+## dbt
+
+Configure how Lightdash runs the dbt subprocess during project compilation.
+
+| Variable | Description |
+| --- | --- |
+| `ALLOW_DBT_COMMANDS_ACCESS_TO_ENV_VARS` | Comma-separated list of environment variable names from the Lightdash server's environment to pass through to the dbt subprocess. Use this when your dbt project reads values with `env_var()` (for example in macros) that you want to source from the host machine instead of setting per-project in Lightdash. By default the dbt subprocess does not inherit the server's environment. Only the names on this allowlist are forwarded. |
 
 ## GitHub Integration
 
@@ -353,6 +559,17 @@ These variables enable you to configure [Github integrations](/self-host/customi
 | `GITHUB_CLIENT_SECRET`   | **(Required)** GitHub OAuth client secret                       |
 | `GITHUB_APP_NAME`        | **(Required)** Name of the GitHub App                           |
 | `GITHUB_REDIRECT_DOMAIN` | Domain for GitHub OAuth redirection                             |
+| `GITHUB_WEBHOOK_SECRET`  | Secret used to verify incoming GitHub webhook signatures (e.g. for dbt PR previews) |
+
+## GitLab Integration
+
+These variables enable you to configure the GitLab integration for dbt project sync.
+
+| Variable                | Description                                                                                                  |
+| :---------------------- | :----------------------------------------------------------------------------------------------------------- |
+| `GITLAB_CLIENT_ID`      | OAuth client ID for the GitLab application                                                                   |
+| `GITLAB_CLIENT_SECRET`  | OAuth client secret for the GitLab application                                                               |
+| `GITLAB_REDIRECT_DOMAIN`| Domain used to build the GitLab OAuth callback URL. Defaults to the subdomain of `SITE_URL`.                |
 
 ## Microsoft Teams Integration
 
@@ -370,12 +587,13 @@ These variables enable you to configure Google Cloud Platform integration.
 | :------------------------ | :------------------------------------------------------------------- |
 | `GOOGLE_CLOUD_PROJECT_ID` | Google Cloud Platform project ID                                     |
 | `GOOGLE_DRIVE_API_KEY`    | Google Drive API key                                                 |
-| `AUTH_GOOGLE_ENABLED`     | Enables Google authentication (default=false)                        |
-| `AUTH_ENABLE_GCLOUD_ADC`  | Enables Google Cloud Application Default Credentials (default=false) |
+| `AUTH_GOOGLE_ENABLED`                | Enables Google authentication (default=false)                                                                                                                  |
+| `AUTH_ENABLE_GCLOUD_ADC`             | Enables Google Cloud Application Default Credentials (default=false)                                                                                           |
+| `AUTH_GOOGLE_INCLUDE_BIGQUERY_SCOPE` | When `true`, bundles the BigQuery scope into the Google login flow so BigQuery SSO users complete a single consent screen instead of two (default=false)      |
 
 ## Embedding
 
-Note that you will need an **Enterprise Licence Key** for this functionality.
+Enterprise-only. For setup steps and how the allow-list of iframe origins works, see [embedding](/self-host/enterprise-features#embedding).
 
 | Variable                                | Description                                                                                           |
 | :-------------------------------------- | :---------------------------------------------------------------------------------------------------- |
@@ -383,10 +601,14 @@ Note that you will need an **Enterprise Licence Key** for this functionality.
 | `EMBED_ALLOW_ALL_DASHBOARDS_BY_DEFAULT` | When creating new embeds, allow all dashboards by default (default=false)                             |
 | `EMBED_ALLOW_ALL_CHARTS_BY_DEFAULT`     | When creating new embeds, allow all charts by default (default=false)                                 |
 | `LIGHTDASH_IFRAME_EMBEDDING_DOMAINS`    | List of domains that are allowed to embed Lightdash in an iframe. Values must be separated by commas. |
+| `EMBED_EVENT_SYSTEM_ENABLED`            | Enables the embed event system that lets host pages subscribe to embedded-dashboard events. (default=false) |
+| `EMBED_EVENT_SYSTEM_POST_MESSAGE_ENABLED` | When `true`, the embed event system also dispatches events via `window.postMessage` to the parent frame. (default=false) |
+| `EMBED_EVENT_RATE_LIMIT_MAX_EVENTS`     | Maximum number of embed events per rate-limit window. (default=10)                                  |
+| `EMBED_EVENT_RATE_LIMIT_WINDOW_MS`      | Embed event rate-limit window in milliseconds. (default=1000)                                       |
 
 ## Custom roles
 
-Note that you will need an **Enterprise Licence Key** for this functionality.
+Enterprise-only. See [custom roles](/self-host/enterprise-features#custom-roles) for setup.
 
 | Variable               | Description                                                                                                                                                      |
 | :--------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -394,7 +616,7 @@ Note that you will need an **Enterprise Licence Key** for this functionality.
 
 ## Service account
 
-Note that you will need an **Enterprise Licence Key** for this functionality.
+Enterprise-only. See [service accounts](/self-host/enterprise-features#service-accounts) for setup.
 
 | Variable                  | Description                                           |
 | :------------------------ | :---------------------------------------------------- |
@@ -402,7 +624,7 @@ Note that you will need an **Enterprise Licence Key** for this functionality.
 
 ## SCIM
 
-Note that you will need an **Enterprise Licence Key** for this functionality.
+Enterprise-only. See [SCIM](/self-host/enterprise-features#scim) for setup, including the required `AUTH_ENABLE_OIDC_TO_EMAIL_LINKING` companion when combining SCIM with SSO.
 
 | Variable       | Description                                                                |
 | :------------- | :------------------------------------------------------------------------- |
@@ -455,38 +677,119 @@ These variables allow you to customize the default appearance settings for your 
 | `OVERRIDE_COLOR_PALETTE_NAME`   | Name of the default color palette                                                         |
 | `OVERRIDE_COLOR_PALETTE_COLORS` | Comma-separated list of hex color codes for the default color palette (must be 20 colors) |
 
-## Initialize instance
+## Pre-aggregates
 
-When a new Lightdash instance is created, and there are no orgs and projects. You can initialize a new org and project using ENV variables to simplify the deployment process.
+Enterprise-only. For setup steps and the required pre-aggregate worker deployment, see [pre-aggregates](/self-host/enterprise-features/pre-aggregates).
 
-<Note>
-  **Initialization is skipped if you already have an organization and project.**
-  
-  On subsequent restarts, only the [update instance](#update-instance) call is made. However, if you have multiple organizations or projects, the update will fail and the instance will not start. To safely restart without issues, remove the variables specified in the [Update instance](#update-instance) section below.
-</Note>
+| Variable                                     | Description                                                                                                                                          |
+| :------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PRE_AGGREGATES_ENABLED`                     | Enables pre-aggregate query routing. Requires `LIGHTDASH_LICENSE_KEY`. (default=false)                                                                |
+| `PRE_AGGREGATES_PARQUET_ENABLED`             | Materialize pre-aggregates as Parquet files instead of in-memory tables. (default=false)                                                              |
+| `PRE_AGGREGATE_DUCKDB_QUERY_MEMORY_LIMIT`    | DuckDB memory limit for pre-aggregate queries (e.g. `4GB`).                                                                                          |
+| `PRE_AGGREGATE_RESULTS_S3_BUCKET`            | S3 bucket for pre-aggregate Parquet storage. Required when configuring pre-aggregate result storage.                                                  |
+| `PRE_AGGREGATE_RESULTS_S3_REGION`            | Region for the pre-aggregate S3 bucket. Required when configuring pre-aggregate result storage.                                                       |
+| `PRE_AGGREGATE_RESULTS_S3_ACCESS_KEY`        | Access key for the pre-aggregate S3 bucket.                                                                                                          |
+| `PRE_AGGREGATE_RESULTS_S3_SECRET_KEY`        | Secret key for the pre-aggregate S3 bucket.                                                                                                          |
 
-<Info>
-  **Initialize instance is only available on Lightdash Enterprise plans.**
+## Data apps runtime
 
-  For more information on our plans, visit our [pricing page](https://www.lightdash.com/pricing).
-</Info>
+Enterprise-only. Sandboxes execute through [E2B](https://e2b.dev/). For setup steps (coding-agent choice, model provider, S3 bucket, sandbox provider), see [data apps](/self-host/enterprise-features/data-apps).
 
-<Info>
-  Currently we only support Databricks project types and Github dbt configuration.
-</Info>
+| Variable                          | Description                                                                                                                                          |
+| :-------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APPS_RUNTIME_ENABLED`            | Enables the data apps runtime. (default=false)                                                                                                       |
+| `APPS_CODING_AGENT`               | Coding agent used to generate Data apps: `claude` (default) or `codex`. Codex uses `OPENAI_API_KEY` unless `AI_DEFAULT_PROVIDER=bedrock`.             |
+| `APP_RUNTIME_LIGHTDASH_ORIGIN`    | Origin the sandbox uses to call back into Lightdash. Defaults to `SITE_URL`.                                                                          |
+| `APP_RUNTIME_CDN_ORIGIN`          | Origin where built app bundles are served from (CDN in front of `APPS_S3_BUCKET`).                                                                    |
+| `APP_RUNTIME_PREVIEW_ORIGIN`      | Origin used to render app previews (typically a separate subdomain to isolate cookies).                                                                |
+| `APP_RUNTIME_CSP_ALLOWED_ORIGINS` | Comma-separated list of extra origins to add to the data apps CSP allow-list.                                                                         |
+| `APP_RUNTIME_EXTERNAL_CONNECTION_ALLOWED_PRIVATE_HOST_CIDRS` | Comma-separated `hostname@CIDR` exceptions allowing external connections, connection tests, and OAuth client-credentials token requests to reach trusted private addresses. Both the hostname and CIDR must match. Default: empty; private addresses remain blocked. Instance-wide; requires a backend restart. See [private-network external connections](/self-host/enterprise-features/data-apps#private-network-external-connections) for syntax, prerequisites, and security boundaries. |
+| `APPS_S3_BUCKET`                  | S3 bucket where built data app bundles are stored. Defaults to the main `S3_BUCKET`.                                                                  |
+| `APPS_S3_REGION`                  | Region for the data apps S3 bucket. Defaults to `S3_REGION`.                                                                                          |
+| `APPS_S3_ACCESS_KEY`              | Access key for the data apps S3 bucket. Defaults to `S3_ACCESS_KEY`.                                                                                  |
+| `APPS_S3_SECRET_KEY`              | Secret key for the data apps S3 bucket. Defaults to `S3_SECRET_KEY`.                                                                                  |
+| `E2B_API_KEY`                     | API key for the E2B sandbox provider.                                                                                                                |
+| `E2B_TEMPLATE_NAME`               | E2B template used for general data app sandboxes. Defaults to Lightdash's public template (`lightdash/lightdash-data-app`) so self-hosters work out of the box. Override to use your own template. |
+| `E2B_TEMPLATE_TAG`                | E2B template tag. Defaults to the running Lightdash version so the template matches the release.                                                      |
+| `E2B_AI_WRITEBACK_TEMPLATE_NAME`  | E2B template used for AI writeback sandboxes. (default=`lightdash-ai-writeback`)                                                                      |
+| `E2B_AI_WRITEBACK_TEMPLATE_TAG`   | E2B AI writeback template tag. Defaults to the running Lightdash version.                                                                             |
 
-| Variable                              | Description                                                                                       |
-| :------------------------------------ | :------------------------------------------------------------------------------------------------ |
-| `LD_SETUP_ADMIN_NAME`                 | Name of the admin user for initial setup (default=Admin User)                                     |
-| `LD_SETUP_ADMIN_EMAIL`                | **(Required)** Email of the admin user for initial setup                                          |
-| `LD_SETUP_ORGANIZATION_EMAIL_DOMAIN`  | Comma-separated list of email domains for organization whitelisting                               |
-| `LD_SETUP_ORGANIZATION_DEFAULT_ROLE`  | Default role for new organization members (default=viewer)                                        |
-| `LD_SETUP_ORGANIZATION_NAME`          | **(Required)** Name of the organization                                                           |
+`APPS_CODING_AGENT=codex` supports GPT-5.6 Sol, Terra, and Luna, with Terra as the default. When `AI_DEFAULT_PROVIDER=bedrock`, Lightdash runs those models through Amazon Bedrock instead of OpenAI directly. `AI_DEFAULT_PROVIDER` also controls AI Analyst; `APPS_CODING_AGENT` affects only Data apps.
+
+<span id="managed-agent" />
+
+## Autopilot
+
+Enterprise-only scheduled project maintenance, always using the AI SDK and shared AI provider configuration. Enable AI Analyst, configure a provider at the instance or organization level, and enable the `ai-autopilot` feature flag. Apply the same environment configuration to API and scheduler processes and restart both after changes. See [Autopilot setup](/self-host/enterprise-features/ai-agents#autopilot).
+
+| Variable | Description |
+| :--- | :--- |
+| `MANAGED_AGENT_SCHEDULE` | Fallback cron schedule when no project schedule is selected. Default: `0 0 * * *`. |
+| `MANAGED_AGENT_SESSION_TIMEOUT_MS` | Per-run deadline in milliseconds. Default: `600000` (10 minutes). Cancellation is cooperative; an in-progress write may finish after the deadline. |
+| `MANAGED_AGENT_MAX_STEPS` | Maximum model steps per run. Default: `120`. Reaching the cap ends the run with an error and preserves recorded actions and any captured summary. |
+| `MANAGED_AGENT_VALIDATED_MODELS` | JSON array of exact `{ "provider", "model", "mode" }` qualifications. Mode: `observe`, `flag`, or `cleanup`. Default: a built-in list of recent Claude Opus, Claude Sonnet and GPT models qualified for `cleanup`. Setting the variable replaces that list; an empty value qualifies no model. See [model qualification](/self-host/enterprise-features/ai-agents#model-qualification-and-cleanup). |
+
+Autopilot needs no separate provider key or runtime selector. Remove the retired hosted-runtime settings from your deployment; see [upgrade guidance](/self-host/enterprise-features/ai-agents#upgrading-from-the-hosted-runtime).
+
+## Agent identity
+
+<Badge icon="flask" color="purple" size="sm" shape="pill">Beta</Badge> Enterprise-only. Applies when the `agent-identity` feature flag is on. See [Agent identity](/self-host/enterprise-features/ai-agents#agent-identity).
+
+| Variable | Description |
+| :--- | :--- |
+| `AGENT_RESULT_IDENTITY_CHECK_ENABLED` | Compares the identity that produced a saved result with the reader (default=true). Only the value `false` turns it off, and it turns off only this comparison. The access checks and the results cache separation stay on. See [Who can read a saved result](/agents/agent-identity#who-can-read-a-saved-result). |
+
+## MCP
+
+Enterprise-only. For setup steps, connecting AI assistants, and network requirements, see [MCP](/self-host/enterprise-features/mcp).
+
+<McpEnv />
+
+## Metrics SQL API
+
+Postgres wire protocol endpoint for the semantic layer. See [Metrics SQL API](/integrations/metrics-sql-api).
+
+| Variable      | Description                                                                                                                                                              |
+| :------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `PGWIRE_PORT` | Port the Metrics SQL API server listens on, e.g. `5432`. The server only starts when this is set. Requires `LIGHTDASH_LICENSE_KEY`. Disabled when unset (default). |
+| `PGWIRE_SSL_CERT_PATH` | Path to the PEM server certificate (leaf first, then chain) for the Metrics SQL API. Required when `PGWIRE_PORT` is set, unless TLS is explicitly disabled. The file is watched, so certificate renewals apply without a restart. |
+| `PGWIRE_SSL_KEY_PATH` | Path to the PEM private key for the Metrics SQL API certificate. Required alongside `PGWIRE_SSL_CERT_PATH`. |
+| `PGWIRE_SSL_MODE` | `require` (default) or `disabled`. With `require`, the server terminates TLS itself and rejects plaintext connections before any credentials are exchanged; Lightdash refuses to start if `PGWIRE_PORT` is set without a certificate. Set `disabled` only on fully trusted networks or behind a Postgres-aware TLS-terminating proxy — tokens are sent in plaintext. |
+
+## NATS worker
+
+Optional NATS-backed query workers. When enabled, Lightdash routes query execution to dedicated [NATS worker pods](/self-host/nats-workers) instead of running queries on the main API server. Enable at least one warehouse worker to process the routed queries.
+
+| Variable           | Description                                                                                                                                        |
+| :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NATS_ENABLED`     | Routes query execution through NATS worker pods. Requires at least one [warehouse worker](/self-host/nats-workers/warehouse-workers) to process the queries. (default=false) |
+| `NATS_URL`         | NATS server connection URL. **Required when `NATS_ENABLED=true`.**                                                                                 |
+| `NATS_WORKER_PORT` | Port the NATS worker process listens on for healthchecks.                                                                                          |
+
+## Initialize instance <Badge icon="building-plus" color="blue" size="sm" shape="pill">Enterprise</Badge>
+
+When a new Lightdash instance is created, and there are no orgs and projects. You can initialize a new org and project using ENV variables to simplify the deployment process. See the [pricing page](https://www.lightdash.com/pricing) for what each plan includes. Only Databricks project types and GitHub dbt configuration are supported.
+
+Initialization is skipped once an organization and project exist — on subsequent restarts, only the [update instance](#update-instance) call is made.
+
+<Warning>
+  If you have multiple organizations or projects, the update call fails and the instance will not start. Remove the variables listed in [Update instance](#update-instance) to restart safely.
+</Warning>
+
+| Variable                              | Description                                                                                                                                         |
+| :------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LD_SETUP_ADMIN_NAME`                 | Name of the admin user for initial setup (default=Admin User)                                                                                       |
+| `LD_SETUP_ADMIN_EMAIL`                | **(Required)** Email of the admin user for initial setup                                                                                            |
+| `LD_SETUP_ORGANIZATION_UUID`          | UUID of the organization to configure. Use when multiple organizations exist to target a specific one instead of requiring exactly one to exist.   |
+| `LD_SETUP_ORGANIZATION_EMAIL_DOMAIN`  | Comma-separated list of email domains for organization whitelisting                                                                                 |
+| `LD_SETUP_ORGANIZATION_DEFAULT_ROLE`  | Default role for new organization members (default=viewer)                                                                                          |
+| `LD_SETUP_ORGANIZATION_NAME`          | **(Required)** Name of the organization                                                                                                             |
 | `LD_SETUP_ADMIN_API_KEY`              | **(Required)** API key for the admin user, must start with `ldpat_` prefix                        |
 | `LD_SETUP_API_KEY_EXPIRATION`         | Number of days until API key expires (0 for no expiration) (default=30)                           |
-| `LD_SETUP_SERVICE_ACCOUNT_TOKEN`      | **(Required)** A pre-set token for the service account, must start with `ldsvc_` prefix           |
-| `LD_SETUP_SERVICE_ACCOUNT_EXPIRATION` | Number of days until service account token expires (0 for no expiration) (default=30)             |
-| `LD_SETUP_PROJECT_NAME`               | **(Required)** Name of the project                                                                |
+| `LD_SETUP_SERVICE_ACCOUNT_TOKEN`      | **(Required)** A pre-set token for the service account, must start with `ldsvc_` prefix                                                             |
+| `LD_SETUP_SERVICE_ACCOUNT_EXPIRATION` | Number of days until service account token expires (0 for no expiration) (default=30)                                                               |
+| `LD_SETUP_PROJECT_UUID`               | UUID of the project to configure. Use when multiple projects exist to target a specific one instead of requiring exactly one to exist.              |
+| `LD_SETUP_PROJECT_NAME`               | **(Required)** Name of the project                                                                                                                  |
 | `LD_SETUP_PROJECT_CATALOG`            | Catalog name for Databricks project                                                               |
 | `LD_SETUP_PROJECT_SCHEMA`             | **(Required)** Schema/database name for the project                                               |
 | `LD_SETUP_PROJECT_HOST`               | **(Required)** Hostname for the Databricks server                                                 |
@@ -499,6 +802,8 @@ When a new Lightdash instance is created, and there are no orgs and projects. Yo
 | `LD_SETUP_GITHUB_REPOSITORY`          | **(Required)** GitHub repository for dbt project                                                  |
 | `LD_SETUP_GITHUB_BRANCH`              | **(Required)** GitHub branch for dbt project                                                      |
 | `LD_SETUP_GITHUB_PATH`                | Subdirectory path within GitHub repository (default=/)                                            |
+| `LD_SETUP_EMBED_SECRET`               | Embed secret to provision on the initial project (used to sign embed JWTs).                       |
+| `LD_SETUP_EMBED_ALLOW_ALL_DASHBOARDS` | When `true`, allows all dashboards in the project to be embedded by default. (default=false)      |
 
 <Warning>
   In order to login as the admin user using SSO, you must enable the following ENV variable too:
@@ -513,7 +818,7 @@ When a new Lightdash instance is created, and there are no orgs and projects. Yo
 
 ## Update instance
 
-On server start, we will check the following variables, and update some configuration of the organization or project. Having more than one org or project can throw runtime errors and prevent the server from starting.
+On server start, we will check the following variables, and update some configuration of the organization or project. If multiple organizations or projects exist, you must set `LD_SETUP_ORGANIZATION_UUID` and/or `LD_SETUP_PROJECT_UUID` to target a specific one.
 
 <Info>
   **Update instance is only available on Lightdash Enterprise plans.**
@@ -521,14 +826,301 @@ On server start, we will check the following variables, and update some configur
   For more information on our plans, visit our [pricing page](https://www.lightdash.com/pricing).
 </Info>
 
-| Variable                             | Description                                                                                              |
-| :----------------------------------- | :------------------------------------------------------------------------------------------------------- |
-| `LD_SETUP_ADMIN_EMAIL`               | (Required if `LD_SETUP_ADMIN_API_KEY` is present) Email of the admin to update its Personal access token |
-| `LD_SETUP_ADMIN_API_KEY`             | API key for the admin user, must start with `ldpat_` prefix                                              |
-| `LD_SETUP_ORGANIZATION_EMAIL_DOMAIN` | Comma-separated list of email domains for organization whitelisting                                      |
-| `LD_SETUP_ORGANIZATION_DEFAULT_ROLE` | Default role for new organization members (default=viewer)                                               |
-| `LD_SETUP_PROJECT_HTTP_PATH`         | HTTP path for Databricks connection                                                                      |
-| `LD_SETUP_PROJECT_PAT`               | Personal access token for Databricks                                                                     |
-| `LD_SETUP_DBT_VERSION`               | Version of dbt to use (eg: v1.8) (default=latest)                                                        |
-| `LD_SETUP_GITHUB_PAT`                | GitHub personal access token                                                                             |
-| `LD_SETUP_SERVICE_ACCOUNT_TOKEN`     | A pre-set token for the service account, must start with `ldsvc_` prefix                                 |
+| Variable                             | Description                                                                                                                                       |
+| :----------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `LD_SETUP_ADMIN_EMAIL`               | (Required if `LD_SETUP_ADMIN_API_KEY` is present) Email of the admin to update its Personal access token                                          |
+| `LD_SETUP_ADMIN_API_KEY`             | API key for the admin user, must start with `ldpat_` prefix                                                                                       |
+| `LD_SETUP_ORGANIZATION_UUID`         | UUID of the organization to update. Required when multiple organizations exist.                                                                   |
+| `LD_SETUP_ORGANIZATION_EMAIL_DOMAIN` | Comma-separated list of email domains for organization whitelisting                                                                               |
+| `LD_SETUP_ORGANIZATION_DEFAULT_ROLE` | Default role for new organization members (default=viewer)                                                                                        |
+| `LD_SETUP_PROJECT_UUID`              | UUID of the project to update. Required when multiple projects exist.                                                                             |
+| `LD_SETUP_PROJECT_HTTP_PATH`         | HTTP path for Databricks connection                                                                                                               |
+| `LD_SETUP_PROJECT_PAT`               | Personal access token for Databricks                                                                                                              |
+| `LD_SETUP_DBT_VERSION`               | Version of dbt to use (eg: v1.8) (default=latest)                                                                                                 |
+| `LD_SETUP_GITHUB_PAT`                | GitHub personal access token                                                                                                                      |
+| `LD_SETUP_SERVICE_ACCOUNT_TOKEN`     | A pre-set token for the service account, must start with `ldsvc_` prefix                                                                          |
+| `LD_SETUP_USER_ATTRIBUTES`           | JSON array declaring [user attributes and group-value mappings](#declare-user-attributes) to reconcile on every deploy.                           |
+| `LD_SETUP_GROUP_PROJECT_ACCESS`      | JSON array declaring [group → project role assignments](#declare-group--project-access) to reconcile on every deploy.                             |
+
+## Initialize multiple projects
+
+Set `LD_SETUP_PROJECTS` to a JSON array to provision **multiple projects at once**. This is a drop-in replacement for the single-project `LD_SETUP_PROJECT_*` variables described in [Initialize instance](#initialize-instance-enterprise) — when `LD_SETUP_PROJECTS` is set, the legacy `LD_SETUP_PROJECT_*` and `LD_SETUP_GITHUB_*` variables are ignored.
+
+On every boot, Lightdash matches each entry to an existing project by its `name`: new names are created, existing names are updated in place.
+
+Multi-project setup supports Databricks project types and GitHub dbt configuration.
+
+<Note>
+  **Project names are the primary key.** Renaming an entry creates a new project rather than renaming the existing one — charts and dashboards will stay on the old project.
+</Note>
+
+### Required companion variables
+
+The admin, organization, and API key variables from [Initialize instance](#initialize-instance-enterprise) still apply. `LD_SETUP_ADMIN_EMAIL` is required — without it, `LD_SETUP_PROJECTS` is ignored.
+
+### Schema
+
+`LD_SETUP_PROJECTS` must be a JSON array. Each entry has the following shape:
+
+| Field                 | Required | Description                                                                        |
+| :-------------------- | :------- | :--------------------------------------------------------------------------------- |
+| `name`                | Yes      | Project name. Must be non-empty and **unique within the array**.                   |
+| `warehouseConnection` | Yes      | Object with a valid `type` and the fields required by that warehouse (see below).  |
+| `dbtConnection`       | Yes      | Object with a valid `type` and the fields required by that dbt connection (below). |
+| `dbtVersion`          | No       | Version of dbt to use (eg: `v1.8`). Defaults to latest.                            |
+| `embed`               | No       | Embed config: `{ "secret": "...", "allowAllDashboards": true }`.                   |
+
+### Databricks warehouse fields
+
+| Field                 | Required                                      | Description                                                                      |
+| :-------------------- | :-------------------------------------------- | :------------------------------------------------------------------------------- |
+| `type`                | Yes                                           | Must be `"databricks"`.                                                          |
+| `serverHostName`      | Yes                                           | Databricks host, no protocol. Example: `dbc-xxxx.cloud.databricks.com`.          |
+| `httpPath`            | Yes                                           | SQL warehouse HTTP path, e.g. `/sql/1.0/warehouses/abc123`.                      |
+| `database`            | Yes                                           | Schema name. (Historical naming — this is the dbt schema, not the Unity Catalog.)|
+| `catalog`             | No                                            | Unity Catalog name.                                                              |
+| `authenticationType`  | No                                            | One of `personal_access_token` (default), `oauth_m2m`, `oauth_u2m`.              |
+| `personalAccessToken` | If `authenticationType=personal_access_token` | Databricks PAT (starts with `dapi_`).                                            |
+| `oauthClientId`       | If `authenticationType=oauth_m2m`             | Databricks Service Principal client ID (a UUID).                                 |
+| `oauthClientSecret`   | If `authenticationType=oauth_m2m`             | Databricks Service Principal client secret.                                      |
+| `compute`             | No                                            | Array of extra SQL warehouses: `[{ "name": "...", "httpPath": "..." }]`.         |
+| `startOfWeek`         | No                                            | Day to use as start of week (default=`SUNDAY`).                                  |
+| `dataTimezone`        | No                                            | Project-level timezone override.                                                 |
+
+### GitHub dbt connection fields
+
+| Field                   | Required | Description                                                    |
+| :---------------------- | :------- | :------------------------------------------------------------- |
+| `type`                  | Yes      | Must be `"github"`.                                            |
+| `authorization_method`  | Yes      | Use `"personal_access_token"`.                                 |
+| `personal_access_token` | Yes      | GitHub personal access token.                                  |
+| `repository`            | Yes      | Repository in `org/repo` format.                               |
+| `branch`                | Yes      | Branch name to pull the dbt project from.                      |
+| `project_sub_path`      | Yes      | Subdirectory path within the repo (use `/` for the root).      |
+| `selector`              | No       | dbt [selector](https://docs.getdbt.com/reference/node-selection/yaml-selectors) name to limit which models are compiled. |
+
+### Example
+
+```bash
+export LD_SETUP_ADMIN_EMAIL="admin@example.com"
+export LD_SETUP_PROJECTS='[
+  {
+    "name": "Sample Project Alpha",
+    "warehouseConnection": {
+      "type": "databricks",
+      "serverHostName": "alpha.cloud.databricks.com",
+      "httpPath": "/sql/1.0/warehouses/abc123",
+      "database": "alpha_db",
+      "personalAccessToken": "dapi_alpha_fake_token"
+    },
+    "dbtConnection": {
+      "type": "github",
+      "authorization_method": "personal_access_token",
+      "personal_access_token": "ghp_fake_alpha_token",
+      "repository": "myorg/alpha-repo",
+      "branch": "main",
+      "project_sub_path": "/"
+    }
+  },
+  {
+    "name": "Sample Project Beta",
+    "warehouseConnection": {
+      "type": "databricks",
+      "serverHostName": "beta.cloud.databricks.com",
+      "httpPath": "/sql/1.0/warehouses/def456",
+      "database": "beta_db",
+      "personalAccessToken": "dapi_beta_fake_token"
+    },
+    "dbtConnection": {
+      "type": "github",
+      "authorization_method": "personal_access_token",
+      "personal_access_token": "ghp_fake_beta_token",
+      "repository": "myorg/beta-repo",
+      "branch": "main",
+      "project_sub_path": "/"
+    }
+  }
+]'
+```
+
+<Note>
+  **Quote the whole value in single quotes** in your shell so that `$`, backticks, and double quotes inside the JSON are not re-interpreted. When injecting via a secret manager or Kubernetes `Secret`, no escaping is needed — just paste the JSON as-is.
+</Note>
+
+### Databricks M2M OAuth example
+
+Use a [Databricks Service Principal](https://docs.databricks.com/aws/en/dev-tools/auth/oauth-m2m) when you want non-interactive, machine-to-machine authentication instead of a PAT. Lightdash exchanges the `client_id` + `client_secret` for an access token automatically on the first compile and refreshes it as needed — no user interaction is required.
+
+```bash
+export LD_SETUP_ADMIN_EMAIL="admin@example.com"
+export LD_SETUP_PROJECTS='[
+  {
+    "name": "Sales (Databricks M2M)",
+    "warehouseConnection": {
+      "type": "databricks",
+      "serverHostName": "dbc-xxxx.cloud.databricks.com",
+      "httpPath": "/sql/1.0/warehouses/abc123",
+      "catalog": "lightdash_prod",
+      "database": "sales",
+      "authenticationType": "oauth_m2m",
+      "oauthClientId": "00000000-0000-0000-0000-000000000000",
+      "oauthClientSecret": "dose...secret..."
+    },
+    "dbtConnection": {
+      "type": "github",
+      "authorization_method": "personal_access_token",
+      "personal_access_token": "ghp_...",
+      "repository": "myorg/dbt-sales",
+      "branch": "main",
+      "project_sub_path": "/"
+    }
+  }
+]'
+```
+
+If you already have an M2M Service Principal configured for dbt, the field names are different. Map your dbt profile fields to Lightdash's `warehouseConnection` like this:
+
+| `profiles.yml` (dbt)      | `LD_SETUP_PROJECTS` (Lightdash) |
+| :------------------------ | :------------------------------ |
+| `host`                    | `serverHostName`                |
+| `http_path`               | `httpPath`                      |
+| `catalog`                 | `catalog`                       |
+| `schema`                  | `database`                      |
+| `auth_type: oauth`        | `authenticationType: "oauth_m2m"` |
+| `client_id`               | `oauthClientId`                 |
+| `client_secret`           | `oauthClientSecret`             |
+
+<Note>
+  M2M is non-interactive by design — Lightdash uses the OAuth client-credentials grant. No browser popup, no per-user sign-in. The Service Principal needs `CAN USE` on the SQL warehouse and the appropriate `SELECT`/`USE CATALOG`/`USE SCHEMA` grants on your data.
+</Note>
+
+### Validation
+
+`LD_SETUP_PROJECTS` is parsed and validated at boot. Lightdash will **fail to start with a descriptive error** if any of the following are true:
+
+| Error                                                       | Cause                                                                                              |
+| :---------------------------------------------------------- | :------------------------------------------------------------------------------------------------- |
+| `Failed to parse LD_SETUP_PROJECTS`                         | The value is not valid JSON. Check your shell quoting.                                             |
+| `Invalid LD_SETUP_PROJECTS: expected array`                 | The top-level JSON is not an array.                                                                |
+| `name: Project name cannot be empty`                        | An entry has a missing or empty `name`.                                                            |
+| `warehouseConnection: Required` / `dbtConnection: Required` | An entry is missing one of the two connection blocks.                                              |
+| `Invalid warehouse type`                                    | `warehouseConnection.type` is not a supported warehouse.                                           |
+| `Invalid dbt connection type`                               | `dbtConnection.type` is not a supported dbt connection.                                            |
+| `Duplicate project name "X" in LD_SETUP_PROJECTS`           | Two entries share the same `name`.                                                                 |
+| `Multiple projects found with name "X"`                     | Two pre-existing projects in the DB share the same name — rename one in the UI before redeploying. |
+
+<Warning>
+  **Credentials in `LD_SETUP_PROJECTS` are the source of truth on every boot.** If an admin rotates a PAT or OAuth secret in the UI, the next restart will overwrite it with the value from this variable. Keep the variable in sync with your secret manager, or omit a project from the array once you no longer want it managed via env.
+</Warning>
+
+### Migrating from `LD_SETUP_PROJECT_*`
+
+`LD_SETUP_PROJECTS` replaces the single-project `LD_SETUP_PROJECT_NAME`, `LD_SETUP_PROJECT_HOST`, `LD_SETUP_PROJECT_HTTP_PATH`, `LD_SETUP_PROJECT_PAT`, `LD_SETUP_PROJECT_SCHEMA`, `LD_SETUP_PROJECT_CATALOG`, `LD_SETUP_PROJECT_COMPUTE`, `LD_SETUP_GITHUB_*`, and `LD_SETUP_DBT_VERSION` variables. When both are set, `LD_SETUP_PROJECTS` takes precedence and the legacy variables are ignored.
+
+To migrate:
+
+1. Move your existing project config into a JSON object (use the existing project's exact `name` so it is updated in place rather than recreated).
+2. Set `LD_SETUP_PROJECTS` to a single-element array containing that object.
+3. Remove the legacy `LD_SETUP_PROJECT_*` and `LD_SETUP_GITHUB_*` variables from your deployment.
+
+## Declare user attributes
+
+Set `LD_SETUP_USER_ATTRIBUTES` to a JSON array to declare [user attributes](/workspace-admin/user-attributes) and their group-value mappings as instance config. Lightdash reconciles the array on every deploy, so you no longer need a manual post-deploy API or CLI step to (re)apply attributes after a release.
+
+<Info>
+  **User attribute setup is only available on Lightdash Enterprise plans.**
+
+  For more information on our plans, visit our [pricing page](https://www.lightdash.com/pricing).
+</Info>
+
+On every boot, Lightdash matches each entry to an existing user attribute by its `name`: new names are created, existing names are updated in place. Attributes that are not present in the array are left untouched — this reconcile is non-destructive and never deletes attributes you created in the UI.
+
+### Schema
+
+Each entry in the array has the following shape:
+
+| Field              | Required | Description                                                                                                                                                                            |
+| :----------------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`             | Yes      | User attribute name. Must be non-empty and **unique within the array**.                                                                                                                |
+| `description`      | No       | Human-readable description shown in **Organization Settings** → **User Attributes**.                                                                                                  |
+| `attributeDefault` | No       | Default value(s) applied to users who don't have an explicit value. Accepts an array of strings (e.g. `["US", "CA"]`), a single string (normalized to a one-element array), or `null` for no default. Defaults to `null`. |
+| `groups`           | No       | Array of group mappings. Each mapping is `{ "group": "<group name>", "values": ["<string>", ...] }` and assigns those values to every member of a [group](/workspace-admin/manage-groups). The legacy single-value form `{ "group": "...", "value": "<string>" }` is still accepted but deprecated. Defaults to `[]`. |
+
+### Example
+
+```jsonc
+LD_SETUP_USER_ATTRIBUTES='[
+  {
+    "name": "region",
+    "description": "sales region access",
+    "attributeDefault": ["US", "CA"],
+    "groups": [
+      { "group": "EMEA Analysts", "values": ["UK", "DE"] }
+    ]
+  }
+]'
+```
+
+### Group resolution
+
+Group bindings are resolved **by group name** because group UUIDs aren't known at deploy time — groups provisioned via [SCIM](/workspace-admin/sso/scim) are created by your IdP, not by Lightdash.
+
+If a group name in `groups` doesn't match any existing group at the time the deploy runs (for example, because SCIM hasn't synced it yet), Lightdash logs a warning and skips that mapping rather than failing the deploy. The mapping is retried on the next deploy, so once the group exists the binding reconciles automatically.
+
+### Per-user mappings
+
+`LD_SETUP_USER_ATTRIBUTES` only supports group-based mappings. Per-user (by-email) values still need to be assigned through the UI or API.
+
+<a id="declare-group--project-access" />
+
+## Declare group → project access
+
+Set `LD_SETUP_GROUP_PROJECT_ACCESS` to a JSON array to declare [group → project role assignments](/workspace-admin/roles) as instance config. Lightdash reconciles the array on every deploy, so you no longer need to re-apply group access through the UI or API after each release. This is the project-access equivalent of [`LD_SETUP_USER_ATTRIBUTES`](#declare-user-attributes).
+
+<Info>
+  **Group project access setup is only available on Lightdash Enterprise plans** and uses [groups](/workspace-admin/manage-groups) and (optionally) [custom roles](/workspace-admin/custom-roles), which are Enterprise features.
+
+  For more information on our plans, visit our [pricing page](https://www.lightdash.com/pricing).
+</Info>
+
+On every boot, Lightdash matches each entry to a group and project, then either creates the access, updates it if the role differs, or leaves it untouched when it already matches. Group accesses that are not present in the array are left untouched — this reconcile is non-destructive and never removes access you assigned in the UI.
+
+This is especially useful for instances that provision groups via [SCIM](/workspace-admin/sso/scim): SCIM group UUIDs aren't known at deploy time, so this lets you declare role mappings by group name once and have them applied automatically as groups sync from your IdP.
+
+### Schema
+
+Each entry in the array has the following shape:
+
+| Field         | Required                       | Description                                                                                                                                                                                            |
+| :------------ | :----------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `groupName`   | Yes                            | Name of the [group](/workspace-admin/manage-groups) to grant access to. Resolved by name so it is compatible with SCIM-synced groups.                                                                    |
+| `projectName` | One of `projectName`/`projectUuid` | Name of the project to grant access to.                                                                                                                                                            |
+| `projectUuid` | One of `projectName`/`projectUuid` | UUID of the project to grant access to. Takes precedence if both `projectName` and `projectUuid` are provided.                                                                                      |
+| `role`        | Yes                            | A [system role](/workspace-admin/roles) (`viewer`, `interactive_viewer`, `editor`, `developer`, or `admin`) or the name of a [custom role](/workspace-admin/custom-roles).                   |
+
+### Example
+
+```jsonc
+LD_SETUP_GROUP_PROJECT_ACCESS='[
+  {
+    "groupName": "Core Data Developer",
+    "projectName": "Production",
+    "role": "developer"
+  },
+  {
+    "groupName": "Data Analyst",
+    "projectUuid": "abc-123",
+    "role": "PII Analyst"
+  }
+]'
+```
+
+### Group, project, and role resolution
+
+- **Groups** are resolved by `groupName` because group UUIDs aren't known at deploy time when groups are provisioned via [SCIM](/workspace-admin/sso/scim).
+- **Projects** are resolved by `projectUuid` when set, otherwise by `projectName`.
+- **Roles** are resolved as a system role first; if the value doesn't match a system role, Lightdash looks up a [custom role](/workspace-admin/custom-roles) with that name.
+
+If a group, project, or custom role can't be resolved at the time the deploy runs (for example, because SCIM hasn't synced the group yet), Lightdash logs a warning and skips that entry rather than failing the deploy. The entry is retried on the next deploy, so once the group, project, or role exists the access reconciles automatically.
+
+Malformed JSON or entries that fail schema validation (e.g. missing `groupName`, or neither `projectName` nor `projectUuid`) throw at boot time so configuration errors surface before the instance starts.

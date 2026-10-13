@@ -1,0 +1,282 @@
+---
+title: "Lightdash YAML"
+sidebarTitle: Lightdash YAML
+description: "Define models in YAML, connect them through GitHub or Bitbucket Cloud, and update them without dbt"
+---
+
+<Frame>
+  <iframe width="100%" height="420" src="https://www.loom.com/embed/d7cab1a72e2a40f088998c4fb387e185" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen />
+</Frame>
+
+## What is Lightdash YAML?
+
+Lightdash YAML defines your semantic layer in standalone model files that point to existing tables in your warehouse. You can build metrics, dimensions, charts, dashboards, and AI agents without installing dbt or maintaining a dbt project.
+
+You can [connect the project through GitHub or Bitbucket Cloud](#connect-through-github) so Lightdash compiles and refreshes it from your repository, or [deploy local files with the CLI](#step-4-deploy-your-project). A GitHub connection also lets you write custom fields and AI-proposed changes back to the repository as pull requests.
+
+This page covers the [project layout](#project-layout), [model setup](#define-your-models), [repository connection](#connect-through-github), and [write-back support](#write-back-from-lightdash).
+
+## Choose a semantic layer format <a id="dbt-vs-lightdash-yaml-which-should-you-use" />
+
+Use the [dbt integration](/integrations/dbt/projects) when your semantic definitions live in a dbt project. Use Lightdash YAML when your warehouse tables already exist and you want to define the semantic layer independently of dbt. Lightdash YAML describes those tables; it does not build or transform them.
+
+The formats share Lightdash's metric and dimension concepts, but they use different file structures. Native model files have a top-level `type`, `name`, and `sql_from`; dbt model files use dbt's model and `meta` structure. Changing the connection's format does not convert your files.
+
+## Project layout
+
+Keep `lightdash.config.yml` in the project directory, with model files under `models/`:
+
+```text
+lightdash.config.yml
+models/
+  users.yml
+  sales/
+    orders.yaml
+```
+
+Lightdash reads `.yml` and `.yaml` files recursively. It also supports `lightdash/models/` when there is no `models/` directory; if both exist, only `models/` is used. Each model needs a unique `name` and a `type` of `model`, `model/v1beta`, or `model/v1`.
+
+The model name does not need to match its filename. Lightdash tracks the source path so write-back updates the original file, including models nested in subdirectories. Keep native model files inside the configured project directory.
+
+## Recommended: build with an AI coding agent
+
+The fastest way to get started with Lightdash YAML is to let an AI coding agent (Claude Code, Cursor, etc.) do the heavy lifting for you.
+
+<Steps>
+  <Step title="Install the Lightdash CLI">
+    Follow the [CLI installation guide](/workflow/cli/install) and [authenticate](/workflow/cli/authenticate) with Lightdash.
+  </Step>
+  <Step title="Install Lightdash skills">
+    Run [`lightdash install-skills`](/workflow/install-agent-skills) to teach your coding agent everything it needs to know about building in Lightdash, from writing YAML models to creating metrics and deploying.
+
+    ```bash
+    lightdash install-skills
+    ```
+  </Step>
+  <Step title="Ask your agent to build your project">
+    Prompt your coding agent to:
+
+    - Create your `lightdash.config.yml` and YAML model files based on tables in your warehouse
+    - Generate dimensions and metrics for those models
+    - Deploy your project to Lightdash with `lightdash deploy --create --no-warehouse-credentials`
+
+    Example prompt:
+
+    ```text
+    /developing-in-lightdash Profile my warehouse, create Lightdash YAML
+    models for the users and orders tables with sensible metrics and
+    dimensions, then deploy the project to Lightdash.
+    ```
+  </Step>
+</Steps>
+
+Prefer to set things up manually? Follow the step-by-step guide below.
+
+## Define your models <a id="getting-started-with-lightdash-yaml" />
+
+### Prerequisites
+
+Before you begin, make sure you have:
+
+1. The [Lightdash CLI installed](/workflow/cli/install)
+2. [Authenticated with Lightdash](/workflow/cli/authenticate)
+3. Credentials for your data warehouse (e.g., Snowflake)
+4. Tables in your warehouse that you want to explore
+
+### Step 1: Create your project configuration
+
+At the root of your project, create a `lightdash.config.yml` file to specify your warehouse type:
+
+```yaml
+warehouse:
+  type: snowflake
+```
+
+Replace `snowflake` with your warehouse type (e.g., `bigquery`, `databricks`, `redshift`, `postgres`, `trino`).
+
+### Step 2: Create your first model
+
+Define the table in `sql_from`, then add dimensions and metrics using the native model structure below.
+
+Create a directory structure for your Lightdash project:
+
+```bash
+mkdir -p models
+```
+
+Create a YAML file for your first model. For example, `models/users.yml`:
+
+```yaml
+# Metadata
+type: model
+name: users
+
+# Table definition
+sql_from: 'DB.SCHEMA.USERS'
+
+# Metric definitions
+# For more configuration see: /semantic-layer/metrics
+metrics:
+  user_count:
+    type: count_distinct
+    sql: ${TABLE}.USER_ID
+    description: Total unique users
+
+# Dimension definitions
+# For more configuration see: /semantic-layer/dimensions
+dimensions:
+  - name: subscription_type
+    sql: ${TABLE}.SUBSCRIPTION
+    type: string
+
+  - name: signed_up_at
+    sql: ${TABLE}.SIGNED_UP
+    type: date
+    time_intervals:
+      - DAY
+      - WEEK
+      - MONTH
+```
+
+Update the configuration:
+
+- Set `sql_from` to the fully qualified name of your table (e.g., `DATABASE.SCHEMA.TABLE`)
+- Update the dimensions to match the columns in your table
+- Add metrics that make sense for your data
+
+### Step 3: Validate your YAML
+
+Run [`lightdash lint`](/workflow/cli/lint) to check your YAML files for errors before you deploy:
+
+```bash
+lightdash lint
+```
+
+Then [compile the models](/workflow/cli/compile) to check field and join references:
+
+```bash
+lightdash compile --no-warehouse-credentials --no-partial-compilation
+```
+
+The CLI uses `warehouse.type` in `lightdash.config.yml` to compile SQL for your warehouse. Compilation does not create the physical tables or confirm that every physical column exists.
+
+### Step 4: Deploy your project
+
+Choose [GitHub or Bitbucket Cloud](#connect-through-github) to have Lightdash compile the committed files, or create a project from your local files with the CLI:
+
+```bash
+lightdash deploy --create --no-warehouse-credentials
+```
+
+With `--no-warehouse-credentials`, the CLI does not read a dbt profile or send warehouse credentials. Configure the created project's warehouse connection in Lightdash before querying it:
+
+1. Go to **Settings**
+2. Under **Current project**, click **Connection settings**
+3. Configure your **Warehouse connection** with your database credentials
+
+<Frame>
+  ![Warehouse connection settings](/images/semantic-layer/yaml/warehouse-connection.png)
+</Frame>
+
+For detailed instructions on configuring your warehouse connection, see [Connect to a warehouse](/integrations/connect-project#1-connect-to-a-warehouse).
+
+### Step 5: Update your project
+
+After your initial deployment, you can edit your `.yml` files and redeploy changes:
+
+```bash
+lightdash deploy --no-warehouse-credentials
+```
+
+For a GitHub- or Bitbucket Cloud-connected project, commit and merge the model changes, then [refresh from the repository](#refresh-a-github-connected-project).
+
+<a id="connect-through-github" />
+
+## Connect through GitHub or Bitbucket Cloud
+
+You need permission to manage the project's connection and access to the repository. Use the [GitHub connection settings](/integrations/connect-project#github) or [Bitbucket Cloud connection settings](/integrations/connect-project#bitbucket) for authentication. To use AI writeback, install the Lightdash GitHub App or configure the Bitbucket API token with writeback permissions.
+
+1. Commit your configuration and models to GitHub or Bitbucket Cloud.
+2. Open **Settings → All projects → Create new**, or **Settings → Current project → Connection settings** for an existing project.
+3. Configure the warehouse connection, and choose **GitHub** or **Bitbucket** as the project connection type.
+4. Set **Semantic layer format** to **Native Lightdash YAML**.
+5. Select the repository and branch. Set **Project directory path** to `/` for the repository root, or the directory containing `lightdash.config.yml` and the model directory. For example, use `/analytics` for `analytics/lightdash.config.yml` and `analytics/models/`.
+6. Save the connection. Lightdash reads the committed files and compiles them using the project's saved warehouse connection.
+
+You can add this connection to an existing CLI-created project. Updating that project's connection keeps its project ID, warehouse credentials, charts, and dashboards. Keep model and field names stable so saved content still resolves.
+
+Native connections do not use dbt versions, profiles, targets, selectors, or dbt environment variables. Native YAML supports GitHub and Bitbucket Cloud (`bitbucket.org`); Bitbucket Server/Data Center and GitLab are not supported. Native projects cannot be combined with additional dbt sources.
+
+<a id="refresh-a-github-connected-project" />
+
+### Refresh a Git-connected project
+
+After merging changes to the configured branch, click **Refresh models** in Lightdash or run [`lightdash refresh`](/workflow/cli/reference#lightdash-refresh). The server pulls that branch and compiles the YAML using the saved warehouse connection. You do not need dbt or a local checkout to trigger a refresh.
+
+Invalid YAML, invalid model definitions, duplicate model names, or semantic compilation errors fail the native refresh instead of publishing an incomplete model set. Open [Compilation history](/workspace-admin/project-compilation-history) to inspect the result.
+
+To test another branch with a GitHub connection, [create a preview project](/workflow/preview-projects#lightdash-app). The preview retains the native semantic layer format.
+
+## Write back from Lightdash
+
+In a GitHub-connected native project, users with [project Developer permissions](/workspace-admin/roles) or above can open pull requests from the Explore view:
+
+1. Create a [custom metric or dimension](/explore/create-custom-fields).
+2. Open the field's menu and choose **Write back to project**. You can also use the write-back action on the Custom metrics or Custom dimensions section to select several fields.
+3. Review the YAML preview and click **Open Pull Request**.
+4. Review and merge the pull request, then refresh the project.
+
+The edit stays in the original model file and preserves comments and unrelated definitions. If a field name already exists, Lightdash rejects the write instead of replacing its definition.
+
+### Supported fields and limits
+
+| Field | Native YAML write-back |
+| --- | --- |
+| Custom metric based on a dimension | Adds the metric under that native dimension's `metrics` |
+| Custom metric cloned from an existing metric | Not supported: it has no base dimension |
+| Generated period-comparison metric | Not supported |
+| Custom SQL dimension | Adds a dimension with its SQL and type |
+| Custom bin dimension | Adds a string dimension with warehouse-specific binning SQL |
+
+Metrics with filters that cannot be represented without changing their meaning are rejected. Write-back requires block-style YAML dimensions rather than inline, flow-style lists.
+
+Existing saved charts keep their custom bin dimensions so their ordering is unchanged. Use the written YAML dimension in new charts; add a separate numeric ordering dimension in the model when bin order matters. Custom dimensions are not automatically replaced in saved charts after write-back.
+
+SQL Runner's **Write back to dbt** action creates dbt SQL models and is not available for native projects. Native `sql_from` definitions point to tables that your warehouse workflow already creates.
+
+## AI writeback and Issues
+
+[AI writeback](/agents/ai-writeback) can edit native YAML from a chat request in GitHub- and Bitbucket Cloud-connected projects. It validates the edited native models before pushing changes, using the connected warehouse's SQL dialect without passing warehouse credentials to the sandbox. A validation error prevents the pull request from being opened or updated.
+
+[Issues](/agents/issues#fixing-an-issue-with-writeback) uses the same native path for semantic layer fixes. Project context fixes update [agent context](/agents/agent-context) in `lightdash.project_context.yml` beside the project configuration. GitHub AI writeback also supports [automatic preview projects](/agents/ai-writeback#automatic-preview-project). For Bitbucket, review and merge in Bitbucket, then refresh the project; see [Bitbucket Cloud behavior](/agents/ai-writeback#bitbucket-cloud-behavior).
+
+## Developing with AI coding agents
+
+If you're developing with Cursor, Claude Code, or another AI coding agent, you can speed up your workflow significantly.
+
+### Recommended setup
+
+1. **Install Lightdash skills:** Run [`lightdash install-skills`](/workflow/install-agent-skills) to give your coding agent everything it needs to build YAML models, create metrics, and deploy to Lightdash. Then ask your agent to create your YAML files, add some metrics, and deploy to Lightdash.
+
+   ```bash
+   lightdash install-skills
+   ```
+
+2. **Share your warehouse schema:** Give your coding agent access to your warehouse schema so it can generate YAML files that match your actual table structures.
+
+3. **Use validation:** Prompt your coding agent to always run `lightdash lint` after making any changes to catch errors early.
+
+<Tip>
+With access to your warehouse schema, AI coding agents can auto-generate dimension and metric definitions for entire tables in seconds.
+</Tip>
+
+If you'd rather not install the skills, you can still point your coding agent at the [Lightdash YAML format specification](https://raw.githubusercontent.com/lightdash/lightdash/refs/heads/main/packages/common/src/schemas/json/model-as-code-1.0.json) directly.
+
+## Next steps
+
+Once you've deployed your Lightdash YAML project:
+
+- [Explore your data](/explore/explore-view) in the Lightdash UI
+- [Create metrics](/semantic-layer/metrics) to define your key business calculations
+- [Set up AI agents](/agents) to enable natural language queries
+- Learn about the [semantic layer reference](/semantic-layer/metrics) for advanced configuration options

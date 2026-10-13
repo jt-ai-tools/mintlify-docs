@@ -1,0 +1,99 @@
+---
+title: "Personal warehouse connections"
+sidebarTitle: "Warehouse connections"
+description: "When and how your personal warehouse credentials are used in Lightdash projects"
+doc-type: reference
+---
+
+Personal warehouse credentials allow you to connect to your data warehouse using your own individual credentials instead of shared project credentials. This provides better security and audit trails for data access.
+
+## When are personal warehouse credentials used?
+
+<Info>
+    Personal warehouse credentials are only used for projects that require user
+    credentials. If a project doesn't require user credentials, it will use the
+    shared project connection instead.
+</Info>
+
+Your personal warehouse credentials will be used when:
+
+-   A project is configured to require user credentials for data access
+-   You're running queries, creating charts, or building dashboards in that project
+-   You're using the SQL runner or exploring data in projects with user credential requirements
+
+On a project with [multiple warehouse connections](/workspace-admin/multiple-warehouse-connections#personal-warehouse-credentials), you choose credentials for each connection in the credentials switcher in the navigation bar.
+
+When a project is created with [organization credentials](/workspace-admin/organization-credentials) but also requires user credentials, your personal credentials override the organization credential for your own queries.
+
+## Setting up personal warehouse credentials
+
+To configure your personal warehouse credentials:
+
+1. Navigate to your user settings by clicking on your profile in the top right corner
+2. Go to the "My warehouse credentials" section
+3. Enter your individual warehouse connection details
+4. Save your credentials
+
+<Frame>
+    <img
+        src="/images/personal-settings/personal-warehouse-connections/personal_warehouse_credentials.gif"
+        alt="Personal warehouse credentials settings page"
+    />
+</Frame>
+
+## Supported authentication methods
+
+Depending on your warehouse type, you can authenticate using different methods:
+
+### Snowflake
+
+- **Sign in with Snowflake (OAuth)**: Use your Snowflake account to authenticate via OAuth. This requires your organization to have configured a Snowflake security integration. See [Snowflake connection setup](/integrations/connect-project#sign-in-with-snowflake) for details.
+- **Private Key**: Authenticate using a private key file.
+- **Password**: Use your Snowflake username and password.
+
+### Databricks
+
+- **Sign in with Databricks (OAuth)**: Use your Databricks account to authenticate via OAuth. This requires your organization to have configured a Databricks OAuth application. See [Databricks connection setup](/integrations/connect-project#sign-in-with-databricks) for details.
+- **Personal Access Token**: Use a Databricks personal access token.
+
+### BigQuery
+
+- **Sign in with Google (OAuth)**: Use your Google account to authenticate via OAuth.
+- **Service Account**: Use a service account JSON key file.
+
+### Redshift
+
+- **Sign in with AWS**: Use your AWS IAM Identity Center account to authenticate in the browser. This requires the project connection to be configured with AWS IAM Identity Center settings. See [Redshift connection setup](/integrations/connect-project#redshift) for details.
+- **AWS IAM (CLI credentials)**: Paste temporary AWS credentials from your CLI or SSO profile when the project requires personal warehouse credentials.
+- **Password**: Use your Redshift username and password.
+
+### Other warehouses
+
+For other warehouse types (Postgres, Trino, ClickHouse), authentication is typically done using username and password credentials.
+
+## With agent identity on
+
+When the [agent identity](/agents/agent-identity) feature flag is on, a personal warehouse credential can set sign-in fields only. The host, port, database, compute, TLS, SSH tunnel and policy settings always come from the project connection. Lightdash refuses to save a personal credential that sets any other field, and the error names the fields.
+
+| Warehouse | Sign-in fields a personal credential can set |
+| --- | --- |
+| Snowflake | User, password, private key, private key passphrase, refresh token, authentication type |
+| BigQuery | Sign in with Google only: the Google sign-in keyfile (type, client ID, client secret and refresh token) and the authentication type |
+| Databricks | Personal access token or refresh token, authentication type, OAuth client ID. The workspace host is checked against the connection, never used. |
+| Redshift | User, password, authentication type, AWS access key ID and secret access key, session token, and a role ARN and external ID with your own AWS keys |
+| Postgres, Trino, ClickHouse | User, password |
+| Athena | AWS access key ID and secret access key |
+| DuckDB | MotherDuck token |
+
+Lightdash refuses to save a BigQuery service account key file, and a Redshift IAM credential with a role but no AWS access key of your own.
+
+Some saved credentials stop working when the flag turns on. Queries with them fail with: "Your saved warehouse credentials can no longer be used with this connection. Reconnect your credentials and try again." Lightdash never falls back to the shared project credentials. Reconnect your credentials under **Settings → My warehouse connections**. This affects:
+
+- A Databricks sign-in saved without a workspace host, or for a different workspace host than the connection.
+- A Databricks credential that uses a service principal (machine-to-machine) sign-in.
+- A Redshift IAM credential that has a role but no AWS access key of your own.
+- An Athena credential that has a session token.
+- A credential for a different warehouse type than the project connection.
+- A MotherDuck token used with a DuckDB connection that is not MotherDuck.
+
+Other saved credentials keep working. Lightdash ignores any extra fields on them, such as a host, database, warehouse or role, and uses the connection's values instead.

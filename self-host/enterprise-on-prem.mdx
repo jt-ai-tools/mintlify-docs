@@ -1,9 +1,12 @@
 ---
 title: "Enterprise on-prem setup"
-description: "Guide for deploying Lightdash Enterprise Edition on your own infrastructure"
+description: "Deploy FedRAMP-ready Lightdash Enterprise Edition on premises on your own infrastructure"
+sidebarTitle: "On-prem setup"
+boost: 0.001
+doc-type: reference
 ---
 
-This guide covers the setup requirements and best practices for deploying Lightdash Enterprise Edition on-premises.
+This guide covers the setup requirements and best practices for deploying Lightdash Enterprise Edition on-prem (on prem, on-premises, on premises). Lightdash Enterprise supports FedRAMP-ready deployments for government and regulated industries.
 
 ## Prerequisites
 
@@ -11,49 +14,21 @@ This guide covers the setup requirements and best practices for deploying Lightd
 
 ## Accessing the Lightdash image
 
-The Lightdash image is available on [DockerHub](https://hub.docker.com/repository/docker/lightdash/lightdash/tags). You can pull a specific version (recommended) or use `latest`.
+The Lightdash image is available on [DockerHub](https://hub.docker.com/repository/docker/lightdash/lightdash/tags). Pin a specific version in production rather than `latest`:
 
 ```bash
 docker pull lightdash/lightdash:0.2248.3
 ```
 
-### Recommended version strategy
-
-We publish frequent releases, and we don't currently provide an LTS (long-term support) or "stable" tag for self-hosted deployments.
-
-**Our recommendation:**
-
-- **Use a pinned version in production** (e.g. `lightdash/lightdash:0.2248.3`) rather than `latest`
-- Pinning makes deployments repeatable and avoids unexpected changes
-
-**Treat upgrades as a controlled rollout:**
-
-1. Upgrade in **staging** first
-2. Run your normal validation (SSO, connections, dbt refreshes, scheduled jobs, embeds, critical dashboards)
-3. Roll out to **production** when you're comfortable
+For the versioning policy, upgrade cadence, and how to rehearse upgrades in UAT, see [Upgrading Lightdash](/self-host/upgrading).
 
 ## License key
 
-A license key is required for Enterprise Edition features. Set it via the `LIGHTDASH_LICENSE_KEY` environment variable. Your license key will be shared by the Lightdash team via 1Password.
-
-<Note>
-License validation requires outbound access to `https://api.keygen.sh`.
-</Note>
-
-For detailed configuration instructions, see [Enterprise License Keys](/self-host/customize-deployment/enterprise-license-keys).
+A license key is required for Enterprise Edition features. Set it via the `LIGHTDASH_LICENSE_KEY` environment variable — the Lightdash team shares your key via 1Password. See [enterprise features](/self-host/enterprise-features) for configuration, validation, and network requirements.
 
 ### After activating your license key
 
-Once your license key is active, most Enterprise features are controlled by environment variables. To enable a specific feature, you'll need to set the corresponding variable:
-
-| Feature | Environment variable | Documentation |
-|---------|---------------------|---------------|
-| Custom roles | `CUSTOM_ROLES_ENABLED=true` | [Custom roles](/references/workspace/custom-roles#custom-roles) |
-| AI agents | `AI_AGENTS_ENABLED=true` | [AI agents](/guides/ai-agents) |
-| Caching | `RESULTS_CACHE_ENABLED=true` | [Caching](/guides/developer/caching) |
-| Embedding | `EMBEDDING_ENABLED=true` | [Embedding](/references/embedding) |
-
-You can [search "enterprise" on the environment variables page](/self-host/customize-deployment/environment-variables) to see all variables that require an Enterprise license key.
+Once your license key is active, each Enterprise feature is enabled from its section on the [enterprise features](/self-host/enterprise-features) page — AI agents, data apps, embedding, MCP, custom roles, service accounts, SCIM, pre-aggregates, AI writeback, and multi-agent Slack channels.
 
 <Tip>
 If you need help enabling features or troubleshooting your deployment, contact the Lightdash team.

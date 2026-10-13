@@ -1,0 +1,216 @@
+---
+title: "Roles and permissions"
+description: "Organization, project, and space roles, how they stack, and every permission each grants"
+doc-type: reference
+---
+
+## Organization vs. project roles
+
+Organization roles and project roles work at two different levels:
+
+- **Organization roles** apply across your whole instance. They're for the big-picture, instance-wide settings — like managing AI agent settings — and they carry across every project that lives inside that instance.
+- **Project roles and scopes** are narrower. They grant permission to do specific things inside one particular project, without affecting anything outside it.
+
+In short: organization roles oversee everything; project roles handle the details within a single project.
+
+### Example: Acme, Inc.
+
+Acme, Inc. is an organization with three projects: **Customer facing**, **Internal analytics**, and **Another project**. Here's how roles and groups combine to give each person the right access:
+
+<Frame>
+  <img className="block dark:hidden" src="/images/workspace-admin/roles/roles-and-permissions-light.png" alt="Diagram of Acme, Inc. showing how org roles, project roles, and group memberships give each user access across three projects" />
+  <img className="hidden dark:block" src="/images/workspace-admin/roles/roles-and-permissions-dark.png" alt="Diagram of Acme, Inc. showing how org roles, project roles, and group memberships give each user access across three projects" />
+</Frame>
+
+- **Bruno** — Org `Developer`. Set once at the org, so he's automatically a `Developer` in all three projects (and any future ones). No per-project setup needed.
+- **Tori** — Org `Member` + `Viewer` on **Customer facing** project. `Member` is the blank-slate minimum: it grants nothing by itself. Her only access comes from the project role assigned directly on **Customer facing**, so that's the only project she can see.
+- **Jess** — Org `Viewer` + Data team group. Her org role cascades, so she's a `Viewer` in every project. In **Internal analytics** she also has `Developer` access which she inherited from the Data team group's project role. Note that org and project permissions stack additively.
+- **Winnie** — Org `Member` + Data team group. Like Tori, `Member` gives her nothing by default. Her only access is `Developer` on **Internal analytics**, inherited through the Data team group — she can't see the other two projects.
+- **Data team** — a group, not a user. Assigned `Developer` on **Internal analytics** once; every member (Jess, Winnie) inherits it. Add someone to the group and they get the same access — no individual assignments to maintain.
+
+## Roles in your Lightdash instance
+
+* Everybody in your organization will join as an `Organization Member` unless specified. For example, if I invite someone to a project as an editor, they will become an organization member with `editor` access to that project. If I invite someone to the ***organization*** as a `viewer`, then they will be an `organization viewer` (instead of an `organization member`).
+
+* Only Organization Admins can create new projects (and will be the Project Admin for those projects). Organization Developers can create preview projects only. Editors, Interactive Viewers, Viewers, and Members cannot create projects.
+
+* Admins have access to all content (even content they haven't been explicitly invited to).
+
+### Space Roles
+
+There are three space roles: `Full Access`, `Can Edit`, `Can View`
+
+| Action               | Full Access                                   | Can Edit                                      | Can View                                      |
+| :------------------: | :-------------------------------------------: | :-------------------------------------------: | :-------------------------------------------: |
+| View space content   | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage space content | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="x" className="matrix-no" />        |
+| Manage space access  | <Icon icon="check" /> | <Icon icon="x" className="matrix-no" />        | <Icon icon="x" className="matrix-no" />        |
+| Manage space details | <Icon icon="check" /> | <Icon icon="x" className="matrix-no" />        | <Icon icon="x" className="matrix-no" />        |
+
+The table describes the capabilities granted by each effective Space role. See [how Space permissions combine](/explore/spaces#how-permission-inheritance-works) for the complete resolution model.
+
+For access to individual items without sharing their space, see [Direct access](/workspace-admin/direct-access). Its content roles combine with existing access while project capabilities still apply.
+
+Space permissions determine which users can edit Space content (charts and dashboards), view the content in a Space, and change a Space's settings:
+
+* A user needs to have at least the `Can view` access level to a space to browse that space. Individual items can also be shared through direct access.
+
+* A user needs to have the `Can edit` access level to a space to manage content through space access. Direct access can separately authorize editing an existing item.
+
+* The `Full access` Space role grants permission to manage access to the Space and edit its details (name, description, etc.).
+
+Space permissions don't otherwise control what users can do, or which data they can use to build their own content.
+
+This means:
+
+* a project viewer who has `Can edit` space permissions cannot get access to build or edit charts because Viewers don't have access to the Explore view
+
+* an interactive viewer who is given `Can edit` space permissions can save content in that space but not in any other space (unless given `edit` access to another space)
+
+* an editor whose only applicable Space grant is `Can view` cannot edit the content in that Space. A higher user, group, or ancestor-Space grant can still give them `Can edit`.
+
+#### Adjusting space permissions
+
+You can adjust an individual user's permissions, or the permissions of a group in a Space.
+
+<Frame>
+  <img src="/images/workspace-admin/roles/add-users-space-16d5e8a04ac28514e015df2cbb2e56c6.png" alt="A space access panel listing users and groups, each with a dropdown set to Can view, Can edit, or Full access" />
+</Frame>
+
+A user can receive access from individual assignments, groups, **All project members**, and parent Spaces. A lower individual assignment does not override a higher group or inherited grant. For example, if Priyanka has an individual `Can View` assignment and receives `Can Edit` from the Design group, her effective access is `Can Edit`.
+
+See [Managing access to a Space](/explore/spaces#managing-access-to-a-space) for how to inspect effective access and configure a Space where most project members can view content but only selected people can edit it.
+
+## Allowed email domains to join organization automatically
+
+Organization admins can let anyone with an approved email domain join the organization without an invite, with a default role for each project. For setup steps, see [Invite your team](/workspace-admin/invite-new-users#allowing-users-with-certain-email-domains-to-join-automatically).
+
+## Project roles and permissions
+
+Project Admins can invite users to their project and assign users or [groups](/workspace-admin/manage-groups) to roles in that project. Projects may also be accessible to users through their organization roles.
+
+<div className="sticky-first-col">
+
+| Permission | Project Viewer | Project Interactive Viewer | Project Editor | Project Developer | Project Admin |
+| :--------- | :-----------: | :-----------: | :-----------: | :-----------: | :-----------: |
+| View Dashboard | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Dashboard | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| Manage Dashboard Space | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Dashboard Self | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Saved Chart | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Saved Chart | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| Manage Saved Chart Space | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Saved Chart Self | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Space | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Create Space | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Space | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| Manage Space Public | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Space Assigned | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Space Self | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Dashboard Comments | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Create Dashboard Comments | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Dashboard Comments | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Tags | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Tags | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Pinned Items | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Pinned Items | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Deleted Content | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| View Content Verification | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Content Verification | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Promote Saved Chart | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Promote Saved Chart Space | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Promote Dashboard | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Promote Dashboard Space | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Project | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Create Project Preview | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Update Project | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Update Project Self | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Delete Project | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| Delete Project Self | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Project | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| Manage Compile Project | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Deploy Project | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Deploy Project Self | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Validation | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Scheduled Deliveries Self | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Create Scheduled Deliveries | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Scheduled Deliveries | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| Manage Google Sheets | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Analytics | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| Create Job | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Job | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Job Self | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Job | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Job Status | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Job Status Self | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Content As Code | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Create Content As Code | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Content As Code | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Content As Code Self | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Underlying Data | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Semantic Viewer | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Semantic Viewer | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Semantic Viewer Space | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Explore | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Explore Self | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Sql Runner | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Custom Sql | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Custom Fields | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Custom Sql Table Calculations | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Create Virtual View | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Delete Virtual View | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Virtual View | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Pre Aggregation | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Export Csv | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Change Csv Results | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Source Code | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Source Code | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Ai Agent | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Ai Agent | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Ai Agent Document | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Ai Agent Document | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Ai Agent Thread | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| View Ai Agent Thread Self | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Create Ai Agent Thread | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Ai Agent Thread | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| Manage Ai Agent Thread Self | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Data App | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Data App | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| Manage Data App Space | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Create Data App | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Data App Self | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Data App Self | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View External Connection | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage External Connection | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| Manage Spotlight Table Config | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Spotlight Table Config | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Metrics Tree | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Metrics Tree | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+
+</div>
+
+## Organization roles and permissions
+
+Organization Admins can assign roles to organization members. Organization-only permissions manage settings and resources across the Lightdash organization.
+
+<div className="sticky-first-col">
+
+| Permission | Organization Member | Organization Viewer | Organization Interactive Viewer | Organization Editor | Organization Developer | Organization Admin |
+| :--------- | :-----------: | :-----------: | :-----------: | :-----------: | :-----------: | :-----------: |
+| View Organization | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Organization | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| View Organization Member Profile | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Organization Member Profile | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| Manage Invite Link | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| Manage Group | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| Manage Git Integration | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| View Organization Warehouse Credentials | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Organization Warehouse Credentials | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| Manage Personal Access Token | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| Impersonate User | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+| View Organization Ai Agent | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Organization Ai Agent | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| View Organization Design | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> | <Icon icon="check" /> |
+| Manage Organization Design | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="x" className="matrix-no" /> | <Icon icon="check" /> |
+
+</div>

@@ -1,0 +1,43 @@
+---
+title: "Compilation"
+sidebarTitle: "Compilation"
+description: Compile dbt or Lightdash YAML models into explores and control compilation strictness
+---
+
+import StrictCompilationFlags from '/snippets/strict-compilation-flags.mdx';
+
+`lightdash compile` builds dbt or native Lightdash YAML models into explores and reports semantic errors, such as a metric referencing a dimension that does not exist.
+
+Compilation also runs inside [`lightdash validate`](/workflow/cli/validate), [`lightdash deploy`](/workflow/cli/deploy), and [`lightdash preview`](/workflow/preview-projects), so the behaviour and flags on this page apply to those commands too.
+
+For native projects, the CLI detects the [Lightdash YAML project layout](/semantic-layer/yaml#project-layout) and compiles without running dbt or loading a dbt profile. See [Validate your YAML](/semantic-layer/yaml#step-3-validate-your-yaml) for the configuration and command. dbt selectors and warehouse-column probes do not apply to this path.
+
+## Choose partial or strict compilation
+
+<StrictCompilationFlags />
+
+To report the isolated failures as errors instead, use strict compilation:
+
+```bash
+lightdash compile --no-partial-compilation
+```
+
+Combine it with warehouse-column validation when your project uses physical references:
+
+```bash
+lightdash compile --no-partial-compilation --validate-warehouse-columns
+```
+
+## Compile a subset of your dbt models
+
+If you only use a subset of your dbt models in Lightdash, specify that subset with dbt selection syntax. For example, to only compile models with the tag `lightdash`:
+
+```bash
+lightdash compile --select tag:lightdash
+```
+
+See [`lightdash compile`](/workflow/cli/reference#lightdash-compile) in the CLI reference for every option.
+
+## Run compilation in CI
+
+To run `lightdash compile` on every pull request and catch errors before they're merged, use the compile workflow template. Follow [Compile your dbt project](/workflow/set-up-ci-cd#compile-your-dbt-project) in Automate with CI/CD.

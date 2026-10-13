@@ -1,0 +1,109 @@
+---
+title: "Nested and repeated columns"
+description: "Expose STRUCT and ARRAY values as fields in Lightdash"
+---
+
+<Info>
+  Available for BigQuery and Databricks projects.
+</Info>
+
+Columns can store records and arrays. Lightdash turns their contents into fields, so users can explore them without writing `UNNEST` queries.
+
+## Supported types
+
+| Column type | Example | What Lightdash creates |
+| --- | --- | --- |
+| `STRUCT` or non-repeated `RECORD` | `customer.address.city` | An ordinary dimension on the model |
+| `ARRAY<STRUCT>` or repeated `RECORD` | `line_items.sku` | A separate group in the Explore, queried at one row per array element |
+| `ARRAY<type>` | `tags` as `ARRAY<STRING>` | A separate group in the Explore with `value` and `offset` dimensions |
+
+For records, add each leaf you want to expose. For an array of scalar values, add the array column itself.
+
+Type names follow your warehouse: BigQuery calls these `RECORD` and `REPEATED`, Databricks `STRUCT` and `ARRAY`.
+
+<Note>
+  Databricks supports nested and repeated columns when connected to a SQL warehouse or an all-purpose cluster running Databricks Runtime 16.2 or later.
+</Note>
+
+## From your warehouse to Lightdash
+
+Imagine an `orders` table with one row per order.
+
+Add the full path of each field you want to expose to your dbt YAML. Lightdash reads the type and structure from your warehouse, so you do not need to describe the nesting in YAML.
+
+<Columns cols={2}>
+  <Column>
+    **In your warehouse**
+
+    <Frame>
+      <img src="/images/semantic-layer/nested-and-repeated-columns/orders-table-schema.png" alt="Orders table with a nested customer record, repeated line item records, and repeated scalar tags, each with an array offset" />
+    </Frame>
+  </Column>
+  <Column>
+    **In your semantic layer**
+
+    <CodeGroup>
+    ```yaml dbt v1.10+ and Fusion
+    models:
+      - name: orders
+        config:
+          meta:
+            primary_key: order_id
+        columns:
+          - name: order_id
+          - name: customer.address.city
+          - name: line_items.sku
+          - name: line_items.price
+          - name: tags
+    ```
+
+    ```yaml dbt v1.9 and earlier
+    models:
+      - name: orders
+        meta:
+          primary_key: order_id
+        columns:
+          - name: order_id
+          - name: customer.address.city
+          - name: line_items.sku
+          - name: line_items.price
+          - name: tags
+    ```
+    </CodeGroup>
+  </Column>
+</Columns>
+
+After you deploy the project, users see:
+
+- **City** on the **Orders** table. Because `customer` is not repeated, the field stays at the order grain.
+- **Sku**, **Price**, and **Offset** under **Orders: Line items**. Each line item is one row, and `offset` is its zero-based position in the array.
+- **Value** and **Offset** under **Orders: Tags**. `value` contains the tag itself.
+
+Only the fields listed in YAML are exposed. For example, `customer.name` remains hidden until you add it.
+
+## How queries behave
+
+Lightdash expands a repeated column only when a query selects, filters, or sorts by one of its fields. Each array element adds a row to the query before Lightdash groups the results. Orders with an empty or `NULL` array remain in the result with `NULL` repeated fields.
+
+The `primary_key` lets Lightdash deduplicate metrics defined on the parent model when repeated fields change the query grain. Metrics defined on a repeated field are calculated at the array-element grain.
+
+A filter on a repeated field keeps the matching elements, not every element from each matching order. For example, filtering to one SKU returns that SKU rather than all line items from orders that contain it.
+
+### Query warnings
+
+Selecting fields from two separate repeated columns pairs every element from one array with every element from the other. This can inflate metrics. For example, selecting both `line_items.sku` and a field from a repeated `shipments` column multiplies the line items by the shipments for each order.
+
+Lightdash shows a warning when a query combines repeated columns this way, or when a metric on one repeated column could be inflated by another.
+
+## Deploy your changes
+
+Before running [`lightdash deploy`](/workflow/cli/deploy), [update the Lightdash CLI](/workflow/cli/install#updating-the-lightdash-cli). The CLI reads the nested-column setting from the Lightdash server when it compiles your Explores.
+
+[`lightdash generate`](/workflow/cli/generate) does not add repeated columns or their leaves to YAML. Add those entries manually after generating your model configuration.
+
+## Limitations
+
+- Record and array containers cannot be selected directly as fields.
+- To access an array element by index, such as `line_items[0].sku`, define a dimension with custom `sql`.
+- SQL Runner and virtual views recognize nested column types but do not expand them into fields.
+- Column types with no addressable fields, such as Databricks `MAP` and `VARIANT`, are exposed as plain string dimensions.

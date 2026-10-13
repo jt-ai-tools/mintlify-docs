@@ -6,48 +6,48 @@ Welcome to the Lightdash documentation repository! This repo contains all docume
 
 ### Prerequisites
 
-- Node.js 18+ installed
+- Node.js 24+ installed
 - Familiarity with Markdown/MDX
+- The [`mint` CLI](https://www.npmjs.com/package/mint) installed globally for local development
 
-### Local Development
+### Preview locally
 
-Install the [Mintlify CLI](https://www.npmjs.com/package/mintlify) to preview documentation changes locally:
+Install the Mintlify CLI and start its local development server:
 
 ```bash
-# Install Mintlify CLI
-npm i -g mintlify
-
-# Start local development server
-mintlify dev
+npm i -g mint@latest
+mint dev
 ```
 
-### Troubleshooting
-
-- Mintlify dev isn't running - Run `mintlify install` to re-install dependencies
-- Page loads as a 404 - Make sure you are running in a folder with `mint.json`
+See the [local development workflow](#3-local-development) for the checks to run before opening a pull request.
 
 ## 📁 Documentation Structure
 
-Our documentation follows a strict folder structure where **images mirror the page structure**:
+Directories are product areas, never doc types — a page lives wherever the part of the product it documents lives:
 
+```text
+get-started/            # Onboarding: quickstart + explorer/developer tracks
+explore/                # Charts, dashboards, spaces, scheduled deliveries
+semantic-layer/         # Dimensions, metrics, pre-aggregates
+workflow/               # Version control, CI/CD, the CLI (workflow/cli/)
+agents/                 # AI analyst agents
+data-apps/              # Data apps
+embed/                  # Embedding
+integrations/           # Third-party integrations
+workspace-admin/        # Org, project, and permissions admin
+personal-settings/      # Per-user settings
+self-host/              # Self-hosting
+help/                   # Support
+api-reference/          # REST API
+sdk/                    # SDKs
+snippets/               # Shared content transcluded into multiple pages
 ```
-docs/
-├── get-started/          # Onboarding and setup guides
-├── guides/               # Feature guides and how-tos
-├── references/           # API and feature reference docs
-├── dbt-guides/           # dbt-specific guides
-└── self-host/            # Self-hosting documentation
 
-images/
-├── get-started/          # ✅ Mirrors docs structure
-├── guides/
-├── references/
-└── ...
-```
+Whether a page is a Tutorial, Guide, or Reference is a frontmatter property (`doc-type`), not a folder — see [Creating a New Page](#creating-a-new-page) below. The full placement and naming rules live in [`.mintlify/ia-rules.md`](.mintlify/ia-rules.md); check it before creating a new page or directory.
 
-### Key Principles
+**Images mirror page paths.** `images/` reproduces the same tree as the docs:
 
-1. **Images belong with their pages**: A page at `guides/dashboard.mdx` should use images from `images/guides/dashboard/`
+1. **Images belong with their pages**: A page at `explore/spaces.mdx` should use images from `images/explore/spaces/`
 2. **Shared images go higher**: If an image is used by multiple pages, place it in the nearest common parent folder
 3. **Use kebab-case**: All files and folders use `kebab-case` (e.g., `my-new-guide.mdx`, not `my_new_guide.mdx`)
 
@@ -57,13 +57,20 @@ Thank you for your interest in improving Lightdash's documentation!
 
 ### Creating a New Page
 
-1. **Choose the right location**:
-   - **get-started/**: For new users setting up Lightdash
-   - **guides/**: Step-by-step instructions for specific tasks
-   - **references/**: Detailed feature documentation and API docs
-   - **dbt-guides/**: dbt-specific content
+1. **Place it by product area**, not by doc type — pick the directory for the part of the product the page documents (`explore/`, `semantic-layer/`, `workflow/`, `agents/`, and so on; see [Documentation Structure](#-documentation-structure)). Full placement and naming rules are in [`.mintlify/ia-rules.md`](.mintlify/ia-rules.md).
 
-2. **Create the MDX file** with proper frontmatter:
+2. **Declare the doc type in frontmatter** if the page isn't a plain docs page:
+
+   | Type | Frontmatter |
+   | --- | --- |
+   | Docs (default) | none |
+   | Tutorial | `doc-type: tutorial` + `tag: "Tutorial"` |
+   | Guide | `doc-type: guide` + `tag: "Guide"` |
+   | Reference | `doc-type: reference` |
+
+   See `.mintlify/ia-rules.md` for what each type covers and when to use it.
+
+3. **Create the MDX file** with proper frontmatter:
 
 ```mdx
 ---
@@ -80,7 +87,7 @@ Introduction paragraph explaining what this page covers.
 Content here...
 ```
 
-3. **Add to navigation** in `docs.json`:
+1. **Add to navigation** in `docs.json`:
 
 ```json
 {
@@ -94,15 +101,19 @@ Content here...
 ### Content Best Practices
 
 #### Use Clear, Action-Oriented Titles
+
 - ✅ **Good**: "How to create a dashboard"
 - ❌ **Bad**: "Dashboards"
 
 #### Write for Your Audience
-- **get-started/**: Assume no prior Lightdash knowledge
-- **guides/**: Assume basic familiarity
-- **references/**: Technical users who need details
+
+- **Docs** (default type): Assume basic familiarity with the feature
+- **Tutorials**: Walk a first-timer through one task start to finish
+- **Guides**: Opinionated recommendations for readers already familiar with the basics
+- **References**: Technical users who need exhaustive detail
 
 #### Structure Your Content
+
 ```mdx
 # Page Title (H1 - only one per page)
 
@@ -133,9 +144,10 @@ More instructions...
 ### Adding Images
 
 1. **Create a folder matching your page**:
+
    ```
-   guides/my-new-feature.mdx
-   images/guides/my-new-feature/
+   explore/my-new-feature.mdx
+   images/explore/my-new-feature/
    ```
 
 2. **Use descriptive filenames**:
@@ -153,7 +165,7 @@ More instructions...
 
 ```mdx
 <Frame>
-  <img src="/images/guides/my-feature/screenshot.png" alt="Descriptive alt text"/>
+  <img src="/images/explore/my-feature/screenshot.png" alt="Descriptive alt text"/>
 </Frame>
 ```
 
@@ -166,63 +178,34 @@ More instructions...
 ### Accessibility
 
 Always include meaningful alt text:
+
 ```mdx
 <img src="/images/path/file.png" alt="Dashboard settings showing the theme selector dropdown menu"/>
 ```
 
 ## 🔁 Using Reusable Snippets
 
-To maintain consistency across the documentation, we use reusable snippets for common callouts and content blocks.
+Identical text in two or more pages is a snippet, not a copy — copies drift, and this repo has shipped contradictory sizing numbers and semantics because of copied tables. Shared tables, warnings, and content blocks live in `/snippets/` and are transcluded with an MDX import, not copy-pasted.
 
-### Available Snippets
+### Using an Existing Snippet
 
-#### Feature Availability Callouts
-
-```mdx
-<!-- Enterprise-only features -->
-<Snippet file="snippets/callouts/enterprise-only.mdx" />
-
-<!-- Cloud-only features -->
-<Snippet file="snippets/callouts/cloud-only.mdx" />
-
-<!-- Self-hosted only features -->
-<Snippet file="snippets/callouts/self-hosted-only.mdx" />
-```
-
-#### Permission & Access Callouts
+Import the snippet and render it where the shared content belongs:
 
 ```mdx
-<!-- Requires admin permissions -->
-<Snippet file="snippets/callouts/admin-only.mdx" />
+import EmbedAvailability from '/snippets/embedding-availability.mdx';
 
-<!-- Beta features -->
-<Snippet file="snippets/callouts/beta-feature.mdx" />
+<EmbedAvailability />
 ```
 
-#### Common Setup Sections
+`snippets/embedding-availability.mdx` (a feature-availability callout) and `snippets/liquid-templating.mdx` (a shared explanation transcluded into both the dimensions and metrics references) are two examples already in use.
 
-```mdx
-<!-- dbt prerequisites (includes heading) -->
-<Snippet file="snippets/setup/dbt-project-required.mdx" />
-
-<!-- Support channels (includes heading) -->
-<Snippet file="snippets/common/support-channels.mdx" />
-```
-
-### When to Use Snippets
-
-- ✅ **Use snippets** for standard callouts that appear across multiple pages
-- ✅ **Use snippets** for repeated setup instructions or prerequisites
-- ❌ **Don't use snippets** for page-specific content that won't be reused
-
-### Creating New Snippets
+### Creating a New Snippet
 
 If you notice the same content repeated across 3+ pages:
 
-1. Create a new snippet file in `/snippets/` with an appropriate subdirectory
-2. Use descriptive filenames: `enterprise-only.mdx` not `callout1.mdx`
-3. Document the new snippet in this section
-4. Update existing pages to use the snippet
+1. Create a new file in `/snippets/` with a descriptive name (`embedding-availability.mdx`, not `callout1.mdx`)
+2. Import and render it on every page that needs it, replacing the copied text
+3. Update the canonical page's content only from then on — every other page stays in sync automatically
 
 ## 🔄 Submitting Changes
 
@@ -233,6 +216,7 @@ git checkout -b docs/your-feature-name
 ```
 
 Branch naming:
+
 - `docs/new-feature-guide` - New documentation
 - `docs/fix-typo-in-setup` - Fixes
 - `docs/update-api-reference` - Updates
@@ -243,63 +227,63 @@ Branch naming:
 - Add images to the correct folders
 - Update `docs.json` navigation if needed
 
-### 3. Test Locally
+### 3. Local development
 
 ```bash
-mintlify dev
+mint dev
 ```
 
 - Check all links work
 - Verify images display correctly
 - Review formatting
 
-#### Run Validation Scripts
+#### Run validation checks
 
-Before submitting your PR, run these validation scripts to catch common issues:
+Install the repository dependencies, then run the project and Mintlify checks before submitting your pull request:
 
 ```bash
-# Check for broken internal links and orphaned pages
-node scripts/check-links.js
+npm ci
 
-# Check for broken external links (optional, slower)
-node scripts/check-links.js --external
+# Type-check and test the documentation utilities
+npm run check
 
-# Validate that images are in the correct locations
-node scripts/check-image-locations.js
+# Check repository-specific documentation rules
+npm run validate:docs
+
+# Run the Mintlify validation and link checks
+mint validate
+mint broken-links --check-anchors
+
+# Audit external links (optional, slower, and advisory)
+npm run audit:external-links
 ```
 
 **What these scripts check:**
 
-- **check-links.js** - Validates all internal markdown and JSX links, verifies linked files exist, and identifies orphaned pages (not in `docs.json`)
-- **check-image-locations.js** - Ensures images mirror page structure (e.g., `guides/dashboard.mdx` → `images/guides/dashboard/`), checks for missing images, and validates file extensions
+- **`npm run check`** - Type-checks the utilities and runs their tests.
+- **`npm run validate:docs`** - Enforces internal links, image locations, page frontmatter, navigation reachability, and redirect integrity.
+- **`mint validate`** - Validates the Mintlify project configuration and content.
+- **`mint broken-links --check-anchors`** - Checks page links and heading anchors.
+- **`npm run audit:external-links`** - Records unavailable third-party links as advisory findings without blocking content changes.
 
-**Automated checks:** These scripts run automatically on all PRs via GitHub Actions. The validation workflow will comment on your PR with any issues found (but won't block merging).
+**Automated checks:** Pull requests block only on findings in changed files. The validation workflow adds inline annotations, updates one PR comment, and publishes the complete JSON report as an artifact. Full-site and external-link audits run on a schedule.
 
 #### Auto-fixing Image Location Issues
 
-**The bot automatically fixes image location issues!** When you create a PR, the Documentation Bot will:
-- Detect misplaced images
-- Automatically move them to the correct directory structure
-- Update all MDX file references
-- Commit the fixes directly to your PR branch
-
-You'll see a comment like: "✅ Fixed 2 misplaced images"
-
-**Manual fixing (optional):**
-You can also run the fix script locally:
+The validator identifies auto-fixable image placement findings without writing to PR branches. Run the fix script locally:
 
 ```bash
 # Preview what would be changed
-node scripts/fix-image-locations.js --dry-run
+npm run fix:image-locations -- --dry-run
 
 # Apply the fixes
-node scripts/fix-image-locations.js
+npm run fix:image-locations
 ```
 
 **Troubleshooting common issues:**
 
-- **Broken links:** Use absolute paths from root (`/guides/my-guide` not `../guides/my-guide`) and omit file extensions in links
-- **Misplaced images:** Run `node scripts/fix-image-locations.js` to automatically fix
+- **Broken links:** Use absolute paths from root (`/explore/spaces` not `../explore/spaces`) and omit file extensions in links
+- **Misplaced images:** Run `npm run fix:image-locations` to automatically fix
 - **Shared images:** Can be placed in the nearest common parent directory
 
 ### 4. Commit Your Changes
@@ -310,6 +294,7 @@ git commit -m "docs: add guide for custom metrics"
 ```
 
 Commit message format:
+
 - `docs: add [feature]` - New content
 - `docs: fix [issue]` - Bug fixes
 - `docs: update [page]` - Updates
@@ -322,6 +307,7 @@ git push origin docs/your-feature-name
 ```
 
 Then create a Pull Request with:
+
 - Clear title describing the change
 - Description of what changed and why
 - Screenshots if relevant
@@ -368,17 +354,19 @@ GROUP BY user_id
 
 #### Links
 
-- Use descriptive link text: [create a new dashboard](/get-started/exploring-data/dashboards)
-- Not: Click [here](/get-started/exploring-data/dashboards)
+- Use descriptive link text: [create a new dashboard](/explore/dashboards)
+- Not: Click [here](/explore/dashboards)
 
 #### Lists
 
 Use numbered lists for sequential steps:
+
 1. First do this
 2. Then do this
 3. Finally do this
 
 Use bullet points for non-sequential items:
+
 - Feature A
 - Feature B
 - Feature C
@@ -386,6 +374,7 @@ Use bullet points for non-sequential items:
 ### Common Terms
 
 Maintain consistency:
+
 - **Lightdash** (capital L, not lightdash)
 - **dbt** (lowercase, not DBT)
 - **dashboard** (lowercase, not Dashboard)

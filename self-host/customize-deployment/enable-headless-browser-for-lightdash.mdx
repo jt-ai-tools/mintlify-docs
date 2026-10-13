@@ -1,9 +1,17 @@
 ---
 title: "Add headless browser on self-hosting"
-description: "We use a chrome headless browser to generate images from your charts and dashboards so we can send them via email or Slack."
+description: "Run the headless browser that renders chart and dashboard images for email and Slack deliveries"
 sidebarTitle: Headless browser
 
+boost: 0.001
+doc-type: tutorial
 ---
+
+import HeadlessBrowserEnv from '/snippets/self-host/headless-browser-env.mdx';
+
+<Note>
+🛠 This page is for engineering teams self-hosting their own Lightdash instance. If you want to set up scheduled deliveries, go to the [Scheduled deliveries](/explore/create-scheduled-deliveries) guide.
+</Note>
 
 Images can be requested on `Slack unfurl` or using our `Scheduler`
 
@@ -12,7 +20,7 @@ If you are running Lightdash on self-hosting, you will also have to run this hea
 ## How it works
 
 <Frame>
-  ![](/images/self-host/customize-deployment/enable-headless-browser-for-lightdash/headless-browser-schema-62b496e0d9f5f705ae823c7d4fdec946.png)
+  ![Diagram: scheduled deliveries and Slack unfurls trigger image generation in Lightdash, which opens a socket to the headless browser; the browser loads the chart page and returns a screenshot for email or Slack](/images/self-host/customize-deployment/enable-headless-browser-for-lightdash/headless-browser-schema-62b496e0d9f5f705ae823c7d4fdec946.png)
 </Frame>
 
 When Lightdash needs to generate an image, it will open a new socket connection to the headless browser on `ws://HEADLESS_BROWSER_HOST:HEADLESS_BROWSER_PORT`
@@ -28,7 +36,7 @@ If the image was requested by Slack unfurl, we will unfurl the image using the S
 ## Configure headless browser on lightdash
 
 <Note>
-  Lightdash uses Browserless for headless browser functionality. We recommend using the `ghcr.io/browserless/chromium` image with version `v2.24.3`, which is the version used in Lightdash Cloud deployments.
+  Lightdash uses Browserless for headless browser functionality with the `ghcr.io/browserless/chromium` image. Match the version Lightdash Cloud runs, which the official [Helm chart](https://github.com/lightdash/helm-charts) pins as the `browserless-chrome.image.tag` default — deploy that tag rather than choosing your own.
 </Note>
 
 In order to make this work, there are a few key ENV variables that need to be configured correctly.
@@ -37,8 +45,81 @@ In order to make this work, there are a few key ENV variables that need to be co
 * `HEADLESS_BROWSER_PORT` : Optional port for headless browser, defaults to 3001
 * `SITE_URL` : The URL for your Lightdash instance.
 
+### Headless browser environment variables
+
+<HeadlessBrowserEnv />
+
 <Info>
   This SITE\_URL variable (eg: [https://eu1.lightdash.cloud](https://eu1.lightdash.cloud)) needs to be accessible from this headless browser service, either by a local connection, or via Internet. Otherwise it will not be able to open a page and generate the image.
 
   This means that if you are using docker locally, make sure the headless browser pod can reach the lightdash pod. Or follow the [docker documentation](https://docs.docker.com/compose/compose-file/compose-file-v3/#network_mode) to enable `network:host`
 </Info>
+
+## Timeouts and retries
+
+If you're exporting large dashboards via scheduled deliveries or Slack, you may need
+to tune timeout and retry settings. There are two layers of configuration: the
+Browserless container and the Lightdash backend.
+
+### Browserless container
+
+Set these environment variables on the **headless browser pod/container** (the
+`ghcr.io/browserless/chromium` image):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TIMEOUT` | `30000` | Maximum time (ms) Browserless allows a browser session to run before terminating it. Increase this if large dashboards time out during export. A value of `120000` (2 minutes) works well for most cases. |
+| `CONNECTION_TIMEOUT` | `180000` | Maximum time (ms) Browserless waits on a connection. The chart default of 180s can truncate very large dashboards — raise to `300000` (5 min) if exports are cut off. |
+| `HEALTH` | `false` | When `true`, Browserless rejects new sessions under memory pressure (HTTP 429) instead of risking an OOM kill mid-screenshot. |
+| `MAX_MEMORY_PERCENT` | — | Memory threshold (percent) above which `HEALTH` sheds new sessions. Set e.g. `85` to reject load before the container OOMs. |
+
+### Lightdash backend
+
+On the **Lightdash backend** (the main app or scheduler worker), the screenshot retry
+settings — `HEADLESS_BROWSER_MAX_SCREENSHOT_RETRIES` and `HEADLESS_BROWSER_RETRY_BASE_DELAY_MS` —
+are documented in [Headless browser environment variables](#headless-browser-environment-variables)
+above. Two scheduler variables also govern screenshot exports, and their canonical reference lives
+in the [Scheduler environment variables](/self-host/customize-deployment/environment-variables#scheduler):
+
+- `SCHEDULER_JOB_TIMEOUT` — maximum time (ms) for any scheduler job (including screenshot exports) to complete (default `600000`, 10 minutes).
+- `SCHEDULER_SCREENSHOT_TIMEOUT` — maximum time (ms) for taking a single chart or dashboard screenshot. Increase this if individual captures time out, separate from the overall job timeout.
+
+### Troubleshooting large dashboard exports
+
+If scheduled deliveries fail for large dashboards, try the following in order:
+
+1. **Increase `TIMEOUT` on the Browserless container** to at least `120000` (2 minutes).
+   This is the most common fix.
+2. **Check that `SITE_URL` is reachable** from the headless browser container. The
+   browser needs to load the full dashboard page, including all chart queries.
+3. If exports still fail intermittently, increase `HEADLESS_BROWSER_MAX_SCREENSHOT_RETRIES`
+   to give it more attempts.
+4. If jobs are timing out entirely, increase `SCHEDULER_JOB_TIMEOUT`. The default
+   of 10 minutes should be sufficient for most dashboards.
+## Run Lightdash on a fully internal HTTPS network
+
+If you run Lightdash with `SECURE_COOKIES=true` and you don't want the headless browser to leave the cluster to reach Lightdash, `INTERNAL_LIGHTDASH_HOST` still needs to be **HTTPS**. Plain HTTP does not work in this configuration: Lightdash emits HSTS on every response, so once Chrome (running inside browserless) has loaded a page from the internal hostname over HTTP it pins that hostname to HTTPS and auto-upgrades every subsequent asset request — which then fails against a plain-HTTP ClusterIP.
+
+The typical setup is to terminate TLS on the internal Lightdash hostname (with an internal Ingress, an nginx/envoy sidecar, an internal AWS ALB, etc.) using a **self-signed certificate**, and tell the Lightdash backend to skip TLS validation for screenshot traffic to that host:
+
+```yaml
+# values.yaml
+configMap:
+  SECURE_COOKIES: 'true'
+  SITE_URL: https://lightdash.mycompany.com
+  INTERNAL_LIGHTDASH_HOST: https://lightdash-internal.svc.cluster.local
+  INTERNAL_LIGHTDASH_HOST_IGNORE_HTTPS_ERRORS: 'true'
+```
+
+`INTERNAL_LIGHTDASH_HOST_IGNORE_HTTPS_ERRORS=true` is opt-in and default off. When enabled, the Lightdash backend skips TLS validation on:
+
+- the internal `getUserCookie` request from the backend to `INTERNAL_LIGHTDASH_HOST`, and
+- the Playwright/Chromium request that renders the screenshot inside the headless browser.
+
+**Security trade-off.** TLS validation is disabled for that traffic. Only enable this flag when the network path between the Lightdash backend, the headless browser and `INTERNAL_LIGHTDASH_HOST` is itself trusted — typically inside a Kubernetes cluster network or a private VPC.
+
+The default `ghcr.io/browserless/chromium` image does not trust self-signed certificates out of the box, so without this flag you will see `net::ERR_CERT_AUTHORITY_INVALID` from Playwright and `DEPTH_ZERO_SELF_SIGNED_CERT` from the backend's own internal fetch.
+
+<Tip>
+If you can issue a publicly-trusted certificate for the internal hostname (e.g. via Let's Encrypt with DNS-01, AWS ACM, an internal subdomain of a public domain), the default browserless image already trusts it and you don't need this flag. This is only worth the effort if a publicly-trusted cert on the internal hostname is straightforward in your infrastructure — many teams find it isn't, which is why this flag exists.
+</Tip>

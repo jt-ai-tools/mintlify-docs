@@ -1,7 +1,16 @@
 ---
 title: "Configure Prometheus metrics for self-hosted Lightdash"
 sidebarTitle: Prometheus metrics
+description: "Expose Prometheus metrics for instance health, plus custom counters driven by application events"
+boost: 0.001
+doc-type: reference
 ---
+
+import PrometheusEnv from '/snippets/self-host/prometheus-env.mdx';
+
+<Note>
+🛠 This page is for engineering teams self-hosting their own Lightdash instance. If you want to monitor usage and analytics, go to the [Usage analytics](/workspace-admin/usage-analytics) guide.
+</Note>
 
 Lightdash can expose Prometheus metrics to help you monitor the performance and health of your Lightdash instance. This guide explains how to enable and configure Prometheus metrics for your self-hosted Lightdash deployment.
 
@@ -17,15 +26,9 @@ LIGHTDASH_PROMETHEUS_ENABLED=true
 
 You can customize the Prometheus metrics endpoint using the following environment variables:
 
-| Variable                                    | Description                                                                     | Required? |           Default           |
-|:--------------------------------------------|:--------------------------------------------------------------------------------|:---------:|:---------------------------:|
-| `LIGHTDASH_PROMETHEUS_ENABLED`              | Enables/Disables Prometheus metrics endpoint                                    |           |           `false`           |
-| `LIGHTDASH_PROMETHEUS_PORT`                 | Port for Prometheus metrics endpoint                                            |           |           `9090`            |
-| `LIGHTDASH_PROMETHEUS_PATH`                 | Path for Prometheus metrics endpoint                                            |           |         `/metrics`          |
-| `LIGHTDASH_PROMETHEUS_PREFIX`               | Prefix for metric names                                                         |           |                             |
-| `LIGHTDASH_GC_DURATION_BUCKETS`             | Buckets for duration histogram in seconds                                       |           | `0.001, 0.01, 0.1, 1, 2, 5` |
-| `LIGHTDASH_EVENT_LOOP_MONITORING_PRECISION` | Precision for event loop monitoring in milliseconds. Must be greater than zero. |           |            `10`             |
-| `LIGHTDASH_PROMETHEUS_LABELS`               | Labels to add to all metrics. Must be valid JSON                                |           |                             |
+<PrometheusEnv />
+
+Operator-configurable counter metrics driven by application events are set through `LIGHTDASH_CUSTOM_METRICS_CONFIG_PATH` — see [Custom event metrics](#custom-event-metrics) below.
 
 ## Available metrics
 
@@ -81,21 +84,95 @@ These metrics provide information about the Node.js runtime:
 
 These metrics provide information about the PostgreSQL connection pool:
 
-| Metric | Type | Description |
-| :----- | :--- | :---------- |
-| `pg_pool_max_size` | gauge | Max size of the PG pool |
-| `pg_pool_size` | gauge | Current size of the PG pool |
-| `pg_active_connections` | gauge | Number of active connections in the PG pool |
-| `pg_idle_connections` | gauge | Number of idle connections in the PG pool |
-| `pg_queued_queries` | gauge | Number of queries waiting in the PG pool queue |
-| `pg_connection_acquire_time` | histogram | Time to acquire a connection from the PG pool in milliseconds |
-| `pg_query_duration` | histogram | Histogram of PG query execution time in milliseconds |
+| Metric | Type | Description | Labels |
+| :----- | :--- | :---------- | :----- |
+| `pg_pool_max_size` | gauge | Max size of the PG pool | |
+| `pg_pool_size` | gauge | Current size of the PG pool | |
+| `pg_active_connections` | gauge | Number of active connections in the PG pool | |
+| `pg_idle_connections` | gauge | Number of idle connections in the PG pool | |
+| `pg_queued_queries` | gauge | Number of queries waiting in the PG pool queue | |
+| `pg_connection_acquire_time` | histogram | Time to acquire a connection from the PG pool in milliseconds | |
+| `pg_query_duration` | histogram | Histogram of PG query execution time in milliseconds | |
 
 ### Queue metrics
 
 | Metric | Type | Description |
 | :----- | :--- | :---------- |
 | `queue_size` | gauge | Number of jobs in the queue |
+
+### Query metrics
+
+These metrics track query execution performance. The `context` label is either `scheduled` or `interactive` based on the execution context.
+
+| Metric | Type | Description | Labels |
+| :----- | :--- | :---------- | :----- |
+| `lightdash_query_status_total` | counter | Total number of queries by terminal status | `status`, `context` |
+| `lightdash_query_state_transitions_total` | counter | Query state transitions | `from`, `to`, `context` |
+| `lightdash_query_queue_wait_duration_seconds` | histogram | Time spent waiting in queue before execution | `context` |
+| `lightdash_query_total_duration_seconds` | histogram | Total query duration from creation to results ready | `context` |
+| `lightdash_query_warehouse_duration_seconds` | histogram | Warehouse query execution duration | `warehouse_type`, `context` |
+| `lightdash_query_overhead_duration_seconds` | histogram | Lightdash overhead: total duration minus warehouse execution time | `context` |
+| `lightdash_query_cache_hit_total` | counter | Total number of query cache hits and misses | `result`, `context`, `has_pre_aggregate_match` |
+
+### Pre-aggregate metrics
+
+These metrics track the pre-aggregate system, including materialization, DuckDB resolution, and file management:
+
+| Metric | Type | Description | Labels |
+| :----- | :--- | :---------- | :----- |
+| `lightdash_pre_aggregate_match_total` | counter | Total number of pre-aggregate match attempts | `result`, `miss_reason`, `format` |
+| `lightdash_pre_aggregate_materialization_total` | counter | Total number of pre-aggregate materializations by outcome | `status`, `trigger` |
+| `lightdash_pre_aggregate_active_materializations` | gauge | Current number of active pre-aggregate materializations | |
+| `lightdash_pre_aggregate_materialization_duration_seconds` | histogram | Pre-aggregate materialization duration | `status`, `trigger` |
+| `lightdash_pre_aggregate_materialization_poll_duration_seconds` | histogram | Time spent polling for materialization query completion in seconds | `status`, `trigger` |
+| `lightdash_pre_aggregate_materialization_warehouse_duration_seconds` | histogram | Warehouse execution time during materialization in seconds | `status`, `trigger` |
+| `lightdash_pre_aggregate_materialization_promote_duration_seconds` | histogram | Time to check file size and promote materialization to active in seconds | `status`, `trigger` |
+| `lightdash_pre_aggregate_materialization_file_size_bytes` | histogram | File size of pre-aggregate materialization in bytes | `format` |
+| `lightdash_pre_aggregate_parquet_conversion_duration_seconds` | histogram | Duration of JSONL to Parquet conversion | `status` |
+| `lightdash_pre_aggregate_duckdb_resolution_total` | counter | Total number of DuckDB pre-aggregate resolution attempts | `status`, `reason` |
+| `lightdash_pre_aggregate_duckdb_resolution_duration_seconds` | histogram | DuckDB pre-aggregate resolution duration | `status` |
+| `lightdash_pre_aggregate_duckdb_query_latency_seconds` | histogram | Total DuckDB query latency in seconds | |
+| `lightdash_pre_aggregate_duckdb_parquet_read_duration_seconds` | histogram | Time spent in READ_PARQUET operators in seconds | |
+| `lightdash_pre_aggregate_duckdb_bytes_read` | histogram | Bytes read from S3/parquet by DuckDB queries | |
+| `lightdash_pre_aggregate_duckdb_scan_amplification` | histogram | Ratio of rows scanned to rows returned in DuckDB queries | |
+| `lightdash_pre_aggregate_fallback_total` | counter | Total number of opportunistic pre-aggregate fallbacks to warehouse | `reason` |
+
+### AI agent metrics
+
+These metrics track the performance of the AI agent:
+
+| Metric | Type | Description | Labels |
+| :----- | :--- | :---------- | :----- |
+| `ai_agent_generate_response_duration_ms` | histogram | AI agent generate response time in milliseconds | |
+| `ai_agent_stream_response_duration_ms` | histogram | AI agent stream response time in milliseconds | |
+| `ai_agent_stream_first_chunk_ms` | histogram | AI agent time to first chunk (any type) | |
+| `ai_agent_ttft_ms` | histogram | AI agent time to first token (TTFT) | `model`, `mode` |
+| `ai_repofs_github_tree_duration_ms` | histogram | Duration of the AI agent's GitHub Git Trees fetch (per-repo file listing, on first descent into a mount) in milliseconds | |
+| `ai_repofs_github_file_duration_ms` | histogram | Duration of a per-file GitHub Contents read in milliseconds | `outcome` (`found`, `missing`, `error`) |
+| `ai_repofs_github_requests_total` | counter | Count of AI agent GitHub API requests by kind | `kind` (`tree`, `file`, `search`, `list`) |
+| `ai_writeback_sandbox_create_duration_ms` | histogram | Duration of AI writeback E2B sandbox create/resume in milliseconds | |
+| `ai_writeback_compile_duration_ms` | histogram | Duration of in-sandbox `lightdash compile` during AI writeback in milliseconds | `status` |
+| `ai_writeback_run_duration_ms` | histogram | End-to-end AI writeback run duration in milliseconds | `status` |
+
+### S3 metrics
+
+| Metric | Type | Description | Labels |
+| :----- | :--- | :---------- | :----- |
+| `lightdash_s3_results_upload_duration_seconds` | histogram | S3 results upload duration | `source` |
+
+### HTTP server metrics
+
+When `LIGHTDASH_PROMETHEUS_HTTP_METRICS_ENABLED` is set to `true`, Lightdash exposes a standardized [OpenTelemetry HTTP server semantic convention](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/) histogram. Buckets are in seconds and labels use route templates (not raw URLs) to keep cardinality bounded.
+
+| Metric | Type | Description | Labels |
+| :----- | :--- | :---------- | :----- |
+| `http_server_request_duration_seconds` | histogram | Duration of inbound HTTP requests in seconds | `http_request_method`, `http_response_status_code`, `http_route`, `url_scheme`, `network_protocol_version` |
+
+### Custom event metrics
+
+Lightdash supports operator-configurable Prometheus counter metrics that are driven by application events. These are defined via a JSON configuration file specified by the `LIGHTDASH_CUSTOM_METRICS_CONFIG_PATH` environment variable.
+
+Each entry in the config file creates a counter metric that increments when a matching application event fires. This allows you to track custom business-level metrics such as user logins or query executions without modifying the application code.
 
 ## Using metrics for monitoring and alerting
 
@@ -115,6 +192,8 @@ For example, you might want to create alerts for:
 ## OpenTelemetry support
 
 Lightdash metrics are also compatible with OpenTelemetry. You can use the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector) with the [Prometheus receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver) to scrape Lightdash's Prometheus metrics endpoint and export them to any OpenTelemetry-compatible backend.
+
+Lightdash can also export distributed traces directly over OTLP. See [Configure OpenTelemetry tracing](/self-host/customize-deployment/configure-opentelemetry-tracing-for-self-hosted-lightdash).
 
 Example OpenTelemetry Collector configuration:
 

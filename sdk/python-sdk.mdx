@@ -1,6 +1,7 @@
 ---
 title: "Python SDK"
-description: "Query your semantic layer with native Python syntax."
+description: "Query your semantic layer with native Python syntax"
+doc-type: reference
 ---
 
 The Lightdash Python SDK lets you query your semantic layer directly from Python. Use it in Jupyter notebooks, Python scripts, or anywhere you use Python to ensure everyone pulls from a single source of truth.
@@ -14,6 +15,41 @@ The Lightdash Python SDK lets you query your semantic layer directly from Python
 ```bash
 pip install lightdash
 ```
+
+## Before you start
+
+To use the SDK, you need three things from your Lightdash instance:
+
+1. **`instance_url`** — the URL where you log into Lightdash (for example, `https://app.lightdash.cloud` for Lightdash Cloud, or your self-hosted URL like `https://lightdash.mycompany.com`).
+2. **`project_uuid`** — the unique ID of the project you want to query.
+3. **`access_token`** — a personal access token (PAT) used to authenticate as you.
+
+You don't need to be an admin to do any of this. You just need access to the project you want to query.
+
+### How to get your project UUID
+
+1. Log in to Lightdash and open the project you want to query.
+2. Look at the URL in your browser's address bar. It looks like this:
+
+   ```
+   https://app.lightdash.cloud/projects/3675b69e-8324-4110-bdca-059031aa8da3/home
+   ```
+3. Copy the long string between `/projects/` and the next `/`. In the example above, the project UUID is `3675b69e-8324-4110-bdca-059031aa8da3`.
+
+### How to get a personal access token
+
+1. Click your avatar (top-right corner) and go to **Settings**.
+2. In the left-hand menu, under your name, click **Personal access tokens**.
+3. Click **Generate new token**.
+4. Give it a description (for example, "Python SDK") and pick an expiration date.
+5. Click **Generate token**.
+6. **Copy the token immediately and save it somewhere safe** — you won't be able to see it again after closing the dialog. If you lose it, just generate a new one.
+
+<Tip>
+  Treat your access token like a password. Don't commit it to git or share it. For scripts, load it from an environment variable (for example, `os.environ["LIGHTDASH_TOKEN"]`) instead of pasting it directly into your code.
+</Tip>
+
+For more details, see [Personal access tokens](/personal-settings/create-personal-tokens).
 
 ## Quick start
 
@@ -45,6 +81,77 @@ df = result.to_df()
 records = result.to_records()
 ```
 
+## Query builder
+
+The SDK provides two patterns for building queries: **single-call** and **chainable builder**.
+
+### Single-call pattern
+
+Pass all parameters at once for simple queries:
+
+```python
+query = model.query(
+    metrics=[model.metrics.revenue, model.metrics.profit],
+    dimensions=[model.dimensions.country],
+    filters=model.dimensions.status == "active",
+    sort=model.metrics.revenue.desc(),
+    limit=100
+)
+result = query.execute()
+```
+
+### Chainable builder pattern
+
+Build queries incrementally with method chaining. Each method returns a new immutable `Query` object:
+
+```python
+query = (
+    model.query()
+    .metrics(model.metrics.revenue)
+    .dimensions(model.dimensions.country, model.dimensions.date)
+    .filter(model.dimensions.status == "active")
+    .sort(model.metrics.revenue.desc())
+    .limit(100)
+)
+```
+
+Key characteristics:
+
+- **Immutable** — each method returns a new `Query` object, safe for reuse
+- **Lazy evaluation** — API calls only happen when `.execute()` is called
+- **Order-independent** — methods can be called in any order
+- **Composable** — create base queries and extend them
+
+```python
+# Create a reusable base query
+base = model.query().metrics(model.metrics.revenue).dimensions(model.dimensions.country)
+
+# Extend it for different use cases
+by_active = base.filter(model.dimensions.status == "active")
+by_inactive = base.filter(model.dimensions.status == "inactive")
+```
+
+## Dimensions and metrics
+
+Access dimensions and metrics as attributes on the model:
+
+```python
+# Access via attribute
+country = model.dimensions.country
+revenue = model.metrics.revenue
+
+# List all available
+all_dimensions = model.dimensions.list()
+all_metrics = model.metrics.list()
+```
+
+Features:
+
+- **Lazy loading** — fetched from API on first access, then cached
+- **Fuzzy matching** — typos suggest closest matches
+- **Tab completion** — works in Jupyter/IPython for discovery
+- **Rich display** — HTML rendering in notebooks
+
 ## Filters
 
 Use Python comparison operators on dimensions to create filters:
@@ -63,7 +170,7 @@ model.dimensions.amount <= 500
 # String operations
 model.dimensions.name.starts_with("John")
 model.dimensions.name.ends_with("son")
-model.dimensions.name.contains("Smith")
+model.dimensions.name.includes("Smith")
 
 # List membership
 model.dimensions.country.in_(["USA", "UK", "Canada"])
@@ -71,17 +178,46 @@ model.dimensions.country.in_(["USA", "UK", "Canada"])
 # Null checks
 model.dimensions.email.is_null()
 model.dimensions.email.is_not_null()
+
+# Range checks
+model.dimensions.order_date.between("2024-01-01", "2024-12-31")
+model.dimensions.amount.not_between(100, 500)
 ```
+
+### Supported operators by data type
+
+<div className="sticky-first-col">
+
+| Operator | Numeric | String | Boolean | Date |
+|----------|---------|--------|---------|------|
+| `is null` | Yes | Yes | Yes | Yes |
+| `is not null` | Yes | Yes | Yes | Yes |
+| `equals` / `is` | Yes | Yes | Yes | Yes |
+| `is not` | Yes | Yes | - | Yes |
+| `is less than` | Yes | - | - | - |
+| `is greater than` | Yes | - | - | - |
+| `starts with` | - | Yes | - | - |
+| `ends with` | - | Yes | - | - |
+| `includes` | - | Yes | - | - |
+| `in the last` | - | - | - | Yes |
+| `in the next` | - | - | - | Yes |
+| `in the current` | - | - | - | Yes |
+| `is before` | - | - | - | Yes |
+| `is after` | - | - | - | Yes |
+| `is between` | Yes | - | - | Yes |
+| `is not between` | Yes | - | - | Yes |
+
+</div>
 
 ### Combining filters
 
 Use `&` (AND) and `|` (OR) to combine filters:
 
 ```python
-# AND
+# AND: Both conditions must be true
 f = (model.dimensions.country == "USA") & (model.dimensions.amount > 1000)
 
-# OR
+# OR: Either condition must be true
 f = (model.dimensions.status == "active") | (model.dimensions.status == "pending")
 
 # Complex combinations
@@ -91,15 +227,181 @@ f = (
 )
 ```
 
-## Raw SQL
-
-Execute SQL queries directly against your data warehouse:
+Multiple `.filter()` calls on a query are combined with AND logic:
 
 ```python
+query = (
+    model.query()
+    .filter(model.dimensions.country == "USA")
+    .filter(model.dimensions.amount > 1000)  # AND-ed with above
+)
+```
+
+## Sorting
+
+Sort results using the `.sort()` method:
+
+```python
+from lightdash import Sort
+
+# Using metric/dimension methods (recommended)
+query = model.query().sort(model.metrics.revenue.desc())
+query = model.query().sort(model.dimensions.country.asc())
+
+# Multiple sorts
+query = model.query().sort(
+    model.metrics.revenue.desc(),
+    model.dimensions.country.asc()
+)
+
+# Control null positioning
+query = model.query().sort(model.dimensions.name.asc(nulls_first=True))
+
+# Using Sort class directly
+query = model.query().sort(Sort("orders_revenue", descending=True))
+```
+
+## Results
+
+Query results implement a unified `ResultSet` interface.
+
+### Converting results
+
+```python
+result = query.execute()
+
+# To pandas DataFrame
+df = result.to_df()  # or result.to_df(backend="pandas")
+
+# To polars DataFrame
+df = result.to_df(backend="polars")
+
+# To list of dictionaries
+records = result.to_records()
+
+# To JSON string
+json_str = result.to_json_str()
+```
+
+### Iterating over results
+
+```python
+# Iterate over rows
+for row in result:
+    print(row)
+
+# Get total count
+total = len(result)
+```
+
+### Pagination
+
+For large result sets, results are paginated automatically:
+
+```python
+result = query.execute()
+
+# Access specific page
+page_2 = result.page(2)
+
+# Iterate through all pages
+for page in result.iter_pages():
+    process(page)
+
+# Lazy DataFrame loading (polars only)
+lazy_df = result.to_df_lazy()
+```
+
+Available properties on the result:
+
+- `result.query_uuid` — unique identifier for the query
+- `result.total_results` — total number of rows
+- `result.total_pages` — number of pages
+- `result.fields` — field metadata
+
+## SQL runner
+
+Execute raw SQL queries directly against your data warehouse:
+
+```python
+# Execute SQL
 result = client.sql("SELECT * FROM orders WHERE status = 'active' LIMIT 100")
 df = result.to_df()
+
+# With custom limit
+result = client.sql("SELECT * FROM orders", limit=1000)
+
+# Introspection
+tables = client.sql_runner.tables()
+fields = client.sql_runner.fields("orders")
+fields = client.sql_runner.fields("orders", schema="public")
+```
+
+## Exception handling
+
+The SDK provides specific exceptions for different error conditions:
+
+```python
+from lightdash import LightdashError, QueryError, QueryTimeout, QueryCancelled
+
+try:
+    result = query.execute()
+except QueryTimeout as e:
+    print(f"Query timed out: {e.query_uuid}")
+except QueryCancelled as e:
+    print(f"Query was cancelled: {e.query_uuid}")
+except QueryError as e:
+    print(f"Query failed: {e.message}")
+except LightdashError as e:
+    print(f"Lightdash error: {e.message} (status: {e.status_code})")
+```
+
+Exception hierarchy:
+
+- `LightdashError` — base exception for all SDK errors
+  - `QueryError` — query execution failed (HTTP 400)
+  - `QueryTimeout` — query exceeded timeout (HTTP 408)
+  - `QueryCancelled` — query was cancelled (HTTP 499)
+
+## Complete example
+
+```python
+from lightdash import Client, QueryError, QueryTimeout
+
+# Initialize client
+client = Client(
+    instance_url="https://app.lightdash.cloud",
+    access_token="your-api-token",
+    project_uuid="your-project-uuid",
+)
+
+# Get a model
+model = client.get_model("orders")
+
+# Build a query with filters
+query = (
+    model.query()
+    .metrics(model.metrics.total_revenue, model.metrics.order_count)
+    .dimensions(model.dimensions.country, model.dimensions.order_date)
+    .filter(
+        (model.dimensions.status == "completed") &
+        (model.dimensions.order_date >= "2024-01-01")
+    )
+    .sort(model.metrics.total_revenue.desc())
+    .limit(50)
+)
+
+try:
+    result = query.execute()
+    df = result.to_df()
+    print(f"Fetched {len(result)} rows")
+    print(df.head())
+except QueryTimeout:
+    print("Query took too long - try adding more filters")
+except QueryError as e:
+    print(f"Query failed: {e.message}")
 ```
 
 ---
 
-For detailed documentation, see the [SDK reference on GitHub](https://github.com/lightdash/python-sdk/tree/main/docs).
+For the full SDK source and more examples, see the [Python SDK on GitHub](https://github.com/lightdash/python-sdk).

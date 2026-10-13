@@ -9,3 +9,17 @@ out/
 images/.DS_Store
 .DS_Store
 .env/
+
+.direnv/
+.envrc
+
+.local/
+.worktrees/
+.claude/worktrees/
+node_modules/
+
+# Generated validation reports
+/component-audit.json
+/docs-validation.json
+/external-links.json
+/changed-files.txt

@@ -1,0 +1,141 @@
+---
+title: "Customizing the appearance of your project"
+sidebarTitle: "Color palettes"
+description: "Set the default chart colors for your organization so everything you build is on brand"
+doc-type: reference
+---
+
+To customize the colors used by default in your organization, head to the `Organization settings` --> `Appearance` and you can update any and all of your default colors used in your organization.
+
+## Viewing available palettes
+
+You will see a list of color palettes that you can choose from for each mode. You can create your own palette by clicking on the `Add new palette` button. Here you can preview the palette before you save it.
+
+<Frame>
+![The organization appearance settings listing the available color palettes, each showing its color swatches](/images/workspace-admin/appearance/list-color-palettes.png)
+</Frame>
+
+## Color palettes for light and dark mode
+
+You can configure different color palettes for light mode and dark mode to ensure optimal contrast and readability in each theme. The appearance configuration includes separate tabs for both light mode and dark mode, allowing you to customize color schemes for each theme independently.
+
+<Frame>
+![Switching between the light mode and dark mode tabs in appearance settings, each with its own palette selection](/images/workspace-admin/appearance/light-dark-mode-palette.gif)
+</Frame>
+
+Since dark mode is available as a user preference setting within the app, having separate palettes ensures your charts look great regardless of which theme users choose. Note that dark mode is only available when using the app directly - embedded charts, Slack integrations, and other external integrations will continue to display in light mode.
+
+## Set the palette as the default
+
+Once you have created your palette, you can set it as the default palette for the current mode (light or dark) by clicking on the `Use this theme` button.
+You can always come back to this page to change the default palette.
+
+<Frame>
+![A saved color palette with its "Use this theme" button, marking it the default for the current mode](/images/workspace-admin/appearance/use-theme.png)
+</Frame>
+
+## Color palette hierarchy
+
+Palettes themselves are always managed at the organization level, but you can pick a specific palette at lower levels to override the default. When a chart is rendered, Lightdash resolves which palette to use by walking up the following chain and stopping at the first override it finds:
+
+1. **Embed / SDK** — when a chart is rendered through an embedded dashboard or the React SDK, a palette passed in via the embed token or SDK config takes precedence over every other level, including a per-chart override. See [Embedding with React SDK — Color palettes](/embed/react-sdk#color-palettes).
+2. **Chart** — a per-chart palette set from the chart's Series tab (cartesian and pie) or Steps tab (funnel).
+3. **Dashboard** — a palette set on the dashboard from its settings modal. Applies to all tiles in the dashboard unless an individual chart overrides it.
+4. **Space** — a palette set on a space. Nested spaces walk up through their parent spaces, so a child space inherits its nearest ancestor's palette before falling through to the project.
+5. **Project** — a palette set on the project from `Project settings` --> `Appearance`. Applies to every chart in the project unless something below overrides it.
+6. **Organization** — the organization's active palette (set on `Organization settings` --> `Appearance`). This is the final fallback.
+
+In short: **embed/SDK > chart > dashboard > space (and parent spaces) > project > organization**.
+
+### Setting a project-level palette
+
+Project admins can pick one of the org's palettes for a project under `Project settings` --> `Appearance`. The picker is read-only — to add or edit palettes themselves, go to `Organization settings` --> `Appearance`. Charts in the project use the project palette and fall back to the org's active palette when none is set.
+
+### Setting a space-level palette
+
+When creating or editing a space, you can pick a palette underneath the space name. The palette applies to every chart in that space and to any nested spaces below it that don't set their own palette. If you leave it unset, the space inherits from its parent space (when nested) or from the project.
+
+### Setting a dashboard-level palette
+
+Open the dashboard settings modal to pick a palette for a dashboard. Tiles in the dashboard render with the dashboard's chosen palette unless the chart itself sets a per-chart override.
+
+### Setting a chart-level palette
+
+In the chart editor, the palette picker is at the top of the **Series** tab (cartesian and pie charts) and the **Steps** tab (funnel charts). The preview reflects the staged palette before you save; the override only persists when you click **Save changes**.
+
+## Brand appearance
+
+Under `Organization settings` --> `Appearance`, organization admins can also configure a **Brand appearance** for the org. This stores your brand's domain, logos, fonts, and colors alongside the color palettes above, and drives branded UI surfaces in Lightdash.
+
+<Note>
+    Brand appearance relies on a [Brandfetch](https://brandfetch.com/) integration to detect a brand from its domain. On Lightdash Cloud this is configured for you. On self-hosted or OSS deployments the section is hidden until the integration is configured on the instance and a brand has been fetched. The `hasBrandfetch` flag on `GET /health` indicates whether the current instance can detect new brands.
+</Note>
+
+### Editing your brand
+
+Open `Organization settings` --> `Appearance` --> **Brand appearance**. You'll see a form containing:
+
+- **Domain** — your brand's domain (for example, `ecom-store.com`). Used as the identifier when fetching brand information.
+- **Colors** — the palette detected for your brand. Each color has a hex value and a classification: `brand`, `accent`, `dark`, `light`, or `other`. You can add new colors, remove existing ones, edit a hex value, or re-classify a color.
+- **Fonts** — the title and body font families associated with your brand. These are shown as read-only for now; a font picker is not yet available.
+- **Logos** — the light and dark logos for your brand. Logos are populated by the Brandfetch integration only — direct logo upload is not exposed in the UI.
+
+### Refreshing from Brandfetch
+
+Next to the domain field is a refresh icon. Clicking it calls Brandfetch for the current domain and replaces the form with the freshly detected brand **without persisting** anything — you can review the change and either keep it (by saving) or discard it (by reverting).
+
+- The refresh icon is grey when the domain has not been edited and blue when it differs from the saved brand.
+- The fetch is fully revertible up until you click **Save changes**.
+
+### Saving and reverting
+
+Any edit — including a Brandfetch refresh — opens an **Unsaved changes** footer with **Revert** and **Save changes** buttons. Nothing is persisted to your organization until you click **Save changes**. **Revert** restores the last saved brand.
+
+### Live preview
+
+Alongside the form, a minimal app-window mock previews how your brand will look in Lightdash:
+
+- The nav bar renders in your primary brand color with your current logo.
+- A sample dashboard title and description use your configured title and body fonts.
+- Sample charts are drawn with your brand colors.
+
+The preview updates live as you edit, so you can see the impact of a color re-classification or a Brandfetch refresh before saving.
+
+### Brand API endpoints
+
+The brand appearance settings are backed by three endpoints under the organization API:
+
+| Method | Path                | Purpose                                                                                             |
+| ------ | ------------------- | --------------------------------------------------------------------------------------------------- |
+| `GET`  | `/org/brand`        | Return the organization's currently saved brand, or `null` if none is stored.                       |
+| `POST` | `/org/brand/fetch`  | Fetch a brand from Brandfetch for a given domain without persisting it. Used to power the preview. |
+| `PUT`  | `/org/brand`        | Persist the edited brand payload (domain, colors, fonts, logos) exactly as provided.                |
+
+Example — fetch a brand for a domain without saving:
+
+```bash
+curl -X POST 'https://<your-lightdash-host>/api/v1/org/brand/fetch' \
+  -H 'Content-Type: application/json' \
+  -d '{ "domain": "ecom-store.com" }'
+```
+
+Example — save the edited brand payload:
+
+```bash
+curl -X PUT 'https://<your-lightdash-host>/api/v1/org/brand' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "domain": "ecom-store.com",
+    "name": "Ecom Store",
+    "description": "Sample brand for illustration",
+    "logos": [],
+    "colors": [
+      { "hex": "#1f6feb", "type": "brand" },
+      { "hex": "#f5a524", "type": "accent" }
+    ],
+    "fonts": [
+      { "name": "Inter", "type": "title" },
+      { "name": "Inter", "type": "body" }
+    ]
+  }'
+```

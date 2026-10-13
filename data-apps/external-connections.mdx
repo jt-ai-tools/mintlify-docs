@@ -1,0 +1,83 @@
+---
+title: "External connections"
+sidebarTitle: "External connections"
+description: "Let data apps fetch from third-party HTTP APIs through a credential-injecting proxy"
+doc-type: reference
+---
+
+A data app can also fetch from third-party HTTP APIs — for example, your own product API, a payments provider, or a Google API like BigQuery's REST endpoint. A project admin registers each API as an **external connection** (base URL, allowed methods, auth), and app builders link the connections they need. At runtime, requests go through a Lightdash-mediated proxy that injects credentials server-side, so secrets are never exposed to the app code or the browser.
+
+External connections are managed under **Project Settings → Data app connections** on the project.
+
+The proxy requires HTTPS and blocks private/internal addresses by default. Self-hosted instance operators can explicitly approve trusted internal destinations with `APP_RUNTIME_EXTERNAL_CONNECTION_ALLOWED_PRIVATE_HOST_CIDRS`. See [private-network external connections](/self-host/enterprise-features/data-apps#private-network-external-connections) for configuration and security boundaries.
+
+[Chart Studio chart types](/visualizations/chart-studio#linking-external-connections) link connections the same way, so a chart type can call an API or show images from a URL field.
+
+## Configuring a connection
+
+A connection is scoped to a project and stores:
+
+- **Name** - a short, human-readable identifier the app uses to refer to the connection.
+- **Base URL** - the origin the app is allowed to reach. The proxy pins requests to this host; an app cannot redirect a fetch elsewhere.
+- **Allowed methods** - which of `GET`, `POST`, `PUT`, `PATCH`, `DELETE` the app can use. New connections default to `GET` only; broaden the set only for APIs that actually need writes.
+- **Allowed paths** - optional path prefixes that further restrict where under the base URL the app can call.
+- **Auth** - see [Auth types](#auth-types) below.
+- **Forward viewer identity** - see [Forwarding viewer identity](#forwarding-viewer-identity) below.
+- **Who can link it** - **Admins only**, or **Data app and chart type builders** so editors can attach the connection from a data app or Chart Studio.
+- **Public images** - the **Allow public images in linked apps** toggle lets linked apps and chart types load images straight from the origin, in `<img>` tags or CSS. Off by default; enable it only for trusted public image or tile hosts.
+- **Instructions** - see [Usage instructions](#usage-instructions) below.
+
+Configuring a connection (create, edit, delete) requires the admin-only `manage:ExternalConnection` scope. Viewing the list — so an app builder can pick a connection to link — is available to Interactive Viewer and above, and only shows connections set to **Data app and chart type builders**; admins see all of them.
+
+## Auth types
+
+Pick the auth method that matches the target API. The secret is encrypted at rest and never returned to the client after it's saved — the proxy decrypts it server-side only when actually making a request.
+
+- **None** - no credentials are injected. Use this for public endpoints.
+- **API key** - a secret injected either as an HTTP header or a query parameter. You provide the parameter name (e.g. `X-Api-Key`) and the location (`header` or `query`).
+- **Bearer token** - a secret injected as `Authorization: Bearer <token>`.
+- **Google service account** - paste a Google service-account key file (the full JSON) and enter one or more **OAuth scopes** (e.g. `https://www.googleapis.com/auth/bigquery`). At request time, the proxy exchanges the key file and scopes for a short-lived Google access token and injects it as `Authorization: Bearer <token>`.
+- **OAuth 2.0 client credentials** - provide a token URL, client ID, client secret, and optional scopes. Choose **Authorization header** or **Request body** to match the OAuth server's client authentication requirements. The proxy obtains and caches an access token server-side, then sends it to the API as a bearer token. A private token endpoint needs its own operator-approved hostname and CIDR when it differs from the API host.
+
+In every case the injected credential is added by the proxy at request time; the generated app only ever sees the connection alias and the response body.
+
+## Forwarding viewer identity
+
+Enable **Forward viewer identity** below **Custom headers** when adding or editing a connection to let the external service apply per-user access rules. This setting is off by default for each connection. When enabled, Lightdash adds these headers alongside the connection's credentials:
+
+| Header | Value |
+| --- | --- |
+| `X-Lightdash-User-Email` | The viewer's email, when available |
+| `X-Lightdash-User-Id` | The viewer's Lightdash user UUID, when available |
+| `X-Lightdash-App-Id` | The app UUID |
+| `X-Lightdash-Organization-Id` | The connection's organization UUID |
+| `X-Lightdash-Project-Id` | The connection's project UUID |
+
+Lightdash sets these headers server-side; app code cannot override them, and their names are reserved in custom and API-key headers. Missing identity attributes are omitted. Connection tests use the testing administrator's identity and omit the app ID.
+
+The headers are unsigned. Enable forwarding only for services you trust with viewer information. Before using the headers for authorization, the receiving service must authenticate Lightdash through the connection credentials or a trusted network boundary.
+
+## Testing a connection
+
+The add-connection wizard and the Edit modal both include a **Test** step you can use to verify the connection before an app depends on it. The test runs through the exact same proxy path as a real app fetch (including host pinning and credential injection), so a passing test reflects real runtime behavior.
+
+On the Test step you can:
+
+- Pick any **method** the connection allows (the dropdown is restricted to your allowed-methods list).
+- Enter a **path** relative to the base URL.
+- Provide a **JSON request body** for non-`GET` methods.
+
+The response comes back with its HTTP status, content type, and body (truncated if oversized). From a passing test you can optionally **Save as sample** — a redacted, size-capped snapshot of the response that's passed into the app-build sandbox so the generator knows the API's response shape.
+
+## Usage instructions
+
+Each connection has an optional freeform **Instructions** field (markdown, up to 10,000 characters) where an admin can write notes on how apps should use the API — auth quirks, pagination style, which endpoints matter, rate-limit hints, response caveats.
+
+These instructions are passed into the app-build sandbox alongside the technical spec, so the generator uses the same guidance you'd give a human integrator. For example, on a fictional ecom `orders_api` you might write:
+
+```markdown
+- Paginate with `?page=` and `?per_page=` (max 100). The `Link` header contains the next-page URL.
+- Timestamps are returned in the store's local time, not UTC. The store timezone is in `GET /store`.
+- `/orders` returns open orders only unless `state=all` is passed.
+- Rate limit: 60 req/min per IP.
+```

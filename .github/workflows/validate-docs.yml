@@ -1,214 +1,248 @@
-name: Validate and Auto-fix Documentation
+name: Validate documentation
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches:
-      - main
+    branches: [main]
     paths:
-      - '**.mdx'
       - '**.md'
+      - '**.mdx'
+      - 'docs.json'
+      - '.mintlify/ia-map.yml'
+      - '.mintignore'
       - 'images/**'
       - 'scripts/**'
-      - '.github/workflows/validate-docs.yml'
+      - 'test/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - '.github/workflows/**'
+  schedule:
+    - cron: '17 8 * * 1'
+  workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+
+concurrency:
+  group: docs-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  validate-and-fix:
-    name: Check and Auto-fix Documentation
-    runs-on: ubuntu-latest
+  validate:
+    name: Validate documentation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
 
     steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@v4
+      - name: Set report directory
+        run: echo "REPORT_DIR=$RUNNER_TEMP/docs-validation" >> "$GITHUB_ENV"
+
+      - name: Checkout source
+        uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
         with:
-          node-version: '18'
+          node-version: '24'
+          cache: npm
 
-      - name: Post initial status comment
-        id: initial-comment
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { data: comment } = await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '## 🔧 Documentation Bot\n\nChecking for issues and fixing what I can...'
-            });
-            core.setOutput('comment_id', comment.id);
+      - name: Install utility dependencies
+        run: npm ci --ignore-scripts
 
-      - name: Check for broken links
-        id: check-links
+      - name: Install Mintlify CLI
+        run: npm install --global mint@4.2.917 --ignore-scripts
+
+      - name: Type-check and test utilities
+        run: npm run check
+
+      - name: List changed files
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git diff --name-only --diff-filter=ACMRD "$BASE_SHA" "$HEAD_SHA" > changed-files.txt
+
+      - name: Run documentation validator
+        id: validation
+        env:
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          node scripts/check-links.js > /tmp/check-links-output.txt 2>&1 || echo "issues_found=true" >> $GITHUB_OUTPUT
-          cat /tmp/check-links-output.txt
-        continue-on-error: true
-
-      - name: Check image locations
-        id: check-images
-        run: |
-          node scripts/check-image-locations.js > /tmp/check-images-output.txt 2>&1 || echo "issues_found=true" >> $GITHUB_OUTPUT
-          cat /tmp/check-images-output.txt
-        continue-on-error: true
-
-      - name: Auto-fix image locations
-        id: fix-images
-        if: steps.check-images.outputs.issues_found == 'true'
-        run: |
-          echo "Running auto-fix for image locations..."
-          node scripts/fix-image-locations.js > /tmp/fix-output.txt 2>&1
-          cat /tmp/fix-output.txt
-
-          # Check if any files were modified
-          if git diff --quiet && git diff --cached --quiet; then
-            echo "fixed_count=0" >> $GITHUB_OUTPUT
-            echo "No changes made (images might be missing or other unfixable issues)"
-          else
-            # Count the number of images that were fixed
-            FIXED_COUNT=$(grep -c "✓ Moved image" /tmp/fix-output.txt || echo "0")
-            echo "fixed_count=$FIXED_COUNT" >> $GITHUB_OUTPUT
-            echo "Fixed $FIXED_COUNT image(s)"
+          mkdir -p "$REPORT_DIR"
+          arguments=(--output "$REPORT_DIR/docs-validation.json")
+          if [[ "$EVENT_NAME" == 'pull_request' ]]; then
+            arguments+=(--changed-files changed-files.txt)
           fi
-        continue-on-error: true
 
-      - name: Commit fixes
-        if: steps.fix-images.outputs.fixed_count != '0'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git add -A
-          git commit -m "🤖 Auto-fix: Move images to correct directories
-
-          Automatically fixed image location issues.
-
-          Co-Authored-By: GitHub Actions <github-actions[bot]@users.noreply.github.com>"
-
-          git push
-
-      - name: Re-check after fixes
-        id: recheck
-        if: steps.fix-images.outputs.fixed_count != '0'
-        run: |
-          echo "Re-checking image locations after fixes..."
-          if node scripts/check-image-locations.js > /tmp/recheck-output.txt 2>&1; then
-            echo "remaining_issues=false" >> $GITHUB_OUTPUT
-          else
-            echo "remaining_issues=true" >> $GITHUB_OUTPUT
+          set +e
+          node scripts/docs/validate.ts "${arguments[@]}"
+          exit_code=$?
+          set -e
+          if [[ ! -f "$REPORT_DIR/docs-validation.json" ]]; then
+            printf '%s\n' '{"schemaVersion":1,"status":"tool_failure","scope":"unknown","summary":{"errors":0,"autoFixable":0},"findings":[],"error":"Validator exited before writing its report."}' > "$REPORT_DIR/docs-validation.json"
+            exit_code=2
           fi
-        continue-on-error: true
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
 
-      - name: Update final status comment
-        if: always()
-        uses: actions/github-script@v7
+      - name: Audit internal links and anchors
+        id: internal-links
+        run: |
+          mkdir -p "$REPORT_DIR"
+          set +e
+          node scripts/docs/audit-internal-links.ts --output "$REPORT_DIR/internal-links.json"
+          exit_code=$?
+          set -e
+          if [[ ! -f "$REPORT_DIR/internal-links.json" ]]; then
+            printf '%s\n' '{"schemaVersion":1,"status":"tool_failure","scope":"all","summary":{"errors":0,"autoFixable":0},"findings":[],"error":"Internal link audit exited before writing its report."}' > "$REPORT_DIR/internal-links.json"
+            exit_code=2
+          fi
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+
+      - name: Check the component baseline
+        id: components
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          mkdir -p "$REPORT_DIR"
+          arguments=(--baseline --output "$REPORT_DIR/component-audit.json")
+          if [[ "$EVENT_NAME" == 'pull_request' ]]; then
+            arguments+=(--changed-files changed-files.txt)
+          fi
+
+          set +e
+          node scripts/docs/audit-components.ts "${arguments[@]}"
+          exit_code=$?
+          set -e
+          if [[ ! -f "$REPORT_DIR/component-audit.json" ]]; then
+            printf '%s\n' '{"schemaVersion":1,"status":"tool_failure","scope":"all","summary":{"warnings":0,"byRule":{},"byArea":{}},"findings":[],"error":"Component audit exited before writing its report."}' > "$REPORT_DIR/component-audit.json"
+            exit_code=2
+          fi
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+
+      - name: Upload component findings
+        if: ${{ !cancelled() && steps.components.outcome == 'success' }}
+        uses: actions/upload-artifact@v7
         with:
-          script: |
-            const fs = require('fs');
+          name: component-audit
+          path: ${{ env.REPORT_DIR }}/component-audit.json
+          if-no-files-found: error
+          retention-days: 14
 
-            let comment = '## 🤖 Documentation Bot\n\n';
+      - name: Upload structured findings
+        if: ${{ !cancelled() && steps.validation.outcome == 'success' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: docs-validation
+          path: |
+            ${{ env.REPORT_DIR }}/docs-validation.json
+            ${{ env.REPORT_DIR }}/internal-links.json
+          if-no-files-found: error
+          retention-days: 14
 
-            const hasLinkIssues = '${{ steps.check-links.outputs.issues_found }}' === 'true';
-            const fixedCount = parseInt('${{ steps.fix-images.outputs.fixed_count }}' || '0');
-            const hasRemainingImageIssues = '${{ steps.recheck.outputs.remaining_issues }}' === 'true';
-
-            // Build status summary
-            const statuses = [];
-
-            if (fixedCount > 0) {
-              statuses.push(`✅ Fixed ${fixedCount} misplaced image${fixedCount > 1 ? 's' : ''}`);
-            }
-
-            if (hasRemainingImageIssues) {
-              statuses.push('⚠️ Some image issues could not be auto-fixed (missing files or invalid types)');
-            }
-
-            if (hasLinkIssues) {
-              const linksOutput = fs.readFileSync('/tmp/check-links-output.txt', 'utf8');
-              const lines = linksOutput.split('\n');
-              const brokenLinkCount = lines.filter(line => line.includes('📄')).length;
-              statuses.push(`⚠️ ${brokenLinkCount} broken link${brokenLinkCount > 1 ? 's' : ''} need${brokenLinkCount === 1 ? 's' : ''} manual attention`);
-            }
-
-            if (statuses.length === 0) {
-              comment += '✅ **All checks passed!** No issues found.\n';
-            } else {
-              comment += '### Status\n\n';
-              statuses.forEach(status => {
-                comment += `${status}\n`;
-              });
-              comment += '\n';
-            }
-
-            // Add details for broken links if any
-            if (hasLinkIssues) {
-              const linksOutput = fs.readFileSync('/tmp/check-links-output.txt', 'utf8');
-              const lines = linksOutput.split('\n');
-              const brokenLinks = lines.filter(line => line.includes('Broken link:') || line.includes('📄')).slice(0, 10);
-
-              comment += '---\n\n';
-              comment += '### 🔗 Broken Links (Manual Fix Required)\n\n';
-              comment += '<details><summary>Click to view details</summary>\n\n';
-              comment += '```\n' + brokenLinks.join('\n') + '\n```\n';
-              comment += '</details>\n';
-            }
-
-            // Add details for unfixable image issues if any
-            if (hasRemainingImageIssues) {
-              comment += '\n---\n\n';
-              comment += '### 🖼️ Image Issues (Manual Fix Required)\n\n';
-              comment += 'Some image issues could not be automatically fixed. These typically include:\n';
-              comment += '- Missing image files\n';
-              comment += '- Invalid file types\n';
-              comment += '\nPlease review and fix these manually.\n';
-            }
-
-            // Update the initial comment
-            await github.rest.issues.updateComment({
-              comment_id: '${{ steps.initial-comment.outputs.comment_id }}',
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
-
-      - name: Report summary and fail if needed
+      - name: Write job summary
         if: always()
         run: |
-          FIXED_COUNT="${{ steps.fix-images.outputs.fixed_count }}"
-          HAS_LINK_ISSUES="${{ steps.check-links.outputs.issues_found }}"
-          HAS_REMAINING_ISSUES="${{ steps.recheck.outputs.remaining_issues }}"
+          node - <<'NODE' >> "$GITHUB_STEP_SUMMARY"
+          const fs = require('node:fs');
+          const path = require('node:path');
+          function readReport(name) {
+            try {
+              return JSON.parse(fs.readFileSync(path.join(process.env.REPORT_DIR, name), 'utf8'));
+            } catch {
+              return undefined;
+            }
+          }
+          const report = readReport('docs-validation.json');
+          console.log('## Documentation validation');
+          console.log('');
+          if (!report) {
+            console.log('Validation report is unavailable. Inspect the preceding steps for setup or execution failures.');
+          } else if (report.status === 'tool_failure') {
+            console.log('Validator failure. Inspect the job log and structured artifact.');
+          } else {
+            console.log(`${report.summary.errors} blocking finding(s), ${report.summary.autoFixable} auto-fixable.`);
+          }
+          const internalLinks = readReport('internal-links.json');
+          if (!internalLinks) {
+            console.log('\nInternal link report is unavailable.');
+          } else if (internalLinks.status === 'tool_failure') {
+            console.log('\nInternal link audit failed. Inspect the job log and structured artifact.');
+          } else {
+            console.log(`\n${internalLinks.summary.errors} broken internal link or anchor finding(s).`);
+          }
+          const components = readReport('component-audit.json');
+          if (!components) {
+            console.log('\nComponent audit report is unavailable.');
+          } else if (components.status === 'tool_failure') {
+            console.log('\nComponent audit failed. Inspect the job log and structured artifact.');
+          } else {
+            const baseline = require('./scripts/docs/component-baseline.json');
+            const grown = Object.entries(components.summary.byRule || {})
+              .filter(([rule, count]) => count > (baseline.rules[rule] ?? 0));
+            console.log('');
+            console.log('## Component system');
+            console.log('');
+            console.log(`${components.summary.warnings} finding(s) against a baseline of ${Object.values(baseline.rules).reduce((a, b) => a + b, 0)}.`);
+            for (const [rule, count] of grown) {
+              console.log(`- \`${rule}\` rose to ${count} from ${baseline.rules[rule] ?? 0}`);
+            }
+          }
+          NODE
 
-          echo "## Documentation Check Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+      - name: Set validation result
+        if: ${{ !cancelled() && steps.validation.outcome == 'success' }}
+        env:
+          EXIT_CODE: ${{ steps.validation.outputs.exit_code }}
+          INTERNAL_LINK_EXIT_CODE: ${{ steps.internal-links.outputs.exit_code }}
+          COMPONENT_EXIT_CODE: ${{ steps.components.outputs.exit_code }}
+        run: |
+          if [[ "${EXIT_CODE:-2}" != '0' ]]; then exit "${EXIT_CODE:-2}"; fi
+          if [[ "${INTERNAL_LINK_EXIT_CODE:-2}" != '0' ]]; then exit "${INTERNAL_LINK_EXIT_CODE:-2}"; fi
+          exit "${COMPONENT_EXIT_CODE:-2}"
 
-          if [ "$FIXED_COUNT" != "0" ]; then
-            echo "✅ Auto-fixed $FIXED_COUNT image location issue(s)" >> $GITHUB_STEP_SUMMARY
+  external-links:
+    name: Audit external links
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Check external links
+        id: external
+        run: |
+          set +e
+          node scripts/docs/audit-external-links.ts --output external-links.json
+          exit_code=$?
+          set -e
+          if [[ ! -f external-links.json ]]; then
+            printf '%s\n' '{"schemaVersion":1,"status":"tool_failure","scope":"all","summary":{"warnings":0},"findings":[],"error":"External link checker exited before writing its report."}' > external-links.json
+            exit_code=2
           fi
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
 
-          if [ "$HAS_LINK_ISSUES" == "true" ]; then
-            echo "❌ Broken links found - fix required before merging" >> $GITHUB_STEP_SUMMARY
-          fi
+      - name: Upload advisory findings
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: external-links
+          path: external-links.json
+          if-no-files-found: error
+          retention-days: 14
 
-          if [ "$HAS_REMAINING_ISSUES" == "true" ]; then
-            echo "⚠️ Some image issues could not be auto-fixed" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          if [ "$FIXED_COUNT" == "0" ] && [ "$HAS_LINK_ISSUES" != "true" ] && [ "$HAS_REMAINING_ISSUES" != "true" ]; then
-            echo "✅ All checks passed!" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          # Fail the workflow if there are broken links
-          if [ "$HAS_LINK_ISSUES" == "true" ]; then
-            echo "::error::Broken links found. Please fix them before merging."
-            exit 1
-          fi
+      - name: Fail on checker errors
+        if: always() && steps.external.outputs.exit_code == '2'
+        run: exit 2

@@ -1,0 +1,218 @@
+---
+title: "Create reusable chart types with Chart Studio"
+sidebarTitle: "Chart Studio"
+description: "Reusable chart types you build once for your project, then use like any built-in chart type"
+doc-type: "reference"
+---
+
+Chart Studio is the agentic in-platform interface for building [custom chart types](/visualizations/custom-charts). You describe the chart you want, Lightdash builds it, and anyone in the project can then use it like a built-in chart type. Open **Configure** in the Explorer, click **Change**, and pick it from the **Custom** group of the chart type gallery.
+
+The same chart type can power many saved charts, each with its own query and field mapping.
+
+<Frame>
+  <iframe
+    width="100%"
+    height="420"
+    src="https://www.youtube.com/embed/LYei_5W2Tv8"
+    title="Chart Studio demo"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen
+  ></iframe>
+</Frame>
+
+## Browsing chart types
+
+Every chart type in the project lives in Chart Studio. Go to **Browse** and pick **Chart Studio**.
+
+Each card previews the chart type with sample data. Click a card to see its description, who built it, its inputs, and its current version, and to preview it in the Explorer, edit it, or delete it.
+
+<Frame>
+  <img
+    alt="Chart Studio, showing cards for each of the project's chart types"
+    className="block dark:hidden"
+    src="/images/visualizations/chart-studio/custom-chart-types-gallery-light.png"
+  />
+  <img
+    alt="Chart Studio, showing cards for each of the project's chart types"
+    className="hidden dark:block"
+    src="/images/visualizations/chart-studio/custom-chart-types-gallery-dark.png"
+  />
+</Frame>
+
+## Building a chart type
+
+Build chart types from the Explorer, on top of a query whose results look like the ones the chart type will render against. Working against real data as you prompt makes the preview trustworthy and cuts out the sample-to-real gap you'd otherwise close after the fact.
+
+<Steps>
+  <Step title="Run the query you want to design against">
+    In the Explorer, pick the dimensions and metrics the chart type needs and run the query. The results become Chart Studio's preview data.
+  </Step>
+  <Step title="Open Chart Studio">
+    Open **Configure**, click **Change**, and pick the **New chart type** tile in the **Custom** group. Chart Studio opens in the chart panel and the sidebar switches to its generated options.
+  </Step>
+  <Step title="Describe the chart">
+    Type what you want in the prompt bar. Chart Studio builds it and renders it against your query's real results. The **Generated options** panel holds the display options the chart type declares, along with a color palette to preview it against. Follow-up prompts create new versions, and **History** opens a panel where you can view an earlier version or restore it.
+  </Step>
+  <Step title="Name it">
+    Name and describe the chart type in the header. That's what people see in the gallery and in the chart type picker.
+  </Step>
+</Steps>
+
+<Frame>
+  <img
+    alt="Chart Studio, with the generated options panel, the sample-data preview, the version history, and the prompt bar"
+    className="block dark:hidden"
+    src="/images/visualizations/chart-studio/custom-chart-types-builder-light.png"
+  />
+  <img
+    alt="Chart Studio, with the generated options panel, the sample-data preview, the version history, and the prompt bar"
+    className="hidden dark:block"
+    src="/images/visualizations/chart-studio/custom-chart-types-builder-dark.png"
+  />
+</Frame>
+
+To edit a chart type you already have selected in the Explorer, click the pencil next to its name in the **Configure chart** sidebar.
+
+You can also start from **Browse → Chart Studio**: click **New chart type** to open Chart Studio against sample data, then click **Preview in explorer** when you want to try it against a real query.
+
+<Tip>
+  Chart types can also be developed on your machine and uploaded with the CLI. See [Chart types as code](#chart-types-as-code).
+</Tip>
+
+## Using a chart type in a chart
+
+<Steps>
+  <Step title="Run your query">
+    Select the dimensions and metrics your chart needs and run the query. You have to run it before you can pick a custom chart type.
+  </Step>
+  <Step title="Pick the chart type">
+    Open **Configure** to open the chart sidebar, then click **Change**. The **Custom** group at the top of the gallery lists the project's chart types; click the **more** tile to see the rest, or search the gallery by name. Only chart types that finished building are listed.
+  </Step>
+  <Step title="Map your fields">
+    Each of the chart type's inputs gets a field picker in the **General** tab, the same as configuring axes on a bar or line chart. Required inputs can't be cleared. The chart type's own display options sit in the tabs beside it.
+  </Step>
+</Steps>
+
+The chart re-renders as you change the mapping or the underlying query.
+
+<Frame>
+  <img
+    alt="A custom chart type selected in the Explorer sidebar, with its inputs mapped to the query's fields and the chart rendering"
+    className="block dark:hidden"
+    src="/images/visualizations/chart-studio/custom-chart-types-mapping-light.png"
+  />
+  <img
+    alt="A custom chart type selected in the Explorer sidebar, with its inputs mapped to the query's fields and the chart rendering"
+    className="hidden dark:block"
+    src="/images/visualizations/chart-studio/custom-chart-types-mapping-dark.png"
+  />
+</Frame>
+
+## Saving and dashboards
+
+Save the chart like any other chart. The saved chart remembers which chart type it uses, how its inputs are mapped, and which version of the chart type it uses (see [Versions and upgrades](#versions-and-upgrades)).
+
+Saved charts render in chart view and as dashboard tiles, driven by each surface's own query - dashboard filters and [date zoom](/explore/dashboards/date-zoom) apply like any other chart tile. Charts in [documents](/explore/documents) can use the chart type too.
+
+## Versions and upgrades
+
+Every follow-up prompt in Chart Studio creates a new version of the chart type. A saved chart keeps using the version it was saved with, so changing a chart type never changes the charts that already use it.
+
+When you edit a chart and a newer version of its chart type exists, the **Configure chart** sidebar shows **Newer version available**. Click **Review upgrade** to see what changed: inputs and options that were added, renamed or removed, and any change to the color palette.
+
+<Frame>
+  <img
+    alt="The Upgrade chart type dialog over the Explorer, listing what changed since the chart's version"
+    className="block dark:hidden"
+    src="/images/visualizations/chart-studio/custom-chart-types-upgrade-light.png"
+  />
+  <img
+    alt="The Upgrade chart type dialog over the Explorer, listing what changed since the chart's version"
+    className="hidden dark:block"
+    src="/images/visualizations/chart-studio/custom-chart-types-upgrade-dark.png"
+  />
+</Frame>
+
+Click **Upgrade** to move the chart to the latest version. Only that chart moves, and nothing changes until you save it. If the new version added a required input, map a field to it and the chart renders again.
+
+Chart Studio has its own upgrade, for the chart type itself. When a chart type was built on an older version of the data apps runtime, the Chart Studio header shows **Upgrade available**. Starting it rebuilds the chart type as a new version, and **History** shows what's new. How the chart type renders doesn't change unless you ask for it in a follow-up prompt.
+
+## Chart types as code
+
+Chart types round-trip through the CLI as their own resource, separate from data apps. Each one downloads to `lightdash/chart-types/<slug>/` as a locally buildable project you can version in git, edit, validate with [`lightdash apps validate`](/workflow/cli/reference#lightdash-apps-validate), and upload back:
+
+```bash
+lightdash download --chart-types-only --chart-types calendar-heatmap
+lightdash upload --chart-types calendar-heatmap
+```
+
+A chart type's identity is the `slug` in its `lightdash-app.yml` manifest, upserted in the target project on upload. The manifest also carries a `vizSchema` field with the chart type's declared inputs, so the inputs round-trip with the source.
+
+Saved charts reference their chart type by that slug in chart YAML (the `dataAppVizSlug` field), which keeps chart files portable across projects and instances:
+
+- Downloading charts brings the chart types they render with along automatically, into `lightdash/chart-types/`.
+- Uploading a chart resolves the slug in the target project. If the chart type doesn't exist there, the chart upload fails with a message to run `lightdash upload --chart-types <slug>` first.
+- Chart YAML written before slug references carries a `dataAppVizUuid` instead. Uploads accept it, but new downloads always write the slug.
+
+The folder layout and server-side build pipeline are the same as for data apps — see [Data apps as code](/data-apps/download-data-apps-as-code), and the `--chart-types` flags on [`lightdash download`](/workflow/cli/reference#lightdash-download) and [`lightdash upload`](/workflow/cli/reference#lightdash-upload) for the full flag lists.
+
+## Permissions
+
+Chart types are available across the whole project. They don't live in spaces and can't be moved into one.
+
+- Anyone who can view a chart can see the chart type it renders with.
+- Editors and above can build new chart types.
+- You can edit and delete the chart types you built. Project admins can edit and delete any of them.
+
+<Accordion title="Linking external connections">
+  Chart types render in the same sandbox as data apps, so they can only reach the network through [external connections](/data-apps/external-connections). That covers two cases: calling a third-party API while the chart renders, and showing images from a URL field in your results. Without a linked connection, the sandbox blocks images from any other origin.
+
+  A project admin registers the connection once, then whoever builds the chart type links it from Chart Studio.
+
+  <Steps>
+    <Step title="Register the connection">
+      Go to **Project Settings → Data app connections** and click **Add connection**. Enter the **Base URL** of the host the chart type needs to reach and pick the auth method that host requires. A public image host needs **None**.
+    </Step>
+    <Step title="Allow images from it">
+      If the chart type shows images, turn on **Allow public images in linked apps**. Linked chart types can then load images straight from that origin, in `<img>` tags or CSS. Leave it off for hosts you only call for data.
+    </Step>
+    <Step title="Choose who can link it">
+      Set **Who can link this connection?** to **Data app and chart type builders** so editors can attach it from Chart Studio. **Admins only** keeps it out of everyone else's picker.
+    </Step>
+    <Step title="Attach it in Chart Studio">
+      Open the chart type in Chart Studio, or start a new one, and click **Add external connections** in the prompt bar. Tick the connection, then describe the chart, or send a follow-up prompt such as "show the image from the Image URL input". The link is created when that build runs, so an existing chart type needs at least one follow-up prompt to pick it up.
+
+      <Frame>
+        <img
+          alt="Chart Studio open in the Explorer, with the Add external connections picker showing a linked image host and the chart rendering an icon per bar"
+          className="block dark:hidden"
+          src="/images/visualizations/chart-studio/custom-chart-types-connections-light.png"
+        />
+        <img
+          alt="Chart Studio open in the Explorer, with the Add external connections picker showing a linked image host and the chart rendering an icon per bar"
+          className="hidden dark:block"
+          src="/images/visualizations/chart-studio/custom-chart-types-connections-dark.png"
+        />
+      </Frame>
+    </Step>
+    <Step title="Check it in the Explorer">
+      Click **Preview in explorer**, run a query that includes the image URL field, and map it to the chart type's input. The images should render.
+
+      <Frame>
+        <img
+          alt="The Explorer showing the chart type with its inputs mapped to the query's fields and an icon rendering next to each category"
+          className="block dark:hidden"
+          src="/images/visualizations/chart-studio/custom-chart-types-connections-explorer-light.png"
+        />
+        <img
+          alt="The Explorer showing the chart type with its inputs mapped to the query's fields and an icon rendering next to each category"
+          className="hidden dark:block"
+          src="/images/visualizations/chart-studio/custom-chart-types-connections-explorer-dark.png"
+        />
+      </Frame>
+    </Step>
+  </Steps>
+
+  Once linked, the connection stays with the chart type across versions and everywhere it renders: the Chart Studio preview, the Explorer, saved charts, dashboard tiles, and embedded dashboards. The indicator in the prompt bar counts linked connections. Open it and untick a connection to unlink it. Unlinking only removes the link, so the generated code keeps calling the connection until you build a new version.
+</Accordion>

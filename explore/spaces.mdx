@@ -1,0 +1,179 @@
+---
+title: "Spaces"
+description: "Organize saved charts and dashboards into spaces, and manage who can access each one"
+doc-type: reference
+---
+
+Spaces are kind of like folders. All saved charts and dashboards exist in a Space and can only be in one Space at a time.
+
+<Frame>
+  ![The Browse drop-down open in the navigation bar, listing the project's spaces](/images/explore/spaces/view-spaces.png)
+</Frame>
+
+To access Spaces, you can either select a Space from the drop-down list in `Browse` or you can click on the Lightdash icon and select your Space from the homepage.
+
+<Frame>
+  ![The All spaces view, with a row per space showing its name and access level](/images/explore/spaces/view-all-spaces.png)
+</Frame>
+
+## Creating a Space
+
+Editors and above can create Spaces. Click `Add` on the `All spaces` page, or pick `Space` from the `+ New` menu in the navigation bar, then give the Space a name. Root-level Spaces also ask you to pick an access mode as you create them: `Inherited access` (everyone in the project, the default) or `Restricted access` (only invited users and groups) — see [managing access](#managing-access-to-a-space) for what each means.
+
+To create a nested Space, open the parent Space and pick `Create space` from its `Add` menu. A nested Space always starts with the same access as its parent; you can change that after creating it. Either way, you become an admin of the Space you created, and it appears in `Browse` and on the `All spaces` page alongside the rest.
+
+## Moving items between Spaces
+
+To move a saved chart, dashboard or space between Spaces, you can click on the three dot menu (`...`) to the right of the item and pick the `Move` action. Or select items using checkboxes on the left and click `Move to Space`.
+
+<Frame>
+  ![The three-dot menu open beside a saved chart, with the Move action in the list](/images/explore/spaces/transfer-to-space.png)
+</Frame>
+
+<br />
+
+<Frame>
+  ![Several items selected by their left-hand checkboxes, with a Move to Space button in the toolbar above](/images/explore/spaces/transfer-to-space-bulk.png)
+</Frame>
+
+<br />
+
+<Frame>
+  ![The Move to Space dialog with a picker for the destination space and the selected items listed](/images/explore/spaces/transfer-to-space-bulk-2.png)
+</Frame>
+
+You can also add items to a Space from within the Space. Just click on the `Add` button on the space page.
+
+<Frame>
+  ![The Add button on a space page, offering to add existing charts and dashboards to that space](/images/explore/spaces/add-to-space.png)
+</Frame>
+
+## Updating and deleting Spaces
+
+You can rename or delete your Space from All Spaces view or on the homescreen by clicking on the three-dot menu (`...`) for the Space.
+
+<Frame>
+  ![The three-dot menu open beside a space in the All spaces view, with rename and delete options](/images/explore/spaces/edit-delete-space.png)
+</Frame>
+
+<Warning>
+  Deleting a Space will delete all of the content in that Space.
+</Warning>
+
+## Managing access to a Space
+
+By default, when you create a Space, it has Inherited Access—inheriting permissions from the project (for root-level spaces) or from the parent space (for nested spaces). You can change a space to Restricted Access to limit it to only invited users and admins.
+
+<Frame>
+  ![Clean Shot2026 02 26at12 23 08@2x](/images/CleanShot2026-02-26at12.23.08@2x.png)
+</Frame>
+
+To edit access to a Space, navigate into the Space, then click the three-dot menu (`...`) and select `Share`. From there, you can choose between `Inherited Access` and `Restricted Access`.
+
+<Frame>
+  <img
+    src="/images/CleanShot2026-02-26at15.48.52@2x-1.png" alt="The Share dialog for a space, with Inherited Access and Restricted Access as the two options"
+    className="hidden dark:block"
+  />
+  <img
+    src="/images/CleanShot2026-02-26at15.48.52@2x.png" alt="The Share dialog for a space, with Inherited Access and Restricted Access as the two options"
+    className="dark:hidden"
+  />
+</Frame>
+
+By default, in spaces with Inherited Access, a user's space permissions are inherited from their project permissions (for root-level spaces) or parent space (for nested spaces). For example, if I'm a project viewer, I will get `Can View` access to a Space.
+
+For what each space role can do, see [the space roles table](/workspace-admin/roles#space-roles).
+
+### Restricted Access spaces
+
+**Only admins and members that are invited to a Space with Restricted Access have access to it.**
+
+For example, here I have a Space with Restricted Access. Only admins and the invited members have access to this Space. Katie, Filipe and Marshall have inherited `Full Access` because they are organization admins. Priyanka was invited to the space, so she has `Can View` access to the space. Individual items can also be shared through [Direct access](/workspace-admin/direct-access), which does not grant access to browse this Space.
+
+Only users with `Full Access` permissions to a Restricted Access Space can invite other users to that Space.
+
+#### Give all project members view access
+
+To let everyone in a project view a Space while allowing only selected people to edit it:
+
+1. Set the Space to **Restricted Access**.
+2. Review the Space's direct grants and remove or reduce any unwanted **Can Edit** or **Full Access** entries.
+3. Add **All project members** with **Can View**.
+4. Give selected users or groups **Can Edit** or **Full Access**.
+
+Restricted Access stops permissions from parent Spaces from continuing to flow into this Space. When you change an existing Space from Inherited Access to Restricted Access, Lightdash copies its current inherited permissions into direct grants so users do not suddenly lose access. Review those copied grants before relying on the Space as view-only.
+
+**Nested spaces inherit access from Restricted Access spaces by default.** When you create a space inside a Restricted Access space, the nested space automatically uses Inherited Access, meaning it inherits the same restricted permissions from its parent. This makes it easy to organize content within a restricted area while maintaining consistent access control.
+
+### Inherited Access spaces
+
+**Everyone who has access to your project (or parent space) has access to a space with Inherited Access.**
+
+For example, here I have a Space with Inherited Access. Everyone who has access to my Project, "Lightdash analytics", will get access to the content in my space.
+
+<Frame>
+  <img
+    src="/images/CleanShot2026-02-26at15.53.06@2x-1.png" alt="The Share dialog for a space set to Inherited Access, noting that everyone with access to the Lightdash analytics project can reach it"
+    className="hidden dark:block"
+  />
+  <img
+    src="/images/CleanShot2026-02-26at15.53.06@2x.png" alt="The Share dialog for a space set to Inherited Access, noting that everyone with access to the Lightdash analytics project can reach it"
+    className="dark:hidden"
+  />
+</Frame>
+
+**By default, you inherit your space permissions in an Inherited Access space from your project permissions (for root-level spaces) or parent space permissions (for nested spaces).**
+
+So, if someone is an `editor` in my project, they will have `Can Edit` permissions in my Space. If someone is a `viewer` in my project, they will have `Can View` permissions in my Space. For more details about actions you can take in a Space based on your role, [check out this table](/workspace-admin/roles#space-roles).
+
+<Warning>
+  Adding **All project members** with **Can View** to an Inherited Access Space does not make the Space view-only. More permissive user or group grants from the Space or its ancestors still apply.
+</Warning>
+
+Users with **Full Access** can change a user's Space permissions. Users cannot be removed from Inherited Access Spaces. To give a user **No access**, change the Space from Inherited Access to Restricted Access.
+
+## Nested space permissions
+
+Spaces can be nested inside other spaces to create a hierarchy. Nested spaces have flexible permission options that allow you to either inherit permissions from their parent or define custom access.
+
+### Permission inheritance options
+
+When creating or editing a space, you can choose between two access modes:
+
+- **Inherited Access**: The space inherits permissions from its parent. For nested spaces, this means inheriting from the parent space. For root-level spaces, this means inheriting from the project. This is the more open option—users with access to the parent automatically have the same access to the space.
+- **Restricted Access**: The space defines its own permissions, which its children inherit. Only users and groups explicitly invited to this space (plus admins) can access it. This is the more restricted option.
+
+### How permission inheritance works
+
+When a nested space uses Inherited Access:
+
+1. **Inheritance chain**: Permissions flow down through the space hierarchy. If Space A contains Space B, and Space B contains Space C, then Space C can inherit permissions all the way from Space A (if both B and C use Inherited Access).
+2. **Breaking inheritance**: When you switch a space from Inherited Access to Restricted Access, the current inherited permissions are copied as direct access entries. This ensures users don't suddenly lose access when you restrict permissions.
+3. **Effective access**: Lightdash collects direct user, group, and **All project members** grants from the Space and every active ancestor in its inheritance chain. The highest applicable Space role wins. A lower role on a child Space does not revoke a higher role inherited from an ancestor. If the chain contains no applicable Space grants, access is derived from the user's organization and project permissions.
+4. **Access sources**: In the Share modal, **Shared with** shows the configured grants, while **Who has access** shows each user's effective access and where it comes from:
+   - **Direct access**: Explicitly granted to this space
+   - **Parent space**: Inherited from a parent space
+   - **Project**: Inherited from project-level permissions
+   - **Organization**: Inherited from organization-level permissions
+
+Check **Who has access** when verifying that a Space is view-only.
+
+### Managing nested space permissions
+
+To change a nested space's permission mode:
+
+1. Navigate into the space
+2. Click the three-dot menu (`...`) and select `Share`
+3. Toggle between Inherited Access and Restricted Access
+4. If switching to Restricted Access, you can then add or remove specific users and groups
+
+<Note>
+  When you switch a space to Restricted Access, you automatically receive Full Access to prevent accidentally locking yourself out.
+</Note>
+
+### Best practices for nested spaces
+
+- **Use groups over individual users**: When sharing spaces, prefer adding groups rather than individual users. This makes permission management easier as your team grows.
+- **Plan your hierarchy**: Consider how permissions should flow before creating deeply nested structures.
+- **Use Inherited Access when possible**: Inheriting permissions simplifies management and ensures consistent access across related content.
