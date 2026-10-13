@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   assign-docs-pr:
+    if: ${{ github.repository == 'lightdash/mintlify-docs' }}
     name: Assign docs PR to source PR author
     runs-on: ubuntu-latest
 
